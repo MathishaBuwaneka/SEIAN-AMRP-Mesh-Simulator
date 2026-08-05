@@ -1,0 +1,33 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Test output
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# Editors
+.vscode/
+.idea/
+
+# Generated files
+output/
+outputs/
+results/
+*.log
+*.zip
+
+# Operating system files
+.DS_Store
+Thumbs.db

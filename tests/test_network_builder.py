@@ -1,0 +1,4 @@
+test_next_available_node_id_reuses_first_gap()
+test_parse_plotly_canvas_event_handles_canvas_and_node_points()
+test_place_move_select_and_delete_nodes_from_canvas()
+test_custom_duplicate_id_is_rejected()

@@ -1,0 +1,14 @@
+{
+  "network_id": "SEIAN-LAB",
+  "area_width_m": 600.0,
+  "area_height_m": 360.0,
+  "lora_range_m": 175.0,
+  "nodes": [
+    {"node_id": "N01", "x": 50, "y": 180, "gateway_capable": true, "gateway_online": true, "active": true},
+    {"node_id": "N02", "x": 160, "y": 180, "gateway_capable": false, "gateway_online": false, "active": true},
+    {"node_id": "N03", "x": 270, "y": 180, "gateway_capable": false, "gateway_online": false, "active": true},
+    {"node_id": "N04", "x": 380, "y": 120, "gateway_capable": false, "gateway_online": false, "active": true},
+    {"node_id": "N05", "x": 380, "y": 240, "gateway_capable": false, "gateway_online": false, "active": true},
+    {"node_id": "N06", "x": 500, "y": 180, "gateway_capable": false, "gateway_online": false, "active": true}
+  ]
+}
