@@ -344,3 +344,118 @@ def _color_for_node(node) -> str:
     if node.fault_status == FaultStatus.WARNING:
         return "#eab308"
     return "#16a34a"
+
+
+def packet_trace_figure(sim: SeianMeshSimulator, session) -> go.Figure:
+    """Draw a Packet Tracer-style view of one manual packet session.
+
+    Completed physical transmissions remain visible as a trace.  The latest
+    successful hop is highlighted in green, a dropped hop in red, and the next
+    waiting transmission is shown as an amber dotted link.  No movement occurs
+    here; movement only changes after ``ManualPacketSession.forward_one``.
+    """
+
+    fig = topology_figure(sim, show_packets=False)
+
+    status_colors = {
+        "DELIVERED": "#16a34a",
+        "FORWARDED": "#2563eb",
+        "RECEIVED": "#0f766e",
+        "DROPPED": "#dc2626",
+        "DUPLICATE": "#f59e0b",
+    }
+
+    physical_records = [
+        row
+        for row in session.history
+        if row.sender_id in sim.nodes
+        and row.receiver_id in sim.nodes
+        and row.sender_id != row.receiver_id
+        and row.action != "Routing decision"
+    ]
+
+    for row in physical_records[:-1]:
+        source = sim.nodes[row.sender_id]
+        receiver = sim.nodes[row.receiver_id]
+        fig.add_trace(
+            go.Scatter(
+                x=[source.position_x, receiver.position_x],
+                y=[source.position_y, receiver.position_y],
+                mode="lines",
+                line=dict(
+                    width=3,
+                    color=status_colors.get(row.status, "#64748b"),
+                    dash="dot" if row.status in {"DROPPED", "DUPLICATE"} else "solid",
+                ),
+                hovertext=(
+                    f"Step {row.step}: {row.packet_type}<br>"
+                    f"{row.sender_id} → {row.receiver_id}<br>"
+                    f"{row.status}<br>{row.message}"
+                ),
+                hoverinfo="text",
+                showlegend=False,
+            )
+        )
+
+    last = session.last_step
+    if last and last.sender_id in sim.nodes and last.receiver_id in sim.nodes and last.sender_id != last.receiver_id:
+        source = sim.nodes[last.sender_id]
+        receiver = sim.nodes[last.receiver_id]
+        color = status_colors.get(last.status, "#7c3aed")
+        fig.add_trace(
+            go.Scatter(
+                x=[source.position_x, receiver.position_x],
+                y=[source.position_y, receiver.position_y],
+                mode="lines+markers",
+                line=dict(width=7, color=color, dash="dot" if last.status == "DROPPED" else "solid"),
+                marker=dict(size=[8, 16], symbol=["circle", "triangle-right"], color=color),
+                hovertext=(
+                    f"Current step {last.step}<br>{last.packet_type}<br>"
+                    f"{last.sender_id} → {last.receiver_id}<br>{last.status}<br>{last.message}"
+                ),
+                hoverinfo="text",
+                name="Last event",
+            )
+        )
+        fig.add_annotation(
+            x=receiver.position_x,
+            y=receiver.position_y,
+            text=f"Step {last.step}: {last.status}",
+            showarrow=True,
+            arrowhead=2,
+            ax=35,
+            ay=-40,
+            bgcolor="rgba(255,255,255,0.92)",
+            bordercolor=color,
+        )
+
+    if session.pending:
+        next_item = session.pending[0]
+        if next_item.sender_id in sim.nodes and next_item.receiver_id in sim.nodes:
+            source = sim.nodes[next_item.sender_id]
+            receiver = sim.nodes[next_item.receiver_id]
+            fig.add_trace(
+                go.Scatter(
+                    x=[source.position_x, receiver.position_x],
+                    y=[source.position_y, receiver.position_y],
+                    mode="lines+markers",
+                    line=dict(width=3, color="#f59e0b", dash="dash"),
+                    marker=dict(size=[13, 7], symbol=["square", "circle"], color="#f59e0b"),
+                    hovertext=(
+                        f"Next waiting event<br>{next_item.packet.packet_type.value}<br>"
+                        f"{next_item.sender_id} → {next_item.receiver_id}<br>"
+                        "Press Forward to execute"
+                    ),
+                    hoverinfo="text",
+                    name="Next event",
+                )
+            )
+
+    fig.update_layout(
+        title=(
+            f"Manual packet trace: {session.packet_type.value} | "
+            f"pending {session.pending_count} | completed steps {len(session.history)}"
+        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+    return fig

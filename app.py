@@ -9,7 +9,8 @@ import pandas as pd
 import streamlit as st
 
 from seian_sim.config import SimulationConfig
-from seian_sim.enums import EventCategory, FaultType
+from seian_sim.enums import EventCategory, FaultType, PacketType
+from seian_sim.manual_simulation import ManualPacketSession
 from seian_sim.network_builder import (
     BUILDER_TOOLS,
     DELETE_NODE,
@@ -20,6 +21,13 @@ from seian_sim.network_builder import (
     apply_canvas_action,
     next_available_node_id,
     parse_plotly_canvas_event,
+)
+from seian_sim.packets import (
+    PRIORITY_BACKGROUND,
+    PRIORITY_CONTROL,
+    PRIORITY_EMERGENCY,
+    PRIORITY_FAULT,
+    PRIORITY_TELEMETRY,
 )
 from seian_sim.scenarios import (
     SCENARIO_NAMES,
@@ -34,6 +42,7 @@ from seian_sim.topology import analyze_topology, link_table, node_failure_impact
 from seian_sim.visualization import (
     drop_reason_figure,
     network_builder_figure,
+    packet_trace_figure,
     time_series_figure,
     topology_figure,
 )
@@ -83,6 +92,7 @@ def reset_builder_state() -> None:
     st.session_state.builder_selected_node = None
     st.session_state.builder_placed_order = []
     st.session_state.builder_canvas_version = st.session_state.get("builder_canvas_version", 0) + 1
+    st.session_state.packet_trace = None
 
 
 def set_builder_notice(level: str, message: str) -> None:
@@ -112,6 +122,8 @@ if "builder_placed_order" not in st.session_state:
     st.session_state.builder_placed_order = []
 if "builder_canvas_version" not in st.session_state:
     st.session_state.builder_canvas_version = 0
+if "packet_trace" not in st.session_state:
+    st.session_state.packet_trace = None
 
 st.title("SEIAN Adaptive LoRa Mesh Topology Simulator")
 st.caption(
@@ -294,6 +306,7 @@ headline[5].metric("Packet delivery", f"{summary['packet_delivery_ratio']:.1%}")
 
 (
     tab_builder,
+    tab_packet,
     tab_topology,
     tab_node,
     tab_metrics,
@@ -303,6 +316,7 @@ headline[5].metric("Packet delivery", f"{summary['packet_delivery_ratio']:.1%}")
 ) = st.tabs(
     [
         "Network Builder",
+        "Packet Simulation",
         "Topology Check",
         "Node Details",
         "Protocol Metrics",
@@ -441,6 +455,168 @@ with tab_builder:
         st.dataframe(pd.DataFrame(builder_table), use_container_width=True, hide_index=True)
     else:
         st.info("The canvas is empty. Select Place standard node or Place gateway node and click.")
+
+
+with tab_packet:
+    st.subheader("Packet Tracer-Style Simulation Mode")
+    st.write(
+        "Create one SEIAN-AMRP packet, then press **Forward** to execute exactly one "
+        "physical link transmission. The simulator does not automatically continue to the next hop."
+    )
+
+    if len(node_ids) < 2:
+        st.warning("Create at least two connected nodes before starting a packet trace.")
+    else:
+        control_left, control_middle, control_right = st.columns(3)
+        with control_left:
+            trace_source = st.selectbox("Packet source", node_ids, key="trace_source")
+            destination_options = ["BROADCAST", *[node_id for node_id in node_ids if node_id != trace_source]]
+            trace_destination_label = st.selectbox(
+                "Packet destination",
+                destination_options,
+                key="trace_destination",
+            )
+            trace_destination = None if trace_destination_label == "BROADCAST" else trace_destination_label
+        with control_middle:
+            packet_type_value = st.selectbox(
+                "Packet type",
+                [packet_type.value for packet_type in PacketType],
+                index=[packet_type.value for packet_type in PacketType].index(PacketType.GRID_STATE_UPDATE.value),
+                key="trace_packet_type",
+            )
+            trace_ttl = st.slider("TTL", 1, int(sim.config.max_hops), min(6, int(sim.config.max_hops)))
+            fault_acks = st.checkbox(
+                "Generate FAULT_ACK packets",
+                value=True,
+                disabled=packet_type_value != PacketType.FAULT_ALERT.value,
+            )
+        with control_right:
+            priority_options = {
+                "Background (0)": PRIORITY_BACKGROUND,
+                "Telemetry (1)": PRIORITY_TELEMETRY,
+                "Control (2)": PRIORITY_CONTROL,
+                "Fault (3)": PRIORITY_FAULT,
+                "Emergency (4)": PRIORITY_EMERGENCY,
+            }
+            default_priority_index = 3 if packet_type_value == PacketType.FAULT_ALERT.value else 1
+            priority_label = st.selectbox(
+                "Priority",
+                list(priority_options),
+                index=default_priority_index,
+                key="trace_priority",
+            )
+            payload_text = st.text_area(
+                "Payload (JSON)",
+                value='{"voltage": 230.0, "frequency": 50.0}',
+                height=105,
+                key="trace_payload",
+            )
+
+        start_col, forward_col, reset_col = st.columns(3)
+        if start_col.button("Create Packet", type="primary", use_container_width=True):
+            try:
+                payload = json.loads(payload_text) if payload_text.strip() else {}
+                if not isinstance(payload, dict):
+                    raise ValueError("Payload JSON must be an object, for example {\"voltage\": 230}.")
+                st.session_state.packet_trace = ManualPacketSession.create(
+                    sim,
+                    source_id=trace_source,
+                    destination_id=trace_destination,
+                    packet_type=PacketType(packet_type_value),
+                    priority=priority_options[priority_label],
+                    ttl=int(trace_ttl),
+                    payload=payload,
+                    generate_fault_acks=bool(fault_acks),
+                )
+            except (ValueError, json.JSONDecodeError) as exc:
+                st.error(f"Could not create packet: {exc}")
+            else:
+                st.rerun()
+
+        trace: ManualPacketSession | None = st.session_state.packet_trace
+        if forward_col.button(
+            "Forward ▶",
+            use_container_width=True,
+            disabled=trace is None or trace.pending_count == 0,
+            help="Executes exactly one waiting transmission event.",
+        ):
+            trace.forward_one(sim)
+            st.rerun()
+
+        if reset_col.button("Reset Trace", use_container_width=True, disabled=trace is None):
+            st.session_state.packet_trace = None
+            st.rerun()
+
+        trace = st.session_state.packet_trace
+        if trace is None:
+            st.info("Configure a packet and press Create Packet. Nothing will move until Forward is pressed.")
+        else:
+            packet = trace.packet
+            header_cols = st.columns(6)
+            header_cols[0].metric("Sequence", packet.sequence_number)
+            header_cols[1].metric("Priority", packet.priority)
+            header_cols[2].metric("TTL", packet.ttl)
+            header_cols[3].metric("Completed events", len(trace.history))
+            header_cols[4].metric("Waiting events", trace.pending_count)
+            header_cols[5].metric("Receivers", len(trace.delivered_nodes))
+
+            if trace.complete:
+                if trace.destination_id is None or trace.destination_id in trace.delivered_nodes:
+                    st.success(trace.completion_message)
+                else:
+                    st.error(trace.completion_message)
+            else:
+                st.info(trace.completion_message)
+
+            st.plotly_chart(
+                packet_trace_figure(sim, trace),
+                use_container_width=True,
+                key=f"packet_trace_{len(trace.history)}_{trace.pending_count}",
+                config={"displaylogo": False, "scrollZoom": True},
+            )
+
+            if trace.last_step:
+                last = trace.last_step
+                if last.status == "DROPPED":
+                    st.error(f"Step {last.step}: {last.sender_id} → {last.receiver_id}: {last.message}")
+                elif last.status in {"DELIVERED", "RECEIVED", "FORWARDED"}:
+                    st.success(f"Step {last.step}: {last.sender_id} → {last.receiver_id}: {last.message}")
+                else:
+                    st.warning(f"Step {last.step}: {last.message}")
+
+            table_left, table_right = st.columns(2)
+            with table_left:
+                st.write("Waiting event queue")
+                pending_rows = trace.pending_rows()
+                if pending_rows:
+                    st.dataframe(pd.DataFrame(pending_rows), use_container_width=True, hide_index=True)
+                else:
+                    st.caption("No waiting transmissions.")
+            with table_right:
+                st.write("Packet header")
+                st.json(
+                    {
+                        "version": packet.version,
+                        "packet_type": packet.packet_type.value,
+                        "source_id": packet.source_id,
+                        "origin_id": packet.origin_id,
+                        "destination_id": packet.destination_id or "BROADCAST",
+                        "sequence_number": packet.sequence_number,
+                        "priority": packet.priority,
+                        "hop_count": packet.hop_count,
+                        "ttl": packet.ttl,
+                        "network_id": packet.network_id,
+                        "payload_length": packet.payload_length,
+                        "payload": packet.payload,
+                    }
+                )
+
+            st.write("Event history")
+            history_rows = trace.history_rows()
+            if history_rows:
+                st.dataframe(pd.DataFrame(history_rows), use_container_width=True, hide_index=True)
+            else:
+                st.caption("Packet created. Press Forward to produce the first event.")
 
 with tab_topology:
     route_path: list[str] = []

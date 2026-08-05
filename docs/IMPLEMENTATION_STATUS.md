@@ -35,6 +35,17 @@ The uploaded Python project was already a substantial simulator rather than an e
 - Invalid route and asymmetric-neighbor checks.
 - Mesh density, average node degree, and largest-component diameter.
 
+### Interactive network creation
+
+- Added **Create own network** as a network setup option.
+- Added a click-to-place Plotly canvas in a dedicated **Network Builder** tab.
+- Added standard-node and gateway-node placement tools.
+- Added direct node selection, movement, and deletion on the canvas.
+- Added placement snapping, automatic/custom Node IDs, undo, clear-all, and route-rebuild controls.
+- Added optional visual LoRa coverage circles.
+- Kept the exact-coordinate sidebar editor as a fallback for precise placement.
+- Added pure, independently tested canvas-event and builder-action logic.
+
 ### Usability
 
 - Repeatable random-topology creation with configurable node and gateway counts.
@@ -50,7 +61,7 @@ The uploaded Python project was already a substantial simulator rather than an e
 - Removed duplicate packet-event recording that counted one physical delivery twice.
 - Added automated tests for topology analysis, route tracing, gateway outage classification, and priority queue eviction.
 
-Current automated result: **19 tests passed**.
+Current automated result: **27 tests passed**.
 
 ## 3. Important simulator limitations that still require updates
 
