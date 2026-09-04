@@ -1,0 +1,210 @@
+{
+  "schema_version": 2,
+  "project_name": "SEIAN_LV_Timed_Switching",
+  "control_model": "master:tbreakn",
+  "line_bindings": [
+    {
+      "line_id": "SW_G01_N02",
+      "component_id": 1160344068,
+      "closed_parameter": "INIT",
+      "closed_value": 0,
+      "open_value": 1,
+      "closed_parameters": {
+        "INIT": 0,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "open_parameters": {
+        "INIT": 1,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "timed_control": {
+        "initial_state_parameter": "INIT",
+        "operation_count_parameter": "NUMS",
+        "operation_time_parameters": [
+          "TO1",
+          "TO2"
+        ],
+        "closed_value": 0,
+        "open_value": 1
+      }
+    },
+    {
+      "line_id": "SW_N02_N03",
+      "component_id": 1005810785,
+      "closed_parameter": "INIT",
+      "closed_value": 0,
+      "open_value": 1,
+      "closed_parameters": {
+        "INIT": 0,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "open_parameters": {
+        "INIT": 1,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "timed_control": {
+        "initial_state_parameter": "INIT",
+        "operation_count_parameter": "NUMS",
+        "operation_time_parameters": [
+          "TO1",
+          "TO2"
+        ],
+        "closed_value": 0,
+        "open_value": 1
+      }
+    },
+    {
+      "line_id": "SW_N03_N04",
+      "component_id": 2126892932,
+      "closed_parameter": "INIT",
+      "closed_value": 0,
+      "open_value": 1,
+      "closed_parameters": {
+        "INIT": 0,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "open_parameters": {
+        "INIT": 1,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "timed_control": {
+        "initial_state_parameter": "INIT",
+        "operation_count_parameter": "NUMS",
+        "operation_time_parameters": [
+          "TO1",
+          "TO2"
+        ],
+        "closed_value": 0,
+        "open_value": 1
+      }
+    },
+    {
+      "line_id": "SW_N05_N06",
+      "component_id": 1543334196,
+      "closed_parameter": "INIT",
+      "closed_value": 0,
+      "open_value": 1,
+      "closed_parameters": {
+        "INIT": 0,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "open_parameters": {
+        "INIT": 1,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "timed_control": {
+        "initial_state_parameter": "INIT",
+        "operation_count_parameter": "NUMS",
+        "operation_time_parameters": [
+          "TO1",
+          "TO2"
+        ],
+        "closed_value": 0,
+        "open_value": 1
+      }
+    },
+    {
+      "line_id": "SW_N03_N05",
+      "component_id": 1989702524,
+      "closed_parameter": "INIT",
+      "closed_value": 0,
+      "open_value": 1,
+      "closed_parameters": {
+        "INIT": 0,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "open_parameters": {
+        "INIT": 1,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "timed_control": {
+        "initial_state_parameter": "INIT",
+        "operation_count_parameter": "NUMS",
+        "operation_time_parameters": [
+          "TO1",
+          "TO2"
+        ],
+        "closed_value": 0,
+        "open_value": 1
+      }
+    },
+    {
+      "line_id": "SW_N02_N05_TIE",
+      "component_id": 393678319,
+      "closed_parameter": "INIT",
+      "closed_value": 0,
+      "open_value": 1,
+      "closed_parameters": {
+        "INIT": 0,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "open_parameters": {
+        "INIT": 1,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "timed_control": {
+        "initial_state_parameter": "INIT",
+        "operation_count_parameter": "NUMS",
+        "operation_time_parameters": [
+          "TO1",
+          "TO2"
+        ],
+        "closed_value": 0,
+        "open_value": 1
+      }
+    },
+    {
+      "line_id": "SW_N04_N06_TIE",
+      "component_id": 1459536611,
+      "closed_parameter": "INIT",
+      "closed_value": 0,
+      "open_value": 1,
+      "closed_parameters": {
+        "INIT": 0,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "open_parameters": {
+        "INIT": 1,
+        "NUMS": 1,
+        "TO1": 1000000.0,
+        "TO2": 1000001.0
+      },
+      "timed_control": {
+        "initial_state_parameter": "INIT",
+        "operation_count_parameter": "NUMS",
+        "operation_time_parameters": [
+          "TO1",
+          "TO2"
+        ],
+        "closed_value": 0,
+        "open_value": 1
+      }
+    }
+  ]
+}

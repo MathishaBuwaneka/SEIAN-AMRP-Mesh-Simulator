@@ -1,0 +1,151 @@
+{
+  "previous_workspace_saved": {
+    "workspace_path": "C:\\Users\\RUSULA OSHADHA\\Documents\\Untitled.pswx",
+    "workspace_dir": "C:\\Users\\RUSULA OSHADHA\\Documents",
+    "workspace_name": "Untitled",
+    "saved": true,
+    "error": ""
+  },
+  "workspace_file": "D:\\Oshadha\\Professional Self Projects\\SEIAN_power_routing_protocol\\research_power_plane\\pscad_workspace\\SEIAN_PSCAD_Workspace.pswx",
+  "case_file": "D:\\Oshadha\\Professional Self Projects\\SEIAN_power_routing_protocol\\research_power_plane\\pscad_workspace\\SEIAN_LV_Switching.pscx",
+  "case_name": "SEIAN_LV_Switching",
+  "mapping_file": "D:\\Oshadha\\Professional Self Projects\\SEIAN_power_routing_protocol\\research_power_plane\\pscad_workspace\\seian_pscad_component_map.generated.json",
+  "notes": [
+    {
+      "component_id": 480800642,
+      "definition": "Sticky",
+      "text": "SEIAN PSCAD switching case"
+    },
+    {
+      "component_id": 45300665,
+      "definition": "Sticky",
+      "text": "Dashboard writes switch states, then runs this case."
+    },
+    {
+      "component_id": 1503423472,
+      "definition": "Sticky",
+      "text": "Replace this generated scaffold with the detailed LV PSCAD feeder as the research model matures."
+    }
+  ],
+  "switch_components": [
+    {
+      "line_id": "SW_G01_N02",
+      "component_id": 1212138750,
+      "definition": "master:var_switch",
+      "parameters": {
+        "Name": "Var",
+        "Group": "",
+        "Display": "YES",
+        "Value": "OFF",
+        "Max": 1.0,
+        "Min": 0.0,
+        "conv": "NO",
+        "Ton": "ON",
+        "Toff": "OFF"
+      }
+    },
+    {
+      "line_id": "SW_N02_N03",
+      "component_id": 33997982,
+      "definition": "master:var_switch",
+      "parameters": {
+        "Name": "Var",
+        "Group": "",
+        "Display": "YES",
+        "Value": "OFF",
+        "Max": 1.0,
+        "Min": 0.0,
+        "conv": "NO",
+        "Ton": "ON",
+        "Toff": "OFF"
+      }
+    },
+    {
+      "line_id": "SW_N03_N04",
+      "component_id": 662226908,
+      "definition": "master:var_switch",
+      "parameters": {
+        "Name": "Var",
+        "Group": "",
+        "Display": "YES",
+        "Value": "OFF",
+        "Max": 1.0,
+        "Min": 0.0,
+        "conv": "NO",
+        "Ton": "ON",
+        "Toff": "OFF"
+      }
+    },
+    {
+      "line_id": "SW_N03_N05",
+      "component_id": 1947042570,
+      "definition": "master:var_switch",
+      "parameters": {
+        "Name": "Var",
+        "Group": "",
+        "Display": "YES",
+        "Value": "OFF",
+        "Max": 1.0,
+        "Min": 0.0,
+        "conv": "NO",
+        "Ton": "ON",
+        "Toff": "OFF"
+      }
+    },
+    {
+      "line_id": "SW_N05_N06",
+      "component_id": 129555221,
+      "definition": "master:var_switch",
+      "parameters": {
+        "Name": "Var",
+        "Group": "",
+        "Display": "YES",
+        "Value": "OFF",
+        "Max": 1.0,
+        "Min": 0.0,
+        "conv": "NO",
+        "Ton": "ON",
+        "Toff": "OFF"
+      }
+    },
+    {
+      "line_id": "SW_N02_N05_TIE",
+      "component_id": 716383150,
+      "definition": "master:var_switch",
+      "parameters": {
+        "Name": "Var",
+        "Group": "",
+        "Display": "YES",
+        "Value": "OFF",
+        "Max": 1.0,
+        "Min": 0.0,
+        "conv": "NO",
+        "Ton": "ON",
+        "Toff": "OFF"
+      }
+    },
+    {
+      "line_id": "SW_N04_N06_TIE",
+      "component_id": 1432262664,
+      "definition": "master:var_switch",
+      "parameters": {
+        "Name": "Var",
+        "Group": "",
+        "Display": "YES",
+        "Value": "OFF",
+        "Max": 1.0,
+        "Min": 0.0,
+        "conv": "NO",
+        "Ton": "ON",
+        "Toff": "OFF"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "component_id": 1386215578,
+      "definition": "ControlFrame",
+      "control_count": 7
+    }
+  ]
+}

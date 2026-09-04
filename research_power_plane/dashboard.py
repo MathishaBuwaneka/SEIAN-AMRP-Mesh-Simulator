@@ -1,0 +1,326 @@
+"""Streamlit dashboard for the SEIAN power-plane PSCAD pipeline."""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+import streamlit as st
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from seian_power_pipeline.control_plane import control_commands_from_payload
+from seian_power_pipeline.pipeline import pipeline_summary, run_control_pipeline
+from seian_power_pipeline.project_config import (
+    DEFAULT_CASE_NAME,
+    DEFAULT_MAP_FILE,
+    WORKSPACE_FILE,
+)
+from seian_power_pipeline.pscad_mcp_client import PscadRuntimeConfig, execute_pscad_manifest
+from seian_power_pipeline.psout_channels import extract_channel_series, group_channels
+from research_power_plane.scripts.bootstrap_pscad_workspace import (
+    bootstrap_workspace,
+)
+
+
+HERE = Path(__file__).resolve().parent
+EXAMPLES = HERE / "examples"
+DEFAULT_WORKSPACE_FILE = WORKSPACE_FILE
+DEFAULT_PSCAD_PROJECT = DEFAULT_CASE_NAME
+GENERATED_MAP_FILE = DEFAULT_MAP_FILE
+
+
+st.set_page_config(page_title="SEIAN PSCAD Co-Simulation", layout="wide")
+
+
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def read_json_text(path: Path) -> tuple[str, dict[str, Any]]:
+    text = read_text(path)
+    payload = json.loads(text)
+    if not isinstance(payload, dict):
+        raise ValueError(f"{path.name} must contain a JSON object.")
+    return text, payload
+
+
+def load_default_state() -> None:
+    topology_text, topology_payload = read_json_text(EXAMPLES / "lv_power_plane_microgrid.json")
+    commands_text, _ = read_json_text(EXAMPLES / "network_control_commands.json")
+    mapping_path = GENERATED_MAP_FILE if GENERATED_MAP_FILE.exists() else EXAMPLES / "pscad_component_map.example.json"
+    mapping_text, _ = read_json_text(mapping_path)
+    st.session_state.topology_text = topology_text
+    st.session_state.command_text = commands_text
+    st.session_state.mapping_text = mapping_text
+    st.session_state.topology_payload = topology_payload
+    st.session_state.pscad_project_name = DEFAULT_PSCAD_PROJECT
+    st.session_state.workspace_file = str(DEFAULT_WORKSPACE_FILE) if DEFAULT_WORKSPACE_FILE.exists() else ""
+    st.session_state.pipeline_result = None
+    st.session_state.pscad_status = None
+
+
+if "topology_text" not in st.session_state:
+    load_default_state()
+
+
+st.title("SEIAN AMRP to PSCAD Co-Simulation")
+st.caption(
+    "A separate research dashboard that leaves the networking simulator code untouched: "
+    "controller commands are replayed into a switchable LV power plane and optionally executed in PSCAD."
+)
+
+with st.sidebar:
+    st.header("Inputs")
+    if st.button("Reload example files", use_container_width=True):
+        load_default_state()
+        st.rerun()
+
+    topology_file = st.file_uploader("Topology JSON", type=["json"])
+    if topology_file is not None:
+        st.session_state.topology_text = topology_file.getvalue().decode("utf-8")
+
+    command_file = st.file_uploader("Control commands JSON", type=["json"])
+    if command_file is not None:
+        st.session_state.command_text = command_file.getvalue().decode("utf-8")
+
+    mapping_file = st.file_uploader("PSCAD component map JSON", type=["json"])
+    if mapping_file is not None:
+        st.session_state.mapping_text = mapping_file.getvalue().decode("utf-8")
+
+    st.divider()
+    st.header("PSCAD")
+    execute_pscad = st.toggle("Auto-run PSCAD after replay", value=GENERATED_MAP_FILE.exists())
+    mode_label = st.segmented_control(
+        "Simulation mode",
+        options=("Controller timeline", "Final steady state"),
+        default="Controller timeline",
+        help=(
+            "Controller timeline operates PSCAD breakers at command timestamps. "
+            "Final steady state starts directly in the resulting topology."
+        ),
+    )
+    simulation_mode = "transient" if mode_label == "Controller timeline" else "steady_state"
+    post_event_seconds = st.number_input(
+        "Recording after last command (s)",
+        value=1.0,
+        min_value=0.1,
+        max_value=30.0,
+        disabled=simulation_mode != "transient",
+    )
+    pscad_project_name = st.text_input(
+        "PSCAD project/case name",
+        value=st.session_state.get("pscad_project_name", DEFAULT_PSCAD_PROJECT),
+    )
+    workspace_file = st.text_input(
+        "PSCAD workspace/project file",
+        value=st.session_state.get("workspace_file", str(DEFAULT_WORKSPACE_FILE) if DEFAULT_WORKSPACE_FILE.exists() else ""),
+    )
+    poll_seconds = st.number_input("Run polling limit (s)", value=120.0, min_value=5.0, max_value=1800.0)
+    read_outputs = st.toggle("Read and chart PSCAD outputs", value=True)
+    preserve_radial = st.toggle("Reject loop-forming closures", value=True)
+
+    st.divider()
+    if st.button("Open SEIAN PSCAD Workspace", use_container_width=True):
+        try:
+            if not DEFAULT_WORKSPACE_FILE.exists():
+                report = bootstrap_workspace()
+                st.session_state.mapping_text = read_text(Path(report["mapping_file"]))
+                st.session_state.workspace_file = report["workspace_file"]
+                st.session_state.pscad_project_name = report["case_name"]
+            result = execute_pscad_manifest(
+                {"calls": []},
+                PscadRuntimeConfig(
+                    project_name=pscad_project_name.strip() or DEFAULT_PSCAD_PROJECT,
+                    workspace_files=[str(DEFAULT_WORKSPACE_FILE)],
+                    allowed_roots=[str(ROOT)],
+                    run_after_apply=False,
+                ),
+            )
+            st.session_state.pscad_status = result.to_dict()
+        except Exception as exc:
+            st.session_state.pscad_status = {"errors": [str(exc)]}
+        st.rerun()
+
+    if st.button("Check PSCAD connection", use_container_width=True):
+        result = execute_pscad_manifest(
+            {"calls": []},
+            PscadRuntimeConfig(
+                project_name=pscad_project_name.strip() or DEFAULT_PSCAD_PROJECT,
+                workspace_files=[workspace_file.strip()] if workspace_file.strip() else [],
+                allowed_roots=[str(ROOT)],
+                run_after_apply=False,
+            ),
+        )
+        st.session_state.pscad_status = result.to_dict()
+        st.rerun()
+
+
+left, right = st.columns(2)
+with left:
+    st.subheader("Power Topology")
+    topology_text = st.text_area("Topology JSON", value=st.session_state.topology_text, height=360)
+with right:
+    st.subheader("Controller Commands")
+    command_text = st.text_area("Command JSON", value=st.session_state.command_text, height=360)
+
+st.subheader("PSCAD Mapping")
+mapping_text = st.text_area(
+    "Map logical switch IDs to PSCAD component IDs",
+    value=st.session_state.mapping_text,
+    height=260,
+)
+
+run_col, clear_col = st.columns([1, 1])
+if run_col.button("Replay and Simulate", type="primary", use_container_width=True):
+    try:
+        topology_payload = json.loads(topology_text)
+        command_payload = json.loads(command_text)
+        mapping_payload = json.loads(mapping_text)
+        if not isinstance(topology_payload, dict) or not isinstance(mapping_payload, dict):
+            raise ValueError("Topology and PSCAD mapping must be JSON objects.")
+        commands = control_commands_from_payload(command_payload)
+        project_name = pscad_project_name.strip() or DEFAULT_PSCAD_PROJECT
+        result = run_control_pipeline(
+            topology_payload=topology_payload,
+            commands=commands,
+            preserve_radial=preserve_radial,
+            pscad_mapping_payload=mapping_payload,
+            pscad_project_name=project_name,
+            execute_in_pscad=execute_pscad,
+            pscad_workspace_files=[workspace_file.strip()] if workspace_file.strip() else [],
+            pscad_allowed_roots=[str(ROOT)],
+            pscad_poll_s=float(poll_seconds),
+            pscad_read_outputs=read_outputs,
+            simulation_mode=simulation_mode,
+            post_event_window_s=float(post_event_seconds),
+        )
+    except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+        st.error(f"Pipeline failed: {exc}")
+    else:
+        st.session_state.topology_text = topology_text
+        st.session_state.command_text = command_text
+        st.session_state.mapping_text = mapping_text
+        st.session_state.pipeline_result = result.to_dict()
+        st.rerun()
+
+if clear_col.button("Clear result", use_container_width=True):
+    st.session_state.pipeline_result = None
+    st.rerun()
+
+if st.session_state.pscad_status:
+    st.subheader("PSCAD Connection")
+    st.json(st.session_state.pscad_status)
+
+result = st.session_state.pipeline_result
+if isinstance(result, dict):
+    st.subheader("Pipeline Result")
+    st.text(pipeline_summary(result))
+
+    analysis = result["final_power_plane"]["analysis"]
+    metrics = st.columns(6)
+    metrics[0].metric("Commands", len(result["plans"]))
+    metrics[1].metric("Energized", len(analysis["energized_nodes"]))
+    metrics[2].metric("Deenergized", len(analysis["deenergized_nodes"]))
+    metrics[3].metric("Open lines", analysis["open_line_count"])
+    metrics[4].metric("Cycles", len(analysis["cycles"]))
+    manifest = result.get("pscad_manifest") or {}
+    metrics[5].metric("PSCAD calls", manifest.get("operation_count", 0))
+
+    plans = [
+        {
+            "command_id": plan["command"]["command_id"],
+            "action": plan["command"]["action"],
+            "accepted": plan["accepted"],
+            "operations": len(plan["operations"]),
+            "warnings": "; ".join(plan["warnings"]),
+        }
+        for plan in result["plans"]
+    ]
+    st.dataframe(pd.DataFrame(plans), use_container_width=True, hide_index=True)
+
+    operations = [operation for plan in result["plans"] for operation in plan["operations"]]
+    st.write("Switch Operations")
+    st.dataframe(pd.DataFrame(operations), use_container_width=True, hide_index=True)
+
+    timeline = result.get("switching_timeline")
+    if timeline:
+        st.write("Physical Switching Timeline")
+        timeline_events = [
+            event
+            for schedule in timeline.get("line_schedules", [])
+            for event in schedule.get("events", [])
+        ]
+        if timeline_events:
+            st.dataframe(pd.DataFrame(timeline_events), use_container_width=True, hide_index=True)
+        else:
+            st.caption(f"No accepted breaker transitions; PSCAD records {timeline['duration_s']:g} s.")
+
+    st.write("Final Power Plane")
+    st.dataframe(pd.DataFrame(result["final_power_plane"]["lines"]), use_container_width=True, hide_index=True)
+    st.json(analysis)
+
+    if result.get("pscad_manifest"):
+        st.write("PSCAD MCP Manifest")
+        st.json(result["pscad_manifest"])
+
+    if result.get("pscad_execution"):
+        st.write("Live PSCAD Execution")
+        execution = result["pscad_execution"]
+        execution_errors = execution.get("errors", [])
+        if execution_errors:
+            st.error("PSCAD execution failed: " + "; ".join(execution_errors))
+        elif execution.get("fresh_output_files"):
+            st.success("PSCAD completed the run and produced fresh output data.")
+
+        execution_metrics = st.columns(4)
+        execution_metrics[0].metric("Applied schedules", execution.get("applied_operation_count", 0))
+        execution_metrics[1].metric(
+            "Status polls", len(execution.get("run_status_history", []))
+        )
+        output_channels = execution.get("output_channels") or {}
+        output_payload = output_channels.get("result", output_channels)
+        execution_metrics[2].metric(
+            "Raw channels", output_payload.get("channel_count", 0)
+            if isinstance(output_payload, dict)
+            else 0,
+        )
+        execution_metrics[3].metric(
+            "Fresh result files", len(execution.get("fresh_output_files", []))
+        )
+
+        with st.expander("Raw PSCAD execution record"):
+            st.json(execution)
+
+        series = extract_channel_series(execution.get("channel_data"))
+        if series:
+            st.write("PSCAD Output Channels (.psout)")
+            for title, group in group_channels(series):
+                st.caption(title)
+                combined = pd.concat(
+                    {
+                        name: pd.Series(data["values"], index=data["time"], name=name)
+                        for name, data in sorted(group.items())
+                    },
+                    axis=1,
+                )
+                combined.index.name = "time (s)"
+                st.line_chart(combined)
+        elif execution.get("channel_data"):
+            st.info(
+                "PSCAD returned output-channel data that could not be parsed into series. "
+                "Raw payload is in the Live PSCAD Execution JSON above."
+            )
+
+    st.download_button(
+        "Download Full Research Artifact",
+        json.dumps(result, indent=2),
+        "seian_pscad_pipeline_result.json",
+        mime="application/json",
+        use_container_width=True,
+    )

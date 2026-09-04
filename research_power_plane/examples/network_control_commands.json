@@ -1,0 +1,29 @@
+{
+  "commands": [
+    {
+      "command_id": "fault-isolate-n03",
+      "timestamp": 12.5,
+      "controller_id": "amrp-sdn-controller",
+      "action": "isolate_node",
+      "target_node_id": "N03",
+      "reason": "Protection event at N03; isolate all incident LV paths."
+    },
+    {
+      "command_id": "reroute-n04-via-tie",
+      "timestamp": 13.0,
+      "controller_id": "amrp-sdn-controller",
+      "action": "reroute_power_path",
+      "source_node_id": "G01",
+      "destination_node_id": "N04",
+      "blocked_nodes": ["N03"],
+      "path": ["G01", "N02", "N05", "N06", "N04"],
+      "close_lines": [["N02", "N05"], ["N04", "N06"]],
+      "reason": "Controller-requested tie-switch closure after fault isolation.",
+      "metadata": {
+        "network_route_before": ["N04", "N03", "N02", "G01"],
+        "network_route_after": ["N04", "N06", "N05", "N02", "G01"],
+        "paper_case": "single fault with tie-switch restoration"
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "commands": [],
+  "scenario": {
+    "name": "No-fault baseline",
+    "description": "Healthy steady state: all five normally-closed radial lines (G01-N02, N02-N03, N03-N04, N03-N05, N05-N06) stay closed and both tie lines (N02-N05, N04-N06) stay open. No controller commands are issued. Use this run to capture reference voltage/current traces for comparison against the fault scenarios."
+  }
+}

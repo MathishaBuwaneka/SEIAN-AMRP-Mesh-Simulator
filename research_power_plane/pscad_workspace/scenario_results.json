@@ -1,0 +1,965 @@
+{
+  "01_no_fault_baseline": {
+    "scenario": {
+      "name": "No-fault baseline",
+      "description": "Healthy steady state: all five normally-closed radial lines (G01-N02, N02-N03, N03-N04, N03-N05, N05-N06) stay closed and both tie lines (N02-N05, N04-N06) stay open. No controller commands are issued. Use this run to capture reference voltage/current traces for comparison against the fault scenarios."
+    },
+    "commands": 0,
+    "accepted_commands": 0,
+    "analysis": {
+      "source_nodes": [
+        "G01"
+      ],
+      "energized_nodes": [
+        "G01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "deenergized_nodes": [],
+      "closed_line_count": 5,
+      "open_line_count": 2,
+      "island_count": 1,
+      "cycles": []
+    },
+    "applied_switch_state": {
+      "SW_G01_N02": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N02_N03": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N03_N04": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N05_N06": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N03_N05": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N02_N05_TIE": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      },
+      "SW_N04_N06_TIE": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      }
+    },
+    "channels": {
+      "Irms_SW_N02_N03": {
+        "final": 0.04349991383197573,
+        "min": 0.0,
+        "max": 0.04349991383197573,
+        "samples": 20001
+      },
+      "Vrms_N06": {
+        "final": 0.38203494913363084,
+        "min": 0.0,
+        "max": 0.3826258143528539,
+        "samples": 20001
+      },
+      "P_SW_N02_N05_TIE": {
+        "final": 3.729095207565006e-09,
+        "min": 0.0,
+        "max": 3.729095207565006e-09,
+        "samples": 20001
+      },
+      "Vrms_N05": {
+        "final": 0.38351239856477704,
+        "min": 0.0,
+        "max": 0.38410221192669736,
+        "samples": 20001
+      },
+      "Irms_SW_N02_N05_TIE": {
+        "final": 5.684451800126639e-09,
+        "min": 0.0,
+        "max": 5.684451800126639e-09,
+        "samples": 20001
+      },
+      "P_SW_G01_N02": {
+        "final": 0.037658004771646804,
+        "min": 0.0,
+        "max": 0.037658004771646804,
+        "samples": 20001
+      },
+      "Vrms_N04": {
+        "final": 0.384825829283099,
+        "min": 0.0,
+        "max": 0.38541486266375496,
+        "samples": 20001
+      },
+      "Vrms_G01": {
+        "final": 0.3982412483881968,
+        "min": 0.0,
+        "max": 0.398822931754739,
+        "samples": 20001
+      },
+      "Vrms_N02": {
+        "final": 0.39301747188561037,
+        "min": 0.0,
+        "max": 0.39360186952905607,
+        "samples": 20001
+      },
+      "Irms_SW_N04_N06_TIE": {
+        "final": 1.6716176846397812e-09,
+        "min": 0.0,
+        "max": 1.6716176846397812e-09,
+        "samples": 20001
+      },
+      "P_SW_N04_N06_TIE": {
+        "final": 1.071435889367234e-09,
+        "min": 0.0,
+        "max": 1.071435889367234e-09,
+        "samples": 20001
+      },
+      "Irms_SW_N05_N06": {
+        "final": 0.00810385122528682,
+        "min": 0.0,
+        "max": 0.00810385122528682,
+        "samples": 20001
+      },
+      "P_SW_N05_N06": {
+        "final": 0.005381700497578833,
+        "min": 0.0,
+        "max": 0.005381700497578833,
+        "samples": 20001
+      },
+      "Irms_SW_N03_N05": {
+        "final": 0.01895068092549046,
+        "min": 0.0,
+        "max": 0.01895068092549046,
+        "samples": 20001
+      },
+      "Irms_SW_G01_N02": {
+        "final": 0.05461485076923259,
+        "min": 0.0,
+        "max": 0.05461485076923259,
+        "samples": 20001
+      },
+      "P_SW_N03_N04": {
+        "final": 0.009116134769498959,
+        "min": 0.0,
+        "max": 0.009116134769498959,
+        "samples": 20001
+      },
+      "P_SW_N03_N05": {
+        "final": 0.012698121907111674,
+        "min": 0.0,
+        "max": 0.012698121907111674,
+        "samples": 20001
+      },
+      "Vrms_N03": {
+        "final": 0.3869686867679677,
+        "min": 0.0,
+        "max": 0.3875567271456112,
+        "samples": 20001
+      },
+      "Irms_SW_N03_N04": {
+        "final": 0.013604877269539278,
+        "min": 0.0,
+        "max": 0.013604877269539278,
+        "samples": 20001
+      },
+      "P_SW_N02_N03": {
+        "final": 0.029601841040601953,
+        "min": 0.0,
+        "max": 0.029601841040601953,
+        "samples": 20001
+      }
+    }
+  },
+  "02_single_fault_isolation": {
+    "scenario": {
+      "name": "Single fault isolation",
+      "description": "A fault at N03 trips its three incident breakers (SW_N02_N03, SW_N03_N04, SW_N03_N05). Both tie lines stay open, so N04, N05 and N06 are left de-energized -- no restoration path is taken. Use this to characterize the isolation transient and the resulting de-energized island, before comparing against the tie-switch-restoration scenario."
+    },
+    "commands": 1,
+    "accepted_commands": 1,
+    "analysis": {
+      "source_nodes": [
+        "G01"
+      ],
+      "energized_nodes": [
+        "G01",
+        "N02"
+      ],
+      "deenergized_nodes": [
+        "N03",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "closed_line_count": 2,
+      "open_line_count": 5,
+      "island_count": 4,
+      "cycles": []
+    },
+    "applied_switch_state": {
+      "SW_G01_N02": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N02_N03": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      },
+      "SW_N03_N04": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      },
+      "SW_N05_N06": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N03_N05": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      },
+      "SW_N02_N05_TIE": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      },
+      "SW_N04_N06_TIE": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      }
+    },
+    "channels": {
+      "Irms_SW_N02_N03": {
+        "final": 2.3008970064543017e-07,
+        "min": 0.0,
+        "max": 2.3008970064543017e-07,
+        "samples": 20001
+      },
+      "Vrms_N06": {
+        "final": 4.638852295615878e-06,
+        "min": 0.0,
+        "max": 4.6456769673702375e-06,
+        "samples": 20001
+      },
+      "P_SW_N02_N05_TIE": {
+        "final": 1.588284429923854e-07,
+        "min": 0.0,
+        "max": 1.588284429923854e-07,
+        "samples": 20001
+      },
+      "Vrms_N05": {
+        "final": 4.656790931699854e-06,
+        "min": 0.0,
+        "max": 4.663603420261619e-06,
+        "samples": 20001
+      },
+      "Irms_SW_N02_N05_TIE": {
+        "final": 2.3009169815315609e-07,
+        "min": 0.0,
+        "max": 2.3009169815315609e-07,
+        "samples": 20001
+      },
+      "P_SW_G01_N02": {
+        "final": 0.00780397925444098,
+        "min": 0.0,
+        "max": 0.00780397925444098,
+        "samples": 20001
+      },
+      "Vrms_N04": {
+        "final": 2.0855640966800557e-10,
+        "min": 0.0,
+        "max": 2.0886260778854014e-10,
+        "samples": 20001
+      },
+      "Vrms_G01": {
+        "final": 0.3997428843765977,
+        "min": 0.0,
+        "max": 0.40032687991426524,
+        "samples": 20001
+      },
+      "Vrms_N02": {
+        "final": 0.3986664420337025,
+        "min": 0.0,
+        "max": 0.3992510691410242,
+        "samples": 20001
+      },
+      "Irms_SW_N04_N06_TIE": {
+        "final": 2.6772523131819105e-12,
+        "min": 0.0,
+        "max": 2.6772523131819105e-12,
+        "samples": 20001
+      },
+      "P_SW_N04_N06_TIE": {
+        "final": -9.667877606525167e-22,
+        "min": -9.667877606525167e-22,
+        "max": 0.0,
+        "samples": 20001
+      },
+      "Irms_SW_N05_N06": {
+        "final": 9.839613518978148e-08,
+        "min": 0.0,
+        "max": 9.839613518978148e-08,
+        "samples": 20001
+      },
+      "P_SW_N05_N06": {
+        "final": 7.933792353051674e-13,
+        "min": 0.0,
+        "max": 7.933792353051674e-13,
+        "samples": 20001
+      },
+      "Irms_SW_N03_N05": {
+        "final": 2.0078656460555096e-12,
+        "min": 0.0,
+        "max": 2.0078656460555096e-12,
+        "samples": 20001
+      },
+      "Irms_SW_G01_N02": {
+        "final": 0.011275086441435668,
+        "min": 0.0,
+        "max": 0.011275086441435668,
+        "samples": 20001
+      },
+      "P_SW_N03_N04": {
+        "final": 6.614347028846138e-17,
+        "min": 0.0,
+        "max": 6.614347028846138e-17,
+        "samples": 20001
+      },
+      "P_SW_N03_N05": {
+        "final": 2.8284223761728166e-17,
+        "min": 0.0,
+        "max": 2.8284223761728166e-17,
+        "samples": 20001
+      },
+      "Vrms_N03": {
+        "final": 8.135646166026177e-06,
+        "min": 0.0,
+        "max": 8.147576740558999e-06,
+        "samples": 20001
+      },
+      "Irms_SW_N03_N04": {
+        "final": 4.695450600879078e-12,
+        "min": 0.0,
+        "max": 4.695450600879078e-12,
+        "samples": 20001
+      },
+      "P_SW_N02_N03": {
+        "final": 1.5882706414628303e-07,
+        "min": 0.0,
+        "max": 1.5882706414628303e-07,
+        "samples": 20001
+      }
+    }
+  },
+  "03_tie_switch_restoration": {
+    "scenario": {
+      "name": "Tie-switch restoration",
+      "description": "Same N03 fault as scenario 02, but 1s later the controller closes both tie lines (SW_N02_N05_TIE, SW_N04_N06_TIE) to restore N04, N05 and N06 through the alternate G01-N02-N05-N06-N04 path. Compare the restoration transient here against the permanently de-energized island in scenario 02."
+    },
+    "commands": 2,
+    "accepted_commands": 2,
+    "analysis": {
+      "source_nodes": [
+        "G01"
+      ],
+      "energized_nodes": [
+        "G01",
+        "N02",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "deenergized_nodes": [
+        "N03"
+      ],
+      "closed_line_count": 4,
+      "open_line_count": 3,
+      "island_count": 2,
+      "cycles": []
+    },
+    "applied_switch_state": {
+      "SW_G01_N02": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N02_N03": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      },
+      "SW_N03_N04": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      },
+      "SW_N05_N06": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N03_N05": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      },
+      "SW_N02_N05_TIE": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N04_N06_TIE": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      }
+    },
+    "channels": {
+      "Irms_SW_N02_N03": {
+        "final": 2.2764443250582272e-07,
+        "min": 0.0,
+        "max": 2.2764443250744211e-07,
+        "samples": 20001
+      },
+      "Vrms_N06": {
+        "final": 0.38342757724050874,
+        "min": 0.0,
+        "max": 0.384018594892539,
+        "samples": 20001
+      },
+      "P_SW_N02_N05_TIE": {
+        "final": 0.022224595531752125,
+        "min": 0.0,
+        "max": 0.022224595531752125,
+        "samples": 20001
+      },
+      "Vrms_N05": {
+        "final": 0.387365639791734,
+        "min": 0.0,
+        "max": 0.3879545798164559,
+        "samples": 20001
+      },
+      "Irms_SW_N02_N05_TIE": {
+        "final": 0.03254190857779412,
+        "min": 0.0,
+        "max": 0.03254190857779412,
+        "samples": 20001
+      },
+      "P_SW_G01_N02": {
+        "final": 0.03015855808856394,
+        "min": 0.0,
+        "max": 0.03015855808856394,
+        "samples": 20001
+      },
+      "Vrms_N04": {
+        "final": 0.3805067756765827,
+        "min": 0.0,
+        "max": 0.38109992536837195,
+        "samples": 20001
+      },
+      "Vrms_G01": {
+        "final": 0.39861954425557794,
+        "min": 0.0,
+        "max": 0.3992018004886315,
+        "samples": 20001
+      },
+      "Vrms_N02": {
+        "final": 0.39443919511634074,
+        "min": 0.0,
+        "max": 0.39502363349158387,
+        "samples": 20001
+      },
+      "Irms_SW_N04_N06_TIE": {
+        "final": 0.013452782654324001,
+        "min": 0.0,
+        "max": 0.013452782654324001,
+        "samples": 20001
+      },
+      "P_SW_N04_N06_TIE": {
+        "final": -0.00886405257031381,
+        "min": -0.00886405257031381,
+        "max": 0.0,
+        "samples": 20001
+      },
+      "Irms_SW_N05_N06": {
+        "final": 0.021586126532680695,
+        "min": 0.0,
+        "max": 0.021586126532680695,
+        "samples": 20001
+      },
+      "P_SW_N05_N06": {
+        "final": 0.014478817572542985,
+        "min": 0.0,
+        "max": 0.014478817572542985,
+        "samples": 20001
+      },
+      "Irms_SW_N03_N05": {
+        "final": 2.235704504168366e-07,
+        "min": 0.0,
+        "max": 2.235704504168366e-07,
+        "samples": 20001
+      },
+      "Irms_SW_G01_N02": {
+        "final": 0.043697125083919805,
+        "min": 0.0,
+        "max": 0.043697125083919805,
+        "samples": 20001
+      },
+      "P_SW_N03_N04": {
+        "final": -9.019929675269527e-12,
+        "min": -9.019929675269527e-12,
+        "max": 0.0,
+        "samples": 20001
+      },
+      "P_SW_N03_N05": {
+        "final": -9.182299532396437e-12,
+        "min": -9.182299532396437e-12,
+        "max": 0.0,
+        "samples": 20001
+      },
+      "Vrms_N03": {
+        "final": 2.371898581453393e-05,
+        "min": 0.0,
+        "max": 2.3755035191055845e-05,
+        "samples": 20001
+      },
+      "Irms_SW_N03_N04": {
+        "final": 2.1961997315978894e-07,
+        "min": 0.0,
+        "max": 2.1961997315978894e-07,
+        "samples": 20001
+      },
+      "P_SW_N02_N03": {
+        "final": 1.554753249631279e-07,
+        "min": 0.0,
+        "max": 1.554753249631279e-07,
+        "samples": 20001
+      }
+    }
+  },
+  "04_loop_rejection": {
+    "scenario": {
+      "name": "Loop rejection",
+      "description": "From the healthy baseline (no prior isolation), the controller asks to close the N02-N05 tie switch while N02-N03 and N03-N05 are still both closed. Closing it would form a closed loop (N02-N03-N05-N02), so PowerPlaneState.apply_command rejects the operation (accepted=false, reason 'rejected: closing line would create a closed-loop LV topology') as long as the pipeline is run with the default preserve_radial=True / without --allow-loops. The PSCAD switch state is left unchanged -- use this run to confirm the safety check holds and no loop current path is ever energized in PSCAD."
+    },
+    "commands": 1,
+    "accepted_commands": 0,
+    "analysis": {
+      "source_nodes": [
+        "G01"
+      ],
+      "energized_nodes": [
+        "G01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "deenergized_nodes": [],
+      "closed_line_count": 5,
+      "open_line_count": 2,
+      "island_count": 1,
+      "cycles": []
+    },
+    "applied_switch_state": {
+      "SW_G01_N02": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N02_N03": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N03_N04": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N05_N06": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N03_N05": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N02_N05_TIE": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      },
+      "SW_N04_N06_TIE": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      }
+    },
+    "channels": {
+      "Irms_SW_N02_N03": {
+        "final": 0.04349991383197573,
+        "min": 0.0,
+        "max": 0.04349991383197573,
+        "samples": 20001
+      },
+      "Vrms_N06": {
+        "final": 0.38203494913363084,
+        "min": 0.0,
+        "max": 0.3826258143528539,
+        "samples": 20001
+      },
+      "P_SW_N02_N05_TIE": {
+        "final": 3.729095207565006e-09,
+        "min": 0.0,
+        "max": 3.729095207565006e-09,
+        "samples": 20001
+      },
+      "Vrms_N05": {
+        "final": 0.38351239856477704,
+        "min": 0.0,
+        "max": 0.38410221192669736,
+        "samples": 20001
+      },
+      "Irms_SW_N02_N05_TIE": {
+        "final": 5.684451800126639e-09,
+        "min": 0.0,
+        "max": 5.684451800126639e-09,
+        "samples": 20001
+      },
+      "P_SW_G01_N02": {
+        "final": 0.037658004771646804,
+        "min": 0.0,
+        "max": 0.037658004771646804,
+        "samples": 20001
+      },
+      "Vrms_N04": {
+        "final": 0.384825829283099,
+        "min": 0.0,
+        "max": 0.38541486266375496,
+        "samples": 20001
+      },
+      "Vrms_G01": {
+        "final": 0.3982412483881968,
+        "min": 0.0,
+        "max": 0.398822931754739,
+        "samples": 20001
+      },
+      "Vrms_N02": {
+        "final": 0.39301747188561037,
+        "min": 0.0,
+        "max": 0.39360186952905607,
+        "samples": 20001
+      },
+      "Irms_SW_N04_N06_TIE": {
+        "final": 1.6716176846397812e-09,
+        "min": 0.0,
+        "max": 1.6716176846397812e-09,
+        "samples": 20001
+      },
+      "P_SW_N04_N06_TIE": {
+        "final": 1.071435889367234e-09,
+        "min": 0.0,
+        "max": 1.071435889367234e-09,
+        "samples": 20001
+      },
+      "Irms_SW_N05_N06": {
+        "final": 0.00810385122528682,
+        "min": 0.0,
+        "max": 0.00810385122528682,
+        "samples": 20001
+      },
+      "P_SW_N05_N06": {
+        "final": 0.005381700497578833,
+        "min": 0.0,
+        "max": 0.005381700497578833,
+        "samples": 20001
+      },
+      "Irms_SW_N03_N05": {
+        "final": 0.01895068092549046,
+        "min": 0.0,
+        "max": 0.01895068092549046,
+        "samples": 20001
+      },
+      "Irms_SW_G01_N02": {
+        "final": 0.05461485076923259,
+        "min": 0.0,
+        "max": 0.05461485076923259,
+        "samples": 20001
+      },
+      "P_SW_N03_N04": {
+        "final": 0.009116134769498959,
+        "min": 0.0,
+        "max": 0.009116134769498959,
+        "samples": 20001
+      },
+      "P_SW_N03_N05": {
+        "final": 0.012698121907111674,
+        "min": 0.0,
+        "max": 0.012698121907111674,
+        "samples": 20001
+      },
+      "Vrms_N03": {
+        "final": 0.3869686867679677,
+        "min": 0.0,
+        "max": 0.3875567271456112,
+        "samples": 20001
+      },
+      "Irms_SW_N03_N04": {
+        "final": 0.013604877269539278,
+        "min": 0.0,
+        "max": 0.013604877269539278,
+        "samples": 20001
+      },
+      "P_SW_N02_N03": {
+        "final": 0.029601841040601953,
+        "min": 0.0,
+        "max": 0.029601841040601953,
+        "samples": 20001
+      }
+    }
+  },
+  "05_degraded_control_plane": {
+    "scenario": {
+      "name": "Degraded control-plane case",
+      "description": "Same fault and restoration as scenario 03, but the reroute command is delayed by 40s (5s vs 45s) to stand in for a degraded/lossy AMRP LoRa uplink -- retransmission backoff or a missed gateway hop -- before the SDN controller's decision reaches the power plane. This scenario intentionally only changes the command timestamp gap (a property of this command-replay layer); it does not re-run seian_sim's own LoRa packet-loss model, since that simulator is kept unmodified per AI_CONTEXT.md. Use it to show how long N04/N05/N06 stay de-energized when the control channel itself is the bottleneck, versus the near-immediate restoration in scenario 03."
+    },
+    "commands": 2,
+    "accepted_commands": 2,
+    "analysis": {
+      "source_nodes": [
+        "G01"
+      ],
+      "energized_nodes": [
+        "G01",
+        "N02",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "deenergized_nodes": [
+        "N03"
+      ],
+      "closed_line_count": 4,
+      "open_line_count": 3,
+      "island_count": 2,
+      "cycles": []
+    },
+    "applied_switch_state": {
+      "SW_G01_N02": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N02_N03": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      },
+      "SW_N03_N04": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      },
+      "SW_N05_N06": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N03_N05": {
+        "closed": false,
+        "parameters": {
+          "Value": 1
+        }
+      },
+      "SW_N02_N05_TIE": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      },
+      "SW_N04_N06_TIE": {
+        "closed": true,
+        "parameters": {
+          "Value": 0
+        }
+      }
+    },
+    "channels": {
+      "Irms_SW_N02_N03": {
+        "final": 2.2764443250582272e-07,
+        "min": 0.0,
+        "max": 2.2764443250744211e-07,
+        "samples": 20001
+      },
+      "Vrms_N06": {
+        "final": 0.38342757724050874,
+        "min": 0.0,
+        "max": 0.384018594892539,
+        "samples": 20001
+      },
+      "P_SW_N02_N05_TIE": {
+        "final": 0.022224595531752125,
+        "min": 0.0,
+        "max": 0.022224595531752125,
+        "samples": 20001
+      },
+      "Vrms_N05": {
+        "final": 0.387365639791734,
+        "min": 0.0,
+        "max": 0.3879545798164559,
+        "samples": 20001
+      },
+      "Irms_SW_N02_N05_TIE": {
+        "final": 0.03254190857779412,
+        "min": 0.0,
+        "max": 0.03254190857779412,
+        "samples": 20001
+      },
+      "P_SW_G01_N02": {
+        "final": 0.03015855808856394,
+        "min": 0.0,
+        "max": 0.03015855808856394,
+        "samples": 20001
+      },
+      "Vrms_N04": {
+        "final": 0.3805067756765827,
+        "min": 0.0,
+        "max": 0.38109992536837195,
+        "samples": 20001
+      },
+      "Vrms_G01": {
+        "final": 0.39861954425557794,
+        "min": 0.0,
+        "max": 0.3992018004886315,
+        "samples": 20001
+      },
+      "Vrms_N02": {
+        "final": 0.39443919511634074,
+        "min": 0.0,
+        "max": 0.39502363349158387,
+        "samples": 20001
+      },
+      "Irms_SW_N04_N06_TIE": {
+        "final": 0.013452782654324001,
+        "min": 0.0,
+        "max": 0.013452782654324001,
+        "samples": 20001
+      },
+      "P_SW_N04_N06_TIE": {
+        "final": -0.00886405257031381,
+        "min": -0.00886405257031381,
+        "max": 0.0,
+        "samples": 20001
+      },
+      "Irms_SW_N05_N06": {
+        "final": 0.021586126532680695,
+        "min": 0.0,
+        "max": 0.021586126532680695,
+        "samples": 20001
+      },
+      "P_SW_N05_N06": {
+        "final": 0.014478817572542985,
+        "min": 0.0,
+        "max": 0.014478817572542985,
+        "samples": 20001
+      },
+      "Irms_SW_N03_N05": {
+        "final": 2.235704504168366e-07,
+        "min": 0.0,
+        "max": 2.235704504168366e-07,
+        "samples": 20001
+      },
+      "Irms_SW_G01_N02": {
+        "final": 0.043697125083919805,
+        "min": 0.0,
+        "max": 0.043697125083919805,
+        "samples": 20001
+      },
+      "P_SW_N03_N04": {
+        "final": -9.019929675269527e-12,
+        "min": -9.019929675269527e-12,
+        "max": 0.0,
+        "samples": 20001
+      },
+      "P_SW_N03_N05": {
+        "final": -9.182299532396437e-12,
+        "min": -9.182299532396437e-12,
+        "max": 0.0,
+        "samples": 20001
+      },
+      "Vrms_N03": {
+        "final": 2.371898581453393e-05,
+        "min": 0.0,
+        "max": 2.3755035191055845e-05,
+        "samples": 20001
+      },
+      "Irms_SW_N03_N04": {
+        "final": 2.1961997315978894e-07,
+        "min": 0.0,
+        "max": 2.1961997315978894e-07,
+        "samples": 20001
+      },
+      "P_SW_N02_N03": {
+        "final": 1.554753249631279e-07,
+        "min": 0.0,
+        "max": 1.554753249631279e-07,
+        "samples": 20001
+      }
+    }
+  }
+}

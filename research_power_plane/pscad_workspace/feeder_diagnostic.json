@@ -1,0 +1,1741 @@
+[
+  {
+    "iid": 670251976,
+    "classid": null,
+    "defn": "Sticky",
+    "x": null,
+    "y": null,
+    "ports_error": "'Sticky' object has no attribute 'ports'"
+  },
+  {
+    "iid": 188554639,
+    "classid": null,
+    "defn": "Sticky",
+    "x": null,
+    "y": null,
+    "ports_error": "'Sticky' object has no attribute 'ports'"
+  },
+  {
+    "iid": 1052962463,
+    "classid": null,
+    "defn": "master:ground",
+    "x": null,
+    "y": null,
+    "ports": {
+      "A": [
+        -400,
+        390
+      ]
+    }
+  },
+  {
+    "iid": 1086922547,
+    "classid": null,
+    "defn": "Bus",
+    "x": null,
+    "y": null,
+    "ports_error": "'Bus' object has no attribute 'ports'"
+  },
+  {
+    "iid": 1300024569,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        -400,
+        390
+      ],
+      [
+        -400,
+        450
+      ]
+    ]
+  },
+  {
+    "iid": 274606682,
+    "classid": null,
+    "defn": "master:source3",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N": [
+        -202,
+        0
+      ],
+      "N3": [
+        -198,
+        0
+      ]
+    }
+  },
+  {
+    "iid": 1756141017,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        -202,
+        0
+      ],
+      [
+        -202,
+        450
+      ],
+      [
+        -400,
+        450
+      ]
+    ]
+  },
+  {
+    "iid": 595557502,
+    "classid": null,
+    "defn": "Bus",
+    "x": null,
+    "y": null,
+    "ports_error": "'Bus' object has no attribute 'ports'"
+  },
+  {
+    "iid": 1591137548,
+    "classid": null,
+    "defn": "Bus",
+    "x": null,
+    "y": null,
+    "ports_error": "'Bus' object has no attribute 'ports'"
+  },
+  {
+    "iid": 1901826444,
+    "classid": null,
+    "defn": "Bus",
+    "x": null,
+    "y": null,
+    "ports_error": "'Bus' object has no attribute 'ports'"
+  },
+  {
+    "iid": 340829320,
+    "classid": null,
+    "defn": "Bus",
+    "x": null,
+    "y": null,
+    "ports_error": "'Bus' object has no attribute 'ports'"
+  },
+  {
+    "iid": 261514320,
+    "classid": null,
+    "defn": "Bus",
+    "x": null,
+    "y": null,
+    "ports_error": "'Bus' object has no attribute 'ports'"
+  },
+  {
+    "iid": 620474240,
+    "classid": null,
+    "defn": "Bus",
+    "x": null,
+    "y": null,
+    "ports_error": "'Bus' object has no attribute 'ports'"
+  },
+  {
+    "iid": 1750067594,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        -198,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 1189377842,
+    "classid": null,
+    "defn": "master:ammeter",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N2": [
+        152,
+        0
+      ],
+      "N1": [
+        150,
+        0
+      ]
+    }
+  },
+  {
+    "iid": 557873286,
+    "classid": null,
+    "defn": "master:breaker3",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N1": [
+        242,
+        0
+      ],
+      "N2": [
+        238,
+        0
+      ]
+    }
+  },
+  {
+    "iid": 1769611459,
+    "classid": null,
+    "defn": "master:resistor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "A": [
+        330,
+        0
+      ],
+      "B": [
+        332,
+        0
+      ]
+    }
+  },
+  {
+    "iid": 721716628,
+    "classid": null,
+    "defn": "master:inductor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "B": [
+        422,
+        0
+      ],
+      "A": [
+        420,
+        0
+      ]
+    }
+  },
+  {
+    "iid": 1964928534,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        150,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 1445733821,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        152,
+        0
+      ],
+      [
+        238,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 1653760046,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        242,
+        0
+      ],
+      [
+        330,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 1059553002,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        332,
+        0
+      ],
+      [
+        420,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 436170399,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        422,
+        0
+      ],
+      [
+        600,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 743973689,
+    "classid": null,
+    "defn": "master:ammeter",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N2": [
+        752,
+        0
+      ],
+      "N1": [
+        750,
+        0
+      ]
+    }
+  },
+  {
+    "iid": 1248267126,
+    "classid": null,
+    "defn": "master:breaker3",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N1": [
+        842,
+        0
+      ],
+      "N2": [
+        838,
+        0
+      ]
+    }
+  },
+  {
+    "iid": 1762396098,
+    "classid": null,
+    "defn": "master:resistor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "A": [
+        930,
+        0
+      ],
+      "B": [
+        932,
+        0
+      ]
+    }
+  },
+  {
+    "iid": 46904566,
+    "classid": null,
+    "defn": "master:inductor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "B": [
+        1022,
+        0
+      ],
+      "A": [
+        1020,
+        0
+      ]
+    }
+  },
+  {
+    "iid": 1705187095,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        750,
+        0
+      ],
+      [
+        600,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 602415008,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        752,
+        0
+      ],
+      [
+        838,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 434060139,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        842,
+        0
+      ],
+      [
+        930,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 1685623854,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        932,
+        0
+      ],
+      [
+        1020,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 218752947,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1022,
+        0
+      ],
+      [
+        1200,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 1841920787,
+    "classid": null,
+    "defn": "master:ammeter",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N2": [
+        1352,
+        0
+      ],
+      "N1": [
+        1350,
+        0
+      ]
+    }
+  },
+  {
+    "iid": 480169787,
+    "classid": null,
+    "defn": "master:breaker3",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N1": [
+        1442,
+        0
+      ],
+      "N2": [
+        1438,
+        0
+      ]
+    }
+  },
+  {
+    "iid": 547668735,
+    "classid": null,
+    "defn": "master:resistor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "A": [
+        1530,
+        0
+      ],
+      "B": [
+        1532,
+        0
+      ]
+    }
+  },
+  {
+    "iid": 1873561196,
+    "classid": null,
+    "defn": "master:inductor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "B": [
+        1622,
+        0
+      ],
+      "A": [
+        1620,
+        0
+      ]
+    }
+  },
+  {
+    "iid": 688114757,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1350,
+        0
+      ],
+      [
+        1200,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 2109979903,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1352,
+        0
+      ],
+      [
+        1438,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 2016200652,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1442,
+        0
+      ],
+      [
+        1530,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 1167221810,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1532,
+        0
+      ],
+      [
+        1620,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 499129508,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1622,
+        0
+      ],
+      [
+        1800,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 1413966522,
+    "classid": null,
+    "defn": "master:ammeter",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N2": [
+        1202,
+        900
+      ],
+      "N1": [
+        1200,
+        900
+      ]
+    }
+  },
+  {
+    "iid": 1932386454,
+    "classid": null,
+    "defn": "master:breaker3",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N1": [
+        1292,
+        900
+      ],
+      "N2": [
+        1288,
+        900
+      ]
+    }
+  },
+  {
+    "iid": 250340564,
+    "classid": null,
+    "defn": "master:resistor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "A": [
+        1380,
+        900
+      ],
+      "B": [
+        1382,
+        900
+      ]
+    }
+  },
+  {
+    "iid": 243869702,
+    "classid": null,
+    "defn": "master:inductor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "B": [
+        1472,
+        900
+      ],
+      "A": [
+        1470,
+        900
+      ]
+    }
+  },
+  {
+    "iid": 730650170,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1200,
+        900
+      ],
+      [
+        900,
+        900
+      ]
+    ]
+  },
+  {
+    "iid": 766823733,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1202,
+        900
+      ],
+      [
+        1288,
+        900
+      ]
+    ]
+  },
+  {
+    "iid": 452316111,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1292,
+        900
+      ],
+      [
+        1380,
+        900
+      ]
+    ]
+  },
+  {
+    "iid": 585147135,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1382,
+        900
+      ],
+      [
+        1470,
+        900
+      ]
+    ]
+  },
+  {
+    "iid": 472784482,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1472,
+        900
+      ],
+      [
+        2400,
+        900
+      ]
+    ]
+  },
+  {
+    "iid": 1602456336,
+    "classid": null,
+    "defn": "master:ammeter",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N2": [
+        302,
+        450
+      ],
+      "N1": [
+        300,
+        450
+      ]
+    }
+  },
+  {
+    "iid": 70780018,
+    "classid": null,
+    "defn": "master:breaker3",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N1": [
+        392,
+        450
+      ],
+      "N2": [
+        388,
+        450
+      ]
+    }
+  },
+  {
+    "iid": 136250323,
+    "classid": null,
+    "defn": "master:resistor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "A": [
+        480,
+        450
+      ],
+      "B": [
+        482,
+        450
+      ]
+    }
+  },
+  {
+    "iid": 545505562,
+    "classid": null,
+    "defn": "master:inductor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "B": [
+        572,
+        450
+      ],
+      "A": [
+        570,
+        450
+      ]
+    }
+  },
+  {
+    "iid": 1445021049,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        300,
+        450
+      ],
+      [
+        300,
+        410
+      ],
+      [
+        1200,
+        410
+      ],
+      [
+        1200,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 1297765484,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        302,
+        450
+      ],
+      [
+        388,
+        450
+      ]
+    ]
+  },
+  {
+    "iid": 876719715,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        392,
+        450
+      ],
+      [
+        480,
+        450
+      ]
+    ]
+  },
+  {
+    "iid": 1508379987,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        482,
+        450
+      ],
+      [
+        570,
+        450
+      ]
+    ]
+  },
+  {
+    "iid": 1077281670,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        572,
+        450
+      ],
+      [
+        572,
+        490
+      ],
+      [
+        900,
+        490
+      ],
+      [
+        900,
+        900
+      ]
+    ]
+  },
+  {
+    "iid": 45718780,
+    "classid": null,
+    "defn": "master:ammeter",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N2": [
+        1702,
+        650
+      ],
+      "N1": [
+        1700,
+        650
+      ]
+    }
+  },
+  {
+    "iid": 219894051,
+    "classid": null,
+    "defn": "master:breaker3",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N1": [
+        1792,
+        650
+      ],
+      "N2": [
+        1788,
+        650
+      ]
+    }
+  },
+  {
+    "iid": 1926084098,
+    "classid": null,
+    "defn": "master:resistor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "A": [
+        1880,
+        650
+      ],
+      "B": [
+        1882,
+        650
+      ]
+    }
+  },
+  {
+    "iid": 2128528612,
+    "classid": null,
+    "defn": "master:inductor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "B": [
+        1972,
+        650
+      ],
+      "A": [
+        1970,
+        650
+      ]
+    }
+  },
+  {
+    "iid": 1412099447,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1700,
+        650
+      ],
+      [
+        1700,
+        610
+      ],
+      [
+        600,
+        610
+      ],
+      [
+        600,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 2111713102,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1702,
+        650
+      ],
+      [
+        1788,
+        650
+      ]
+    ]
+  },
+  {
+    "iid": 1037470095,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1792,
+        650
+      ],
+      [
+        1880,
+        650
+      ]
+    ]
+  },
+  {
+    "iid": 1594572412,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1882,
+        650
+      ],
+      [
+        1970,
+        650
+      ]
+    ]
+  },
+  {
+    "iid": 367438926,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1972,
+        650
+      ],
+      [
+        1972,
+        690
+      ],
+      [
+        900,
+        690
+      ],
+      [
+        900,
+        900
+      ]
+    ]
+  },
+  {
+    "iid": 1437516526,
+    "classid": null,
+    "defn": "master:ammeter",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N2": [
+        1902,
+        1300
+      ],
+      "N1": [
+        1900,
+        1300
+      ]
+    }
+  },
+  {
+    "iid": 1593610526,
+    "classid": null,
+    "defn": "master:breaker3",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N1": [
+        1992,
+        1300
+      ],
+      "N2": [
+        1988,
+        1300
+      ]
+    }
+  },
+  {
+    "iid": 874282818,
+    "classid": null,
+    "defn": "master:resistor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "A": [
+        2080,
+        1300
+      ],
+      "B": [
+        2082,
+        1300
+      ]
+    }
+  },
+  {
+    "iid": 1675227607,
+    "classid": null,
+    "defn": "master:inductor",
+    "x": null,
+    "y": null,
+    "ports": {
+      "B": [
+        2172,
+        1300
+      ],
+      "A": [
+        2170,
+        1300
+      ]
+    }
+  },
+  {
+    "iid": 1640668012,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1900,
+        1300
+      ],
+      [
+        1900,
+        1260
+      ],
+      [
+        1800,
+        1260
+      ],
+      [
+        1800,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 1067959870,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1902,
+        1300
+      ],
+      [
+        1988,
+        1300
+      ]
+    ]
+  },
+  {
+    "iid": 761991101,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1992,
+        1300
+      ],
+      [
+        2080,
+        1300
+      ]
+    ]
+  },
+  {
+    "iid": 28832633,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        2082,
+        1300
+      ],
+      [
+        2170,
+        1300
+      ]
+    ]
+  },
+  {
+    "iid": 380382565,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        2172,
+        1300
+      ],
+      [
+        2172,
+        1340
+      ],
+      [
+        2400,
+        1340
+      ],
+      [
+        2400,
+        900
+      ]
+    ]
+  },
+  {
+    "iid": 1945316623,
+    "classid": null,
+    "defn": "master:Yload",
+    "x": null,
+    "y": null,
+    "ports": {
+      "ABC": [
+        680,
+        -152
+      ],
+      "Neut": [
+        680,
+        -150
+      ],
+      "G": [
+        680,
+        -151
+      ]
+    }
+  },
+  {
+    "iid": 167697623,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        680,
+        -152
+      ],
+      [
+        680,
+        0
+      ],
+      [
+        600,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 1046279775,
+    "classid": null,
+    "defn": "master:Yload",
+    "x": null,
+    "y": null,
+    "ports": {
+      "ABC": [
+        1280,
+        -152
+      ],
+      "Neut": [
+        1280,
+        -150
+      ],
+      "G": [
+        1280,
+        -151
+      ]
+    }
+  },
+  {
+    "iid": 10824380,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1280,
+        -152
+      ],
+      [
+        1280,
+        0
+      ],
+      [
+        1200,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 496872628,
+    "classid": null,
+    "defn": "master:Yload",
+    "x": null,
+    "y": null,
+    "ports": {
+      "ABC": [
+        1880,
+        -152
+      ],
+      "Neut": [
+        1880,
+        -150
+      ],
+      "G": [
+        1880,
+        -151
+      ]
+    }
+  },
+  {
+    "iid": 1486334813,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1880,
+        -152
+      ],
+      [
+        1880,
+        0
+      ],
+      [
+        1800,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 2080074065,
+    "classid": null,
+    "defn": "master:Yload",
+    "x": null,
+    "y": null,
+    "ports": {
+      "ABC": [
+        980,
+        748
+      ],
+      "Neut": [
+        980,
+        750
+      ],
+      "G": [
+        980,
+        749
+      ]
+    }
+  },
+  {
+    "iid": 444554369,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        980,
+        748
+      ],
+      [
+        980,
+        900
+      ],
+      [
+        900,
+        900
+      ]
+    ]
+  },
+  {
+    "iid": 95939492,
+    "classid": null,
+    "defn": "master:Yload",
+    "x": null,
+    "y": null,
+    "ports": {
+      "ABC": [
+        2480,
+        748
+      ],
+      "Neut": [
+        2480,
+        750
+      ],
+      "G": [
+        2480,
+        749
+      ]
+    }
+  },
+  {
+    "iid": 747303598,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        2480,
+        748
+      ],
+      [
+        2480,
+        900
+      ],
+      [
+        2400,
+        900
+      ]
+    ]
+  },
+  {
+    "iid": 441073092,
+    "classid": null,
+    "defn": "master:voltmetergnd",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N1": [
+        -150,
+        -300
+      ]
+    }
+  },
+  {
+    "iid": 1485585324,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        -150,
+        -300
+      ],
+      [
+        -150,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 848504368,
+    "classid": null,
+    "defn": "master:voltmetergnd",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N1": [
+        450,
+        -300
+      ]
+    }
+  },
+  {
+    "iid": 198931152,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        450,
+        -300
+      ],
+      [
+        450,
+        0
+      ],
+      [
+        600,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 742585975,
+    "classid": null,
+    "defn": "master:voltmetergnd",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N1": [
+        1050,
+        -300
+      ]
+    }
+  },
+  {
+    "iid": 1751032343,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1050,
+        -300
+      ],
+      [
+        1050,
+        0
+      ],
+      [
+        1200,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 1843786523,
+    "classid": null,
+    "defn": "master:voltmetergnd",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N1": [
+        1650,
+        -300
+      ]
+    }
+  },
+  {
+    "iid": 1855281791,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        1650,
+        -300
+      ],
+      [
+        1650,
+        0
+      ],
+      [
+        1800,
+        0
+      ]
+    ]
+  },
+  {
+    "iid": 387622447,
+    "classid": null,
+    "defn": "master:voltmetergnd",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N1": [
+        750,
+        600
+      ]
+    }
+  },
+  {
+    "iid": 2084849107,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        750,
+        600
+      ],
+      [
+        750,
+        900
+      ],
+      [
+        900,
+        900
+      ]
+    ]
+  },
+  {
+    "iid": 1297199865,
+    "classid": null,
+    "defn": "master:voltmetergnd",
+    "x": null,
+    "y": null,
+    "ports": {
+      "N1": [
+        2250,
+        600
+      ]
+    }
+  },
+  {
+    "iid": 1741945180,
+    "classid": null,
+    "defn": "WireOrthogonal",
+    "x": null,
+    "y": null,
+    "ports_error": "'Wire' object has no attribute 'ports'",
+    "vertices": [
+      [
+        2250,
+        600
+      ],
+      [
+        2250,
+        900
+      ],
+      [
+        2400,
+        900
+      ]
+    ]
+  }
+]

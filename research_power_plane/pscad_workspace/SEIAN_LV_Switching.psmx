@@ -1,0 +1,53 @@
+<Meta name="SEIAN_LV_Switching">
+  <messagelist>
+    <message status="normal" label="build" groupid="400002" scope="SEIAN_LV_Switching" id="1396377842" classid="MessageObj"><![CDATA[Begin compiling with PSCAD Version 5.0.1]]></message>
+    <message status="normal" label="build" groupid="100006" link="1648083644" id="1648083644" classid="FileNavigator"><![CDATA[Generating 'D:\Oshadha\Professional Self Projects\SEIAN_power_routing_protocol\research_power_plane\pscad_workspace\SEIAN_LV_Switching.gf46\SEIAN_LV_Switching.map'.]]><file scope="SEIAN_LV_Switching">D:\Oshadha\Professional Self Projects\SEIAN_power_routing_protocol\research_power_plane\pscad_workspace\SEIAN_LV_Switching.gf46\SEIAN_LV_Switching.map</file></message>
+    <message status="normal" label="build" groupid="100015" scope="SEIAN_LV_Switching" id="297913425" classid="MessageObj"><![CDATA[The total number of live nodes: 65]]></message>
+    <message status="normal" label="build" groupid="0" link="1804239247" id="1804239247" classid="FileNavigator"><![CDATA[Coding .mak file: 'D:\Oshadha\Professional Self Projects\SEIAN_power_routing_protocol\research_power_plane\pscad_workspace\SEIAN_LV_Switching.gf46\\SEIAN_LV_Switching.mak']]><file scope="SEIAN_LV_Switching">D:\Oshadha\Professional Self Projects\SEIAN_power_routing_protocol\research_power_plane\pscad_workspace\SEIAN_LV_Switching.gf46\\SEIAN_LV_Switching.mak</file></message>
+    <message status="normal" label="build" groupid="100001" scope="SEIAN_LV_Switching" id="390764990" classid="MessageObj"><![CDATA[Non-professional licenses are limited to a single, electrical subsystem. Subsystem splitting has been internally disabled for this simulation.]]></message>
+    <message status="normal" label="build" groupid="400000" scope="SEIAN_LV_Switching" id="2011149723" classid="MessageObj"><![CDATA[Time for Compile: 0ms  Make: 0ms]]></message>
+    <message status="normal" label="build" groupid="400000" scope="SEIAN_LV_Switching" id="1529375868" classid="MessageObj"><![CDATA[Solve Time = 282ms]]></message>
+    <message status="normal" label="build" groupid="100016" scope="SEIAN_LV_Switching" id="1425008979" classid="MessageObj"><![CDATA[Will execute (1): call C:\Program Files (x86)\GFortran\4.6\bin\gf46vars.bat]]></message>
+    <message status="normal" label="build" groupid="100016" scope="SEIAN_LV_Switching" id="1701183561" classid="MessageObj"><![CDATA[Will execute (1): call "C:\Program Files (x86)\GFortran\4.6\bin\gf46vars.bat"]]></message>
+    <message status="normal" label="build" groupid="100016" scope="SEIAN_LV_Switching" id="966306752" classid="MessageObj"><![CDATA[Will execute (2): make -j -f SEIAN_LV_Switching.mak]]></message>
+    <message status="normal" label="build" groupid="100016" scope="SEIAN_LV_Switching" id="492539233" classid="MessageObj"><![CDATA[Will execute (2): "D:\Oshadha\Professional Self Projects\SEIAN_power_routing_protocol\research_power_plane\pscad_workspace\SEIAN_LV_Switching.gf46\SEIAN_LV_Switching_mak.bat"]]></message>
+    <message status="normal" label="build" groupid="100005" scope="SEIAN_LV_Switching" id="1599705492" classid="MessageObj"><![CDATA[Creating EMTDC executable...]]></message>
+    <message status="normal" label="build" groupid="0" scope="SEIAN_LV_Switching" id="576479449" classid="MessageObj"><![CDATA[D:\Oshadha\Professional Self Projects\SEIAN_power_routing_protocol\research_power_plane\pscad_workspace\SEIAN_LV_Switching.gf46>call "C:\Program Files (x86)\GFortran\4.6\bin\gf46vars.bat" ]]></message>
+    <message status="normal" label="build" groupid="100013" scope="SEIAN_LV_Switching" id="1157965143" classid="MessageObj"><![CDATA[Linking objects and libraries into binary 'SEIAN_LV_Switching.exe']]></message>
+    <message status="normal" label="build" groupid="400003" scope="SEIAN_LV_Switching" id="299178655" classid="MessageObj"><![CDATA[Finished compiling with PSCAD Version 5.0.1]]></message>
+  </messagelist>
+  <ViewContext>
+    <Window defn="SEIAN_LV_Switching:Main" call="0" />
+  </ViewContext>
+  <List classid="View">
+    <View name="Main" zoomscale="1.5" scrollx="0" scrolly="0" />
+  </List>
+  <Output device="EMTDC" version="2010" date="2026/09/04" time="06:14:58.000000">
+    <Domain name="Time" unit="s" mult="0.0" skew="0.0">
+      <Sample rate="20000.0" end="20000" />
+    </Domain>
+    <List classid="Analog">
+      <Analog name="Main(0):P_SW_N03_N04" index="1" gindex="100663297" id="1613878023:0" label="SEIAN" dim="1" unit="MW" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Irms_SW_N03_N04" index="2" gindex="100663298" id="1953446513:0" label="SEIAN" dim="1" unit="kA" min="-2.0" max="2.0" />
+      <Analog name="Main(0):P_SW_N02_N03" index="3" gindex="100663299" id="2061457802:0" label="SEIAN" dim="1" unit="MW" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Irms_SW_N02_N03" index="4" gindex="100663300" id="13763050:0" label="SEIAN" dim="1" unit="kA" min="-2.0" max="2.0" />
+      <Analog name="Main(0):P_SW_N04_N06_TIE" index="5" gindex="100663301" id="1324178240:0" label="SEIAN" dim="1" unit="MW" min="-2.0" max="2.0" />
+      <Analog name="Main(0):P_SW_G01_N02" index="6" gindex="100663302" id="630541229:0" label="SEIAN" dim="1" unit="MW" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Irms_SW_N04_N06_TIE" index="7" gindex="100663303" id="965854230:0" label="SEIAN" dim="1" unit="kA" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Irms_SW_G01_N02" index="8" gindex="100663304" id="1601158859:0" label="SEIAN" dim="1" unit="kA" min="-2.0" max="2.0" />
+      <Analog name="Main(0):P_SW_N02_N05_TIE" index="9" gindex="100663305" id="170320597:0" label="SEIAN" dim="1" unit="MW" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Vrms_N06" index="10" gindex="100663306" id="53271280:0" label="SEIAN" dim="1" unit="kV" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Irms_SW_N02_N05_TIE" index="11" gindex="100663307" id="229116195:0" label="SEIAN" dim="1" unit="kA" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Vrms_N05" index="12" gindex="100663308" id="224194182:0" label="SEIAN" dim="1" unit="kV" min="-2.0" max="2.0" />
+      <Analog name="Main(0):P_SW_N03_N05" index="13" gindex="100663309" id="1633707975:0" label="SEIAN" dim="1" unit="MW" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Vrms_N04" index="14" gindex="100663310" id="831465031:0" label="SEIAN" dim="1" unit="kV" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Irms_SW_N03_N05" index="15" gindex="100663311" id="1522073508:0" label="SEIAN" dim="1" unit="kA" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Vrms_N03" index="16" gindex="100663312" id="1667966319:0" label="SEIAN" dim="1" unit="kV" min="-2.0" max="2.0" />
+      <Analog name="Main(0):P_SW_N05_N06" index="17" gindex="100663313" id="1499035991:0" label="SEIAN" dim="1" unit="MW" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Vrms_N02" index="18" gindex="100663314" id="921924685:0" label="SEIAN" dim="1" unit="kV" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Irms_SW_N05_N06" index="19" gindex="100663315" id="1441602849:0" label="SEIAN" dim="1" unit="kA" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Vrms_G01" index="20" gindex="100663316" id="906075187:0" label="SEIAN" dim="1" unit="kV" min="-2.0" max="2.0" />
+    </List>
+    <List classid="Digital" />
+  </Output>
+</Meta>

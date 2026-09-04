@@ -1,0 +1,16 @@
+{
+  "commands": [
+    {
+      "command_id": "bad-tie-close-n02-n05",
+      "timestamp": 5.0,
+      "controller_id": "amrp-sdn-controller",
+      "action": "close_line",
+      "target_line_id": "SW_N02_N05_TIE",
+      "reason": "Erroneous/premature tie-switch closure request while the radial N02-N03-N05 path is still fully closed."
+    }
+  ],
+  "scenario": {
+    "name": "Loop rejection",
+    "description": "From the healthy baseline (no prior isolation), the controller asks to close the N02-N05 tie switch while N02-N03 and N03-N05 are still both closed. Closing it would form a closed loop (N02-N03-N05-N02), so PowerPlaneState.apply_command rejects the operation (accepted=false, reason 'rejected: closing line would create a closed-loop LV topology') as long as the pipeline is run with the default preserve_radial=True / without --allow-loops. The PSCAD switch state is left unchanged -- use this run to confirm the safety check holds and no loop current path is ever energized in PSCAD."
+  }
+}

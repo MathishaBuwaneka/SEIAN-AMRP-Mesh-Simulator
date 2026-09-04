@@ -1,0 +1,24 @@
+{
+  "scenario": "LV microgrid power-plane switching",
+  "network_id": "SEIAN-LAB",
+  "area_width_m": 600,
+  "area_height_m": 360,
+  "lora_range_m": 260,
+  "nodes": [
+    {"node_id": "G01", "x": 60, "y": 180, "gateway_capable": true, "gateway_online": true, "active": true},
+    {"node_id": "N02", "x": 160, "y": 120, "active": true},
+    {"node_id": "N03", "x": 275, "y": 120, "active": true},
+    {"node_id": "N04", "x": 390, "y": 120, "active": true},
+    {"node_id": "N05", "x": 275, "y": 255, "active": true},
+    {"node_id": "N06", "x": 410, "y": 255, "active": true}
+  ],
+  "power_lines": [
+    {"line_id": "SW_G01_N02", "endpoints": ["G01", "N02"], "closed": true, "normally_closed": true, "capacity_kw": 60},
+    {"line_id": "SW_N02_N03", "endpoints": ["N02", "N03"], "closed": true, "normally_closed": true, "capacity_kw": 40},
+    {"line_id": "SW_N03_N04", "endpoints": ["N03", "N04"], "closed": true, "normally_closed": true, "capacity_kw": 35},
+    {"line_id": "SW_N03_N05", "endpoints": ["N03", "N05"], "closed": true, "normally_closed": true, "capacity_kw": 30},
+    {"line_id": "SW_N05_N06", "endpoints": ["N05", "N06"], "closed": true, "normally_closed": true, "capacity_kw": 30},
+    {"line_id": "SW_N02_N05_TIE", "endpoints": ["N02", "N05"], "closed": false, "normally_closed": false, "capacity_kw": 25},
+    {"line_id": "SW_N04_N06_TIE", "endpoints": ["N04", "N06"], "closed": false, "normally_closed": false, "capacity_kw": 25}
+  ]
+}

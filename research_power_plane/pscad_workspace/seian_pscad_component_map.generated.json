@@ -1,0 +1,54 @@
+{
+  "project_name": "SEIAN_LV_Switching",
+  "line_bindings": [
+    {
+      "line_id": "SW_G01_N02",
+      "component_id": 186336580,
+      "closed_parameter": "Value",
+      "closed_value": 0,
+      "open_value": 1
+    },
+    {
+      "line_id": "SW_N02_N03",
+      "component_id": 468372934,
+      "closed_parameter": "Value",
+      "closed_value": 0,
+      "open_value": 1
+    },
+    {
+      "line_id": "SW_N03_N04",
+      "component_id": 489554207,
+      "closed_parameter": "Value",
+      "closed_value": 0,
+      "open_value": 1
+    },
+    {
+      "line_id": "SW_N05_N06",
+      "component_id": 957511937,
+      "closed_parameter": "Value",
+      "closed_value": 0,
+      "open_value": 1
+    },
+    {
+      "line_id": "SW_N03_N05",
+      "component_id": 1343643235,
+      "closed_parameter": "Value",
+      "closed_value": 0,
+      "open_value": 1
+    },
+    {
+      "line_id": "SW_N02_N05_TIE",
+      "component_id": 546005735,
+      "closed_parameter": "Value",
+      "closed_value": 0,
+      "open_value": 1
+    },
+    {
+      "line_id": "SW_N04_N06_TIE",
+      "component_id": 7922863,
+      "closed_parameter": "Value",
+      "closed_value": 0,
+      "open_value": 1
+    }
+  ]
+}

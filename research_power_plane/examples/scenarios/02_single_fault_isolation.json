@@ -1,0 +1,16 @@
+{
+  "commands": [
+    {
+      "command_id": "fault-isolate-n03",
+      "timestamp": 5.0,
+      "controller_id": "amrp-sdn-controller",
+      "action": "isolate_node",
+      "target_node_id": "N03",
+      "reason": "Protection event at N03; isolate all incident LV paths (N02-N03, N03-N04, N03-N05)."
+    }
+  ],
+  "scenario": {
+    "name": "Single fault isolation",
+    "description": "A fault at N03 trips its three incident breakers (SW_N02_N03, SW_N03_N04, SW_N03_N05). Both tie lines stay open, so N04, N05 and N06 are left de-energized -- no restoration path is taken. Use this to characterize the isolation transient and the resulting de-energized island, before comparing against the tie-switch-restoration scenario."
+  }
+}

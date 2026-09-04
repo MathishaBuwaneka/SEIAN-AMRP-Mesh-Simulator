@@ -1,0 +1,1344 @@
+{
+  "topology": {
+    "network_id": "SEIAN-LAB",
+    "node_count": 6,
+    "power_line_count": 7,
+    "source_nodes": [
+      "G01"
+    ]
+  },
+  "plans": [
+    {
+      "command": {
+        "command_id": "fault-isolate-n03",
+        "action": "isolate_node",
+        "timestamp": 5.0,
+        "controller_id": "amrp-sdn-controller",
+        "priority": 5,
+        "source_node_id": null,
+        "destination_node_id": null,
+        "target_node_id": "N03",
+        "target_line_id": null,
+        "path": [],
+        "open_lines": [],
+        "close_lines": [],
+        "blocked_nodes": [],
+        "reason": "Protection event at N03; isolate all incident LV paths.",
+        "metadata": {}
+      },
+      "accepted": true,
+      "operations": [
+        {
+          "operation_id": "fault-isolate-n03-01",
+          "command_id": "fault-isolate-n03",
+          "timestamp": 5.0,
+          "line_id": "SW_N02_N03",
+          "node_a": "N02",
+          "node_b": "N03",
+          "action": "open",
+          "before_closed": true,
+          "after_closed": false,
+          "accepted": true,
+          "reason": "Protection event at N03; isolate all incident LV paths."
+        },
+        {
+          "operation_id": "fault-isolate-n03-02",
+          "command_id": "fault-isolate-n03",
+          "timestamp": 5.0,
+          "line_id": "SW_N03_N04",
+          "node_a": "N03",
+          "node_b": "N04",
+          "action": "open",
+          "before_closed": true,
+          "after_closed": false,
+          "accepted": true,
+          "reason": "Protection event at N03; isolate all incident LV paths."
+        },
+        {
+          "operation_id": "fault-isolate-n03-03",
+          "command_id": "fault-isolate-n03",
+          "timestamp": 5.0,
+          "line_id": "SW_N03_N05",
+          "node_a": "N03",
+          "node_b": "N05",
+          "action": "open",
+          "before_closed": true,
+          "after_closed": false,
+          "accepted": true,
+          "reason": "Protection event at N03; isolate all incident LV paths."
+        }
+      ],
+      "warnings": []
+    },
+    {
+      "command": {
+        "command_id": "reroute-n04-via-tie",
+        "action": "reroute_power_path",
+        "timestamp": 6.0,
+        "controller_id": "amrp-sdn-controller",
+        "priority": 5,
+        "source_node_id": "G01",
+        "destination_node_id": "N04",
+        "target_node_id": null,
+        "target_line_id": null,
+        "path": [
+          "G01",
+          "N02",
+          "N05",
+          "N06",
+          "N04"
+        ],
+        "open_lines": [],
+        "close_lines": [
+          [
+            "N02",
+            "N05"
+          ],
+          [
+            "N04",
+            "N06"
+          ]
+        ],
+        "blocked_nodes": [
+          "N03"
+        ],
+        "reason": "Controller-requested tie-switch closure after fault isolation.",
+        "metadata": {
+          "network_route_before": [
+            "N04",
+            "N03",
+            "N02",
+            "G01"
+          ],
+          "network_route_after": [
+            "N04",
+            "N06",
+            "N05",
+            "N02",
+            "G01"
+          ],
+          "paper_case": "single fault with tie-switch restoration"
+        }
+      },
+      "accepted": true,
+      "operations": [
+        {
+          "operation_id": "reroute-n04-via-tie-01",
+          "command_id": "reroute-n04-via-tie",
+          "timestamp": 6.0,
+          "line_id": "SW_N02_N05_TIE",
+          "node_a": "N02",
+          "node_b": "N05",
+          "action": "close",
+          "before_closed": false,
+          "after_closed": true,
+          "accepted": true,
+          "reason": "Controller-requested tie-switch closure after fault isolation."
+        },
+        {
+          "operation_id": "reroute-n04-via-tie-02",
+          "command_id": "reroute-n04-via-tie",
+          "timestamp": 6.0,
+          "line_id": "SW_N04_N06_TIE",
+          "node_a": "N04",
+          "node_b": "N06",
+          "action": "close",
+          "before_closed": false,
+          "after_closed": true,
+          "accepted": true,
+          "reason": "Controller-requested tie-switch closure after fault isolation."
+        },
+        {
+          "operation_id": "reroute-n04-via-tie-03",
+          "command_id": "reroute-n04-via-tie",
+          "timestamp": 6.0,
+          "line_id": "SW_N02_N03",
+          "node_a": "N02",
+          "node_b": "N03",
+          "action": "noop",
+          "before_closed": false,
+          "after_closed": false,
+          "accepted": true,
+          "reason": "already open"
+        },
+        {
+          "operation_id": "reroute-n04-via-tie-04",
+          "command_id": "reroute-n04-via-tie",
+          "timestamp": 6.0,
+          "line_id": "SW_N03_N04",
+          "node_a": "N03",
+          "node_b": "N04",
+          "action": "noop",
+          "before_closed": false,
+          "after_closed": false,
+          "accepted": true,
+          "reason": "already open"
+        },
+        {
+          "operation_id": "reroute-n04-via-tie-05",
+          "command_id": "reroute-n04-via-tie",
+          "timestamp": 6.0,
+          "line_id": "SW_N03_N05",
+          "node_a": "N03",
+          "node_b": "N05",
+          "action": "noop",
+          "before_closed": false,
+          "after_closed": false,
+          "accepted": true,
+          "reason": "already open"
+        },
+        {
+          "operation_id": "reroute-n04-via-tie-06",
+          "command_id": "reroute-n04-via-tie",
+          "timestamp": 6.0,
+          "line_id": "SW_G01_N02",
+          "node_a": "G01",
+          "node_b": "N02",
+          "action": "noop",
+          "before_closed": true,
+          "after_closed": true,
+          "accepted": true,
+          "reason": "already closed"
+        },
+        {
+          "operation_id": "reroute-n04-via-tie-07",
+          "command_id": "reroute-n04-via-tie",
+          "timestamp": 6.0,
+          "line_id": "SW_N05_N06",
+          "node_a": "N05",
+          "node_b": "N06",
+          "action": "noop",
+          "before_closed": true,
+          "after_closed": true,
+          "accepted": true,
+          "reason": "already closed"
+        }
+      ],
+      "warnings": []
+    }
+  ],
+  "final_power_plane": {
+    "nodes": [
+      "G01",
+      "N02",
+      "N03",
+      "N04",
+      "N05",
+      "N06"
+    ],
+    "source_nodes": [
+      "G01"
+    ],
+    "preserve_radial": true,
+    "lines": [
+      {
+        "line_id": "SW_G01_N02",
+        "node_a": "G01",
+        "node_b": "N02",
+        "closed": true,
+        "normally_closed": true,
+        "capacity_kw": 60.0,
+        "metadata": {},
+        "endpoints": [
+          "G01",
+          "N02"
+        ]
+      },
+      {
+        "line_id": "SW_N02_N03",
+        "node_a": "N02",
+        "node_b": "N03",
+        "closed": false,
+        "normally_closed": true,
+        "capacity_kw": 40.0,
+        "metadata": {},
+        "endpoints": [
+          "N02",
+          "N03"
+        ]
+      },
+      {
+        "line_id": "SW_N02_N05_TIE",
+        "node_a": "N02",
+        "node_b": "N05",
+        "closed": true,
+        "normally_closed": false,
+        "capacity_kw": 25.0,
+        "metadata": {},
+        "endpoints": [
+          "N02",
+          "N05"
+        ]
+      },
+      {
+        "line_id": "SW_N03_N04",
+        "node_a": "N03",
+        "node_b": "N04",
+        "closed": false,
+        "normally_closed": true,
+        "capacity_kw": 35.0,
+        "metadata": {},
+        "endpoints": [
+          "N03",
+          "N04"
+        ]
+      },
+      {
+        "line_id": "SW_N03_N05",
+        "node_a": "N03",
+        "node_b": "N05",
+        "closed": false,
+        "normally_closed": true,
+        "capacity_kw": 30.0,
+        "metadata": {},
+        "endpoints": [
+          "N03",
+          "N05"
+        ]
+      },
+      {
+        "line_id": "SW_N04_N06_TIE",
+        "node_a": "N04",
+        "node_b": "N06",
+        "closed": true,
+        "normally_closed": false,
+        "capacity_kw": 25.0,
+        "metadata": {},
+        "endpoints": [
+          "N04",
+          "N06"
+        ]
+      },
+      {
+        "line_id": "SW_N05_N06",
+        "node_a": "N05",
+        "node_b": "N06",
+        "closed": true,
+        "normally_closed": true,
+        "capacity_kw": 30.0,
+        "metadata": {},
+        "endpoints": [
+          "N05",
+          "N06"
+        ]
+      }
+    ],
+    "analysis": {
+      "source_nodes": [
+        "G01"
+      ],
+      "energized_nodes": [
+        "G01",
+        "N02",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "deenergized_nodes": [
+        "N03"
+      ],
+      "closed_line_count": 4,
+      "open_line_count": 3,
+      "island_count": 2,
+      "cycles": []
+    }
+  },
+  "pscad_manifest": {
+    "project_name": "SEIAN_LV_Switching",
+    "mcp_server": "powermcp_pscad",
+    "mode": "final_state_snapshot",
+    "operation_count": 7,
+    "missing_line_bindings": [],
+    "changed_operation_count": 5,
+    "changed_calls": [
+      {
+        "tool": "set_component_parameters",
+        "arguments": {
+          "project_name": "SEIAN_LV_Switching",
+          "component_id": 1922872520,
+          "parameters": {
+            "BOpen1": 2,
+            "BOpen2": 2,
+            "BOpen3": 2
+          }
+        },
+        "metadata": {
+          "operation_id": "fault-isolate-n03-01",
+          "command_id": "fault-isolate-n03",
+          "line_id": "SW_N02_N03",
+          "requested_action": "open"
+        }
+      },
+      {
+        "tool": "set_component_parameters",
+        "arguments": {
+          "project_name": "SEIAN_LV_Switching",
+          "component_id": 1972196396,
+          "parameters": {
+            "BOpen1": 2,
+            "BOpen2": 2,
+            "BOpen3": 2
+          }
+        },
+        "metadata": {
+          "operation_id": "fault-isolate-n03-02",
+          "command_id": "fault-isolate-n03",
+          "line_id": "SW_N03_N04",
+          "requested_action": "open"
+        }
+      },
+      {
+        "tool": "set_component_parameters",
+        "arguments": {
+          "project_name": "SEIAN_LV_Switching",
+          "component_id": 1497259391,
+          "parameters": {
+            "BOpen1": 2,
+            "BOpen2": 2,
+            "BOpen3": 2
+          }
+        },
+        "metadata": {
+          "operation_id": "fault-isolate-n03-03",
+          "command_id": "fault-isolate-n03",
+          "line_id": "SW_N03_N05",
+          "requested_action": "open"
+        }
+      },
+      {
+        "tool": "set_component_parameters",
+        "arguments": {
+          "project_name": "SEIAN_LV_Switching",
+          "component_id": 290357505,
+          "parameters": {
+            "BOpen1": 0,
+            "BOpen2": 0,
+            "BOpen3": 0
+          }
+        },
+        "metadata": {
+          "operation_id": "reroute-n04-via-tie-01",
+          "command_id": "reroute-n04-via-tie",
+          "line_id": "SW_N02_N05_TIE",
+          "requested_action": "close"
+        }
+      },
+      {
+        "tool": "set_component_parameters",
+        "arguments": {
+          "project_name": "SEIAN_LV_Switching",
+          "component_id": 477030040,
+          "parameters": {
+            "BOpen1": 0,
+            "BOpen2": 0,
+            "BOpen3": 0
+          }
+        },
+        "metadata": {
+          "operation_id": "reroute-n04-via-tie-02",
+          "command_id": "reroute-n04-via-tie",
+          "line_id": "SW_N04_N06_TIE",
+          "requested_action": "close"
+        }
+      }
+    ],
+    "calls": [
+      {
+        "tool": "set_component_parameters",
+        "arguments": {
+          "project_name": "SEIAN_LV_Switching",
+          "component_id": 1365100656,
+          "parameters": {
+            "BOpen1": 0,
+            "BOpen2": 0,
+            "BOpen3": 0
+          }
+        },
+        "metadata": {
+          "operation_id": "final-state-SW_G01_N02",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_G01_N02",
+          "requested_action": "close"
+        }
+      },
+      {
+        "tool": "set_component_parameters",
+        "arguments": {
+          "project_name": "SEIAN_LV_Switching",
+          "component_id": 1922872520,
+          "parameters": {
+            "BOpen1": 2,
+            "BOpen2": 2,
+            "BOpen3": 2
+          }
+        },
+        "metadata": {
+          "operation_id": "final-state-SW_N02_N03",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_N02_N03",
+          "requested_action": "open"
+        }
+      },
+      {
+        "tool": "set_component_parameters",
+        "arguments": {
+          "project_name": "SEIAN_LV_Switching",
+          "component_id": 290357505,
+          "parameters": {
+            "BOpen1": 0,
+            "BOpen2": 0,
+            "BOpen3": 0
+          }
+        },
+        "metadata": {
+          "operation_id": "final-state-SW_N02_N05_TIE",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_N02_N05_TIE",
+          "requested_action": "close"
+        }
+      },
+      {
+        "tool": "set_component_parameters",
+        "arguments": {
+          "project_name": "SEIAN_LV_Switching",
+          "component_id": 1972196396,
+          "parameters": {
+            "BOpen1": 2,
+            "BOpen2": 2,
+            "BOpen3": 2
+          }
+        },
+        "metadata": {
+          "operation_id": "final-state-SW_N03_N04",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_N03_N04",
+          "requested_action": "open"
+        }
+      },
+      {
+        "tool": "set_component_parameters",
+        "arguments": {
+          "project_name": "SEIAN_LV_Switching",
+          "component_id": 1497259391,
+          "parameters": {
+            "BOpen1": 2,
+            "BOpen2": 2,
+            "BOpen3": 2
+          }
+        },
+        "metadata": {
+          "operation_id": "final-state-SW_N03_N05",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_N03_N05",
+          "requested_action": "open"
+        }
+      },
+      {
+        "tool": "set_component_parameters",
+        "arguments": {
+          "project_name": "SEIAN_LV_Switching",
+          "component_id": 477030040,
+          "parameters": {
+            "BOpen1": 0,
+            "BOpen2": 0,
+            "BOpen3": 0
+          }
+        },
+        "metadata": {
+          "operation_id": "final-state-SW_N04_N06_TIE",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_N04_N06_TIE",
+          "requested_action": "close"
+        }
+      },
+      {
+        "tool": "set_component_parameters",
+        "arguments": {
+          "project_name": "SEIAN_LV_Switching",
+          "component_id": 857324180,
+          "parameters": {
+            "BOpen1": 0,
+            "BOpen2": 0,
+            "BOpen3": 0
+          }
+        },
+        "metadata": {
+          "operation_id": "final-state-SW_N05_N06",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_N05_N06",
+          "requested_action": "close"
+        }
+      }
+    ]
+  },
+  "pscad_execution": {
+    "connected": true,
+    "project_name": "SEIAN_LV_Switching",
+    "applied_operation_count": 7,
+    "pscad_status": "Successfully attached to PSCAD 5.0.1 (Local).",
+    "loaded_projects": "Loaded: D:\\Oshadha\\Professional Self Projects\\SEIAN_power_routing_protocol\\research_power_plane\\pscad_workspace\\SEIAN_PSCAD_Workspace.pswx",
+    "parameter_results": [
+      {
+        "metadata": {
+          "operation_id": "final-state-SW_G01_N02",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_G01_N02",
+          "requested_action": "close"
+        },
+        "result": "Parameters updated for component 1365100656."
+      },
+      {
+        "metadata": {
+          "operation_id": "final-state-SW_N02_N03",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_N02_N03",
+          "requested_action": "open"
+        },
+        "result": "Parameters updated for component 1922872520."
+      },
+      {
+        "metadata": {
+          "operation_id": "final-state-SW_N02_N05_TIE",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_N02_N05_TIE",
+          "requested_action": "close"
+        },
+        "result": "Parameters updated for component 290357505."
+      },
+      {
+        "metadata": {
+          "operation_id": "final-state-SW_N03_N04",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_N03_N04",
+          "requested_action": "open"
+        },
+        "result": "Parameters updated for component 1972196396."
+      },
+      {
+        "metadata": {
+          "operation_id": "final-state-SW_N03_N05",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_N03_N05",
+          "requested_action": "open"
+        },
+        "result": "Parameters updated for component 1497259391."
+      },
+      {
+        "metadata": {
+          "operation_id": "final-state-SW_N04_N06_TIE",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_N04_N06_TIE",
+          "requested_action": "close"
+        },
+        "result": "Parameters updated for component 477030040."
+      },
+      {
+        "metadata": {
+          "operation_id": "final-state-SW_N05_N06",
+          "command_id": "final-state-snapshot",
+          "line_id": "SW_N05_N06",
+          "requested_action": "close"
+        },
+        "result": "Parameters updated for component 857324180."
+      }
+    ],
+    "build_result": {
+      "built": false,
+      "errors": [
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'GND' dimension mismatch -> 1 != 3",
+          "component": "",
+          "status": "error"
+        }
+      ],
+      "warnings": [
+        {
+          "text": "Position is exactly on another instance @917088098.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @2064959577.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @412980970.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1685159136.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @916601747.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @480109148.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @963796649.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @2064959577.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1457697618.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1043085502.",
+          "component": "master:consti",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1685159136.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @916601747.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @480109148.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @991724661.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @847024219.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @319884002.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @870114120.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @746659724.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @2066107510.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @905828077.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @168789879.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1816820017.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1005311614.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1841066542.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @565732175.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @804915148.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @917529092.",
+          "component": "master:consti",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @494528426.",
+          "component": "master:consti",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @2066107510.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @905828077.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1816820017.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1005311614.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @565732175.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @804915148.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @847024219.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @319884002.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @870114120.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @905828077.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1005311614.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @804915148.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @494528426.",
+          "component": "master:consti",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @319884002.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @870114120.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1967442836.",
+          "component": "master:Yload",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @304278282.",
+          "component": "master:Yload",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @304278282.",
+          "component": "master:Yload",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1792930969.",
+          "component": "master:Yload",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @916601747.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @480109148.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @480109148.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @870114120.",
+          "component": "master:multimeter",
+          "status": "warning"
+        }
+      ]
+    },
+    "patched_batch_files": [],
+    "run_result": {
+      "started": true,
+      "project": "SEIAN_LV_Switching",
+      "note": "Build+run started. Poll get_run_status until state is 'idle_or_finished'."
+    },
+    "run_status_history": [
+      {
+        "state": "idle_or_finished",
+        "raw_status": null,
+        "progress": null
+      },
+      {
+        "state": "idle_or_finished",
+        "raw_status": null,
+        "progress": null
+      }
+    ],
+    "build_messages": {
+      "errors": [
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:Sequencer_Breaker",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'BUS_G01' dimension mismatch -> 3 != 1",
+          "component": "master:consti",
+          "status": "error"
+        },
+        {
+          "text": "Signal 'GND' dimension mismatch -> 1 != 3",
+          "component": "",
+          "status": "error"
+        }
+      ],
+      "warnings": [
+        {
+          "text": "Position is exactly on another instance @917088098.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @2064959577.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @412980970.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1685159136.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @916601747.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @480109148.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @963796649.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @2064959577.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1457697618.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1043085502.",
+          "component": "master:consti",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1685159136.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @916601747.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @480109148.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @991724661.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @847024219.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @319884002.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @870114120.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @746659724.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @2066107510.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @905828077.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @168789879.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1816820017.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1005311614.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1841066542.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @565732175.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @804915148.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @917529092.",
+          "component": "master:consti",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @494528426.",
+          "component": "master:consti",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @2066107510.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @905828077.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1816820017.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1005311614.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @565732175.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @804915148.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @847024219.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @319884002.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @870114120.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @905828077.",
+          "component": "master:resistor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1005311614.",
+          "component": "master:inductor",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @804915148.",
+          "component": "master:Sequencer_Breaker",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @494528426.",
+          "component": "master:consti",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @319884002.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @870114120.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1967442836.",
+          "component": "master:Yload",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @304278282.",
+          "component": "master:Yload",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @304278282.",
+          "component": "master:Yload",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @1792930969.",
+          "component": "master:Yload",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @916601747.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @480109148.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @480109148.",
+          "component": "master:multimeter",
+          "status": "warning"
+        },
+        {
+          "text": "Position is exactly on another instance @870114120.",
+          "component": "master:multimeter",
+          "status": "warning"
+        }
+      ],
+      "info_count": 4
+    },
+    "project_output": "",
+    "output_channels": {
+      "error": "No .psout file found for project 'SEIAN_LV_Switching'. Searched: ['D:\\\\Oshadha\\\\Professional Self Projects\\\\SEIAN_power_routing_protocol\\\\research_power_plane\\\\pscad_workspace\\\\SEIAN_LV_Switching.gf46']. Ensure the run has finished and the project's output format is PSOUT."
+    },
+    "channel_data": null,
+    "errors": []
+  }
+}

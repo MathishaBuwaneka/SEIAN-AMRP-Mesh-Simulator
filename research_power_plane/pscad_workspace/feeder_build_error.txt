@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "D:\Oshadha\Professional Self Projects\SEIAN_power_routing_protocol\research_power_plane\scripts\build_lv_feeder.py", line 86, in main
+    report = build_feeder()
+  File "D:\Oshadha\Professional Self Projects\SEIAN_power_routing_protocol\research_power_plane\scripts\build_lv_feeder.py", line 165, in build_feeder
+    chain = _build_line_chain(
+        main,
+    ...<8 lines>...
+        capacity_kw=capacity_by_line[line_id],
+    )
+  File "D:\Oshadha\Professional Self Projects\SEIAN_power_routing_protocol\research_power_plane\scripts\build_lv_feeder.py", line 269, in _build_line_chain
+    raise RuntimeError(
+    ...<2 lines>...
+    )
+RuntimeError: SW_G01_N02: src_ports={'OUT': Port(x=152, y=-60, name='OUT', dim=0, type=<NodeType.OUTPUT: 2>, electrical=<Electrical.FIXED: 0>, signal=<Signal.INTEGER: 2>)} src_port=None switch_ports={'IState': Port(x=237, y=-60, name='IState', dim=1, type=<NodeType.INPUT: 1>, electrical=<Electrical.FIXED: 0>, signal=<Signal.INTEGER: 2>), 'OState': Port(x=243, y=-60, name='OState', dim=1, type=<NodeType.OUTPUT: 2>, electrical=<Electrical.FIXED: 0>, signal=<Signal.INTEGER: 2>)} dst_port=Port(x=237, y=-60, name='IState', dim=1, type=<NodeType.INPUT: 1>, electrical=<Electrical.FIXED: 0>, signal=<Signal.INTEGER: 2>)

@@ -1,0 +1,12 @@
+{
+  "project_name": "SEIAN_LV_Microgrid_Case",
+  "line_bindings": [
+    {"line_id": "SW_G01_N02", "component_id": 101, "closed_parameter": "Closed", "closed_value": 1, "open_value": 0},
+    {"line_id": "SW_N02_N03", "component_id": 102, "closed_parameter": "Closed", "closed_value": 1, "open_value": 0},
+    {"line_id": "SW_N03_N04", "component_id": 103, "closed_parameter": "Closed", "closed_value": 1, "open_value": 0},
+    {"line_id": "SW_N03_N05", "component_id": 104, "closed_parameter": "Closed", "closed_value": 1, "open_value": 0},
+    {"line_id": "SW_N05_N06", "component_id": 105, "closed_parameter": "Closed", "closed_value": 1, "open_value": 0},
+    {"line_id": "SW_N02_N05_TIE", "component_id": 106, "closed_parameter": "Closed", "closed_value": 1, "open_value": 0},
+    {"line_id": "SW_N04_N06_TIE", "component_id": 107, "closed_parameter": "Closed", "closed_value": 1, "open_value": 0}
+  ]
+}

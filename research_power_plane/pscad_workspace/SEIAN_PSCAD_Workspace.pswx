@@ -1,0 +1,15 @@
+<workspace name="SEIAN_PSCAD_Workspace" version="5.0.1" crc="25321307">
+  <projects>
+    <project type="project" name="SEIAN_LV_Switching" filepath=".\SEIAN_LV_Switching.pscx" />
+    <project type="project" name="SEIAN_LV_Timed_Switching" filepath=".\SEIAN_LV_Timed_Switching.pscx" />
+  </projects>
+  <simulations />
+  <pmr />
+  <messagegrid expanded="">
+    <column name="Icon" />
+    <column name="Id" />
+    <column name="Component" />
+    <column name="Namespace" />
+    <column name="Description" />
+  </messagegrid>
+</workspace>

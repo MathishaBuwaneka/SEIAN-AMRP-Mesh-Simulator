@@ -1,0 +1,34 @@
+{
+  "commands": [
+    {
+      "command_id": "fault-isolate-n03",
+      "timestamp": 5.0,
+      "controller_id": "amrp-sdn-controller",
+      "action": "isolate_node",
+      "target_node_id": "N03",
+      "reason": "Protection event at N03; isolate all incident LV paths."
+    },
+    {
+      "command_id": "reroute-n04-via-tie-delayed",
+      "timestamp": 45.0,
+      "controller_id": "amrp-sdn-controller",
+      "action": "reroute_power_path",
+      "source_node_id": "G01",
+      "destination_node_id": "N04",
+      "blocked_nodes": ["N03"],
+      "path": ["G01", "N02", "N05", "N06", "N04"],
+      "close_lines": [["N02", "N05"], ["N04", "N06"]],
+      "reason": "Tie-switch restoration command, delayed by a degraded control-plane link.",
+      "metadata": {
+        "network_route_before": ["N04", "N03", "N02", "G01"],
+        "network_route_after": ["N04", "N06", "N05", "N02", "G01"],
+        "paper_case": "degraded control-plane: delayed restoration after LoRa uplink packet loss",
+        "assumed_control_plane_delay_s": 40.0
+      }
+    }
+  ],
+  "scenario": {
+    "name": "Degraded control-plane case",
+    "description": "Same fault and restoration as scenario 03, but the reroute command is delayed by 40s (5s vs 45s) to stand in for a degraded/lossy AMRP LoRa uplink -- retransmission backoff or a missed gateway hop -- before the SDN controller's decision reaches the power plane. This scenario intentionally only changes the command timestamp gap (a property of this command-replay layer); it does not re-run seian_sim's own LoRa packet-loss model, since that simulator is kept unmodified per AI_CONTEXT.md. Use it to show how long N04/N05/N06 stay de-energized when the control channel itself is the bottleneck, versus the near-immediate restoration in scenario 03."
+  }
+}
