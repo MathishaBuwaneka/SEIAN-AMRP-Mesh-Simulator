@@ -1,0 +1,108 @@
+{
+  "pdf_pages": 16,
+  "references": 12,
+  "pages": [
+    {
+      "page": 1,
+      "words": 409,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 2,
+      "words": 465,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 3,
+      "words": 390,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 4,
+      "words": 374,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 5,
+      "words": 559,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 6,
+      "words": 297,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 7,
+      "words": 486,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 8,
+      "words": 457,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 9,
+      "words": 509,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 10,
+      "words": 475,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 11,
+      "words": 297,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 12,
+      "words": 398,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 13,
+      "words": 469,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 14,
+      "words": 377,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 15,
+      "words": 212,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    },
+    {
+      "page": 16,
+      "words": 349,
+      "width_pt": 595.2760009765625,
+      "height_pt": 841.8900146484375
+    }
+  ],
+  "unresolved_citations_or_references": false,
+  "overfull_boxes": false,
+  "input_hashes_unchanged": true,
+  "verified_source_inputs": 32,
+  "pscad_runs_during_preparation": 0,
+  "pdf_sha256": "0f01d0ae31e5c7a183b887ba1e9b9653b89f3490df68b9fe4775a7052b7cdf15"
+}

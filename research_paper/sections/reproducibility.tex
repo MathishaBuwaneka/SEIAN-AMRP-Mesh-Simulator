@@ -1,0 +1,64 @@
+\section{Reproducibility and Artifact Guide}
+\label{sec:reproducibility}
+The independent manuscript package generates its numerical tables and four
+original figures from a frozen saved-result snapshot. Its generator neither
+launches PSCAD nor writes into operational folders. Snapshot refresh is an
+explicit, read-only access to the source project.
+
+\begin{table}[h]
+\centering\small
+\caption{Manuscript-package contents and their evidential role.}
+\begin{tabularx}{\textwidth}{@{}p{64mm}X@{}}
+\toprule
+Artifact & Role \\
+\midrule
+\code{data/evidence_snapshot.json} & Saved scenario results, input batches, electrical metadata, and GUI-validation summary \\
+\code{data/provenance.json} & Original input hashes, snapshot time, and inspected repository revision \\
+\code{data/scenario_summary.csv} & Numeric values underlying the six-scenario table \\
+\code{scripts/prepare_artifacts.py} & Read-only evidence extraction and figure/table generation \\
+\code{figures/}, \code{tables/} & Generated manuscript assets \\
+\code{research_notes.md} & Literature source audit, claim boundaries, and author checklist \\
+\code{build.ps1} & Local LaTeX and BibTeX build into the paper's build directory \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The inspected repository revision is
+\code{7db42ae0e9f8092065cf77bb206b1a818c29eacd}.
+This identifies the revision present when the artifacts were read, not a
+verified build-time commit for every historical experiment. Individual SHA-256
+hashes identify the actual inputs used by the manuscript. The existing
+project context records PSCAD 5.0.1 Educational, Python 3.13.7,
+\code{mhi.pscad} 2.9.7, \code{mhi.psout} 1.3.0, PowerMCP 0.3.0,
+MCP 2.1.1, Streamlit 1.63.0, and Playwright 1.62.0. These are recorded local
+versions, not a complete environment lock or a claim of compatibility across
+other installations. PSCAD licensing and a compatible compiler remain
+requirements for independently rerunning the electrical experiments.
+
+The source workspace is \path{research_power_plane/pscad_workspace}.
+Its principal evidence files are \code{transient_scenario_results.json},
+\code{timed_feeder_build_report.json}, and
+\path{validation/graphical_gui_validation.json}.
+Source modules governing the principal claims are
+\code{power_plane.py} (per-operation acceptance), \code{timeline.py}
+(state-changing schedules), \code{pscad_adapter.py} (component mapping),
+\code{pscad_mcp_client.py} and \code{pscad_mcp_server.py} (execution),
+and \code{transient_analysis.py} (metric definitions).
+
+\paragraph{Rebuild the paper.}
+Run the optional artifact generator and then the PDF build from this folder:
+\begin{quote}\small\ttfamily
+py -B scripts/prepare\_artifacts.py\\
+.\textbackslash build.ps1
+\end{quote}
+Only artifact generation needs Python, Matplotlib, and NumPy. The document
+uses the conventional \code{article} class and BibTeX; no online service or
+venue-specific template is required.
+
+\paragraph{Reproduce the science.}
+Rebuilding tables does not reproduce the EMT experiments. A scientific release
+must additionally archive the exact case and component library, compiler and
+dependency versions, initialization, command and fault manifests, per-scenario
+\code{.psout} files, solver messages, and rerunnable analysis. Archive each raw
+output before another run replaces it. Author and venue review is necessary
+before public release.

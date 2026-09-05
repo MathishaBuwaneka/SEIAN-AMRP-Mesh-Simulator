@@ -1,0 +1,106 @@
+\section{Experimental Method and Evidence Handling}
+\label{sec:methods}
+\subsection{Saved Scenario Matrix}
+The evaluation is a read-only analysis of existing experiment artifacts,
+frozen for manuscript preparation on 5 September 2026. No new PSCAD
+simulations were launched while producing the paper. There is one saved
+deterministic result per matrix condition, so no confidence interval,
+stochastic reliability estimate, or repeated-run performance distribution is
+reported.
+
+The six conditions are: S1, no-fault baseline; S2, N03 isolation at 5 s without
+restoration; S3, the same isolation followed by tie closure at 6 s; S4, attempted
+closure of a tie that would create a loop in the initial topology; S5, isolation
+at 5 s and deliberately delayed tie closure at 45 s; and S6, a native fault
+at 4.8--5.2 s with isolation at 5 s and restoration at 6 s. S2 and S3 retain
+``fault'' terminology in some originating filenames or scenario descriptions,
+but contain only logical isolation commands, not an applied physical fault.
+Only S6 energizes the native fault component.
+
+The input reason string in S6 refers to protection detecting a fault. This is
+scenario annotation, not evidence of a simulated detector. Both fault timing
+and controller timing are provided in advance in the same experiment input.
+The 0.2-s interval between fault inception and isolation is imposed; it does
+not measure relay decision time or communication delay.
+
+\begin{table}[tb]
+\centering\footnotesize
+\caption{Saved experiment matrix. Accepted commands are shown as accepted/issued.
+Events count individual breaker transitions. The N04 duration is time below
+200 V; $\geq$ marks an interval still ongoing when the run ended.}
+\label{tab:scenarios}
+\begin{tabularx}{\textwidth}{@{}lXrrrrr@{}}
+\toprule
+ID & Condition & Run (s) & Cmd. & Events & Samples/ch. & N04 (s) \\
+\midrule
+\input{tables/scenario_rows}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Measured Channels and Interruption Metric}
+Each run provides six bus RMS voltage channels in kV; seven branch RMS-current
+channels in kA; seven branch active-power channels in MW; seven breaker-control
+state channels; three instantaneous fault-current channels in kA; and one
+fault-state channel. These sum to 31 research channels. The binary
+\code{State_*} channels record scheduled control signals, not independent
+mechanical-contact feedback. The fault-state signal uses 1 for active,
+unlike the breaker convention in Equation~\ref{eq:polarity}.
+
+The raw output also contains animation-related traces. The existing reader
+distinguishes the research recorders from sparsely sampled display channels
+instead of treating every exported trace as a full-rate measurement. The saved
+integration evidence reports 146 raw traces and 31 selected research traces.
+
+For recorded bus RMS voltage $V_i[n]$, define a threshold indicator
+\begin{equation}
+ z_i[n]=\begin{cases}
+ 1,& t_n\geq 0.5\unit{s}\ \text{and}\ V_i[n]<0.2\unit{kV},\\
+ 0,&\text{otherwise}.
+ \end{cases}
+\end{equation}
+An interval begins at the first below-threshold sample and ends at the first
+sample no longer below threshold. The implemented analysis merges consecutive
+intervals separated by at most 0.02 s, then discards intervals shorter than
+0.01 s. If an interval continues to the last sample, the saved duration is
+right-censored at the run end. For each retained interval $j$,
+\begin{equation}
+ D_{i,j}=t_{i,j}^{\mathrm{end}}-t_{i,j}^{\mathrm{start}}.
+\end{equation}
+Because of the merge rule, $D_{i,j}$ can include very short recovered gaps;
+it is a sustained-interruption envelope, not necessarily the exact integral of
+$z_i$. The threshold is 0.5 per unit of the nominal 400-V voltage, chosen for
+this experiment. It is not a claim of compliance with a voltage-quality
+standard, nor a customer reliability index such as SAIDI.
+
+The peak absolute current for fault phase $\phi$ is
+\begin{equation}
+ I_{\phi}^{\mathrm{pk}}=\max_n |i_{\phi}[n]|.
+\end{equation}
+The pipeline computes peaks and threshold intervals from the full recorded
+series before reducing the displayed traces. Sample alignment is
+$50\unit{\mu s}$; this spacing is not a calibrated accuracy bound on RMS
+filter dynamics or switching-device behavior.
+
+\subsection{Provenance and Visualization}
+The source result file stores final values, extrema, event-aligned samples,
+interruption metrics, and a 501-point evenly indexed preview per channel.
+The manuscript script verifies channel counts, sample counts, preview order,
+finite values, final-value consistency, and interval arithmetic against this
+snapshot. It does not reconstruct full-rate waveforms from those previews.
+The numerical tables use stored full-rate summaries; the plotted voltage and
+RMS-current trajectories use explicitly labeled decimated previews.
+
+In particular, evenly subsampled instantaneous fault current can alias the
+50-Hz waveform and miss a peak. The paper therefore presents fault-current
+peak bars from the saved full-rate metrics rather than inventing a detailed
+waveform between preview points. Publication-grade transient waveform figures
+will require separately archived raw outputs.
+
+Provenance includes the inspected repository revision, SHA-256 hashes of the
+read input artifacts and relevant source modules, the electrical build report,
+and the scenario inputs. A recorded graphical-validation artifact supplies
+additional evidence for baseline selection, physical-fault selection, and a
+command edit through the dashboard. This evidence is reported as an earlier
+integration check, not a new GUI experiment conducted during manuscript
+preparation.

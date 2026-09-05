@@ -1,0 +1,5 @@
+build/*
+!build/main.pdf
+!build/verification.json
+__pycache__/
+.mplconfig/

@@ -1,0 +1,131 @@
+\section{Results}
+\label{sec:results}
+\subsection{Baseline, Isolation, and Loop Rejection}
+All six saved matrix runs report 31 research channels, zero build errors, and
+zero build warnings. The recorded sample counts match their respective
+simulation durations at the specified output interval
+(Table~\ref{tab:scenarios}). This is evidence of successful case execution and
+recorder extraction, not proof that the parameter set is physically calibrated.
+
+In S1, the downstream final RMS voltages range from approximately 382.0 to
+386.97 V at N03--N06. The normally open tie currents are negligible, and no
+retained below-threshold interval is reported. S2 opens the three incident
+branches of N03 at 5 s. N03--N06 then remain below the analysis threshold to
+the 6-s run end. N04 first crosses below 200 V at 5.0165 s, giving an observed
+duration of 0.9835 s. This is only a lower bound on the unresolved
+interruption, not a recovery time.
+
+S4 rejects the single loop-forming closure and produces no state-changing
+switching events. Its final voltage profile remains consistent with the
+baseline. This establishes the intended behavior for that particular cycle
+test. It does not establish atomic rejection for a mixed command containing
+both acceptable and unacceptable operations.
+
+\subsection{Tie Restoration and Imposed Delay}
+In S3, tie closure at 6 s restores N04, N05, and N06 while N03 stays isolated.
+The respective final voltages are 380.51, 387.37, and 383.43 V
+(Table~\ref{tab:voltages}). The final tie currents are 32.54 A on N02--N05
+and 13.45 A on N04--N06. These current magnitudes provide electrical evidence
+that the alternate branches carry load after closure, beyond a graphical
+indication that an edge is closed. They do not establish a thermal margin
+against measured cable ratings.
+
+\begin{table}[tb]
+\centering\small
+\caption{Saved final bus RMS voltage (V). The small N03 residual after
+restoration is not usable service; finite off-state paths remain in the model.}
+\label{tab:voltages}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Bus & S1 baseline & S3 restoration & S6 physical fault \\
+\midrule
+\input{tables/voltage_rows}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+N04 and N06 remain below 200 V for approximately 0.9984 s in S3, and N05 for
+0.99805 s. In S5, changing the tie-closure time from 6 to 45 s increases each
+of these saved interval durations by 39 s; their final voltage values remain
+the same to the displayed precision. The difference is the direct consequence
+of the imposed restoration schedule. It cannot be described as an SDN speedup
+over a measured legacy network, because neither network-delay distribution nor
+communications implementation is varied in these runs.
+
+\begin{table}[tb]
+\centering\small
+\caption{Completed downstream intervals below 200 V, from saved full-rate
+metrics. Displayed decimal places reflect sample-based accounting rather than
+physical calibration accuracy.}
+\label{tab:interruptions}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Bus & S3 duration (s) & S5 duration (s) & S6 duration (s) \\
+\midrule
+\input{tables/interruption_rows}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Native Physical Fault and Restoration}
+The physical-fault scenario produces a different voltage trajectory from
+isolation-only switching. The fault input is active from 4.8 to 5.2 s;
+N03--N06 cross below threshold around 4.820 s, before the scheduled breaker
+opening at 5 s. The maximum absolute fault phase currents are 1.552, 1.554,
+and 1.552 kA for A, B, and C, respectively. The largest recorded phase peak
+is 1.554333 kA. In contrast, inactive-fault cases exhibit approximately
+1.3 mA maximum leakage rather than a high-current event.
+
+Opening the three N03 incident branches removes the source-fed route to the
+fault location. The fault logic clears at 5.2 s, and the healthy downstream
+buses are reconnected through the two ties at 6 s. Their below-threshold
+durations are 1.19485 s at N04, 1.19455 s at N05, and 1.19495 s at N06.
+Their final voltages and tie currents agree with S3 at the reported precision.
+N03 remains isolated to the 7-s run end, with only a small residual measured
+voltage. Restoring healthy loads therefore does not imply restoration of the
+faulted bus.
+
+\begin{figure}[tb]
+\centering\includegraphics[width=0.96\textwidth]{physical_fault.pdf}
+\caption{S6 physical-fault response near the switching events. The upper two
+panels use the stored 501-point voltage and RMS-current previews from a
+140,001-sample-per-channel run; they are decimated trajectories, not full-rate
+transient waveforms. The lower panel shows exact input schedules, not measured
+breaker-contact feedback. Dotted lines mark 4.8, 5.0, 5.2, and 6.0 s.}
+\label{fig:physical}
+\end{figure}
+
+Figure~\ref{fig:physical} combines the stored RMS trajectories with the exact
+scenario input schedule. Figure~\ref{fig:comparison} reports the interval
+durations and fault-current peaks from the stored full-rate metrics. The
+roughly 15--20 ms difference between a programmed transition and an RMS
+threshold crossing should not be interpreted as communication latency. It
+includes the voltage measurement's response and the electrical transient, as
+well as the threshold definition.
+
+\begin{figure}[tb]
+\centering\includegraphics[width=\textwidth]{comparison.pdf}
+\caption{Saved full-rate summary metrics. Panel (a) uses a logarithmic duration
+axis to show the intentionally imposed long wait in S5 alongside S3 and S6.
+Panel (b) reports phase-current peaks for S6; no peaks are estimated from
+decimated waveform previews.}
+\label{fig:comparison}
+\end{figure}
+
+\subsection{Recorded Dashboard Integration Evidence}
+The graphical-validation artifact dated 5 September 2026 records three
+successful actions: selecting the baseline, selecting the physical fault, and
+editing a controller command. All three retain the same PSCAD process
+identifier and return 31 selected channels with no reported errors. The
+baseline has 20,001 samples per channel; both fault-related runs have 140,001.
+The baseline fault-current peak is approximately $1.26\times10^{-6}$ kA,
+while the phase-A peak for the physical-fault runs is approximately 1.552 kA.
+The command-edit validation moves isolation from 5.0 to 5.1 s while retaining
+the 6.0-s restoration time and the same fixed feeder model.
+
+Together with the parameter manifests and fresh-output checks, this evidence
+supports the implemented dashboard-to-PSCAD batch workflow. It is not a
+measurement of end-to-end dashboard latency, proof of uninterrupted control
+connectivity, or a live feedback demonstration. The project context also
+records 114 passing automated tests; those tests were not rerun for this
+read-only manuscript task and are not counted as additional experiments.

@@ -1,0 +1,117 @@
+\section{System Architecture and Command Semantics}
+\label{sec:architecture}
+\subsection{Ownership Boundaries and Data Flow}
+The original networking simulator remains in its existing repository modules.
+The power-plane extension is housed separately under
+\code{research_power_plane}, with dedicated command adaptation, topology,
+timeline, PSCAD mapping, automation, measurement, and dashboard modules.
+This separation allows networking colleagues to evolve their algorithms while
+the adapter handles changes in their output fields. It does not guarantee
+compatibility with an arbitrary future schema: new aliases and semantic changes
+must be tested at the adapter boundary.
+
+Figure~\ref{fig:architecture} shows the implemented workflow. A controller
+output batch or a graphical dashboard submission supplies topology, commands,
+optional faults, and logical-to-PSCAD bindings. Canonical JSON remains the
+exchange representation. The dashboard provides feeder selection, switch-state
+controls, scheduled operations, fault forms, and mapping tables; advanced raw
+JSON remains available. Committing an edit can automatically invoke the same
+pipeline as a command-line replay. Selecting an element or moving the
+scheduled-state preview is not a simulation request.
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=\textwidth]{architecture.pdf}
+\caption{Implemented batch workflow. Solid arrows indicate current processing
+paths. Measurement display follows run completion; no feedback path from the
+running EMT solver to the networking controller is implemented.}
+\label{fig:architecture}
+\end{figure}
+
+The displayed network state and the PSCAD wiring are related but not
+interchangeable. The present dashboard operates on the fixed six-bus electrical
+case and its component map. A new graph edge without a corresponding wired
+PSCAD branch does not create a new physical circuit. Extending the feeder
+requires an electrical-model and mapping update.
+
+\subsection{Command Contract and Graph Model}
+Represent a normalized command as
+\begin{equation}
+ c_k = (\mathrm{id}_k,\,\tau_k,\,a_k,\,\mathcal{O}_k,\,\mathcal{M}_k),
+\end{equation}
+where $\tau_k$ is a simulation-time timestamp, $a_k$ is an action,
+$\mathcal{O}_k$ contains target nodes, edges, or a requested path, and
+$\mathcal{M}_k$ holds controller identity and metadata. Supported actions
+include opening or closing a line, isolating or restoring a node, applying
+a switch set, and requesting a reroute path. Commands are processed in a
+stable chronological order, retaining input order for equal timestamps.
+
+Let the physical connectivity model be the undirected graph
+$\mathcal{G}=(\mathcal{V},\mathcal{E})$, with $x_e=1$ for a logically closed
+branch and $x_e=0$ for an open branch. The currently conducting graph is
+\begin{equation}
+ \mathcal{G}_x = (\mathcal{V},\{e\in\mathcal{E}:x_e=1\}).
+\end{equation}
+For a source set $\mathcal{S}$, the software's energized-node estimate is the
+union of connected components containing a source. This is a connectivity
+estimate, not a voltage calculation. Likewise, the analysis field called
+``island count'' counts connected components; it does not establish viable
+grid-forming operation within a separated component.
+
+With radiality preservation enabled and an initially acyclic graph, a proposed
+closure $e=(u,v)$ is rejected if a path already connects $u$ and $v$ in
+$\mathcal{G}_x$. Opening an edge cannot introduce a cycle. This local rule
+preserves a forest during accepted edge changes, but does not require every
+load to remain connected. It also does not enforce voltage limits, branch
+ratings, source capacity, protection selectivity, or synchronization between
+multiple sources.
+
+An implementation detail limits the strength of the validation guarantee.
+The current command handler records command-level warnings while processing
+individual requested operations. A command may therefore be marked
+unaccepted or partially accepted after some valid edge operations have already
+been applied. Only accepted state-changing operations enter the switching
+timeline; rejected operations and no-ops do not. This is
+\emph{not an atomic, all-or-nothing transaction}. The loop-rejection experiment
+tests a single rejected closure, not general rollback behavior. A production
+interlock would require validation of the complete prospective transition
+before committing it.
+
+\subsection{Schedule Compilation and Execution}
+Each logical line identifier maps to a PSCAD timed-logic component and its
+associated three-phase breaker. The component's control convention reverses
+the graph variable:
+\begin{equation}
+ b_e(t)=1-x_e(t),\qquad b_e=0\text{ closed},\quad b_e=1\text{ open}.
+\label{eq:polarity}
+\end{equation}
+The adapter writes the initial state and operation count and times using
+\code{INIT}, \code{NUMS}, \code{TO1}, and \code{TO2}. The current mapping
+permits at most two transitions per breaker during one run, consistent with
+the selected timed component \cite{pscadTimedBreaker}. An unchanged branch
+receives an operation beyond the simulation window to accommodate the
+component's lack of a zero-operation setting. The generated waveform inside
+the experiment window remains constant.
+
+Execution uses a project-local wrapper around PowerMCP, a Model Context
+Protocol (MCP) server exposing PSCAD automation tools. A persistent localhost
+service owns the application connection. The local wrapper focuses the intended
+case and uses a blocking project run so that returning control means the run
+has completed. The persistence avoids reopening the application for every
+dashboard action; it does not represent an independently powered,
+always-available field control network.
+
+The client serializes project parameter writes with a run lock. To avoid the
+PSCAD output-overwrite dialog, it removes only the current case's generated
+output before building. Other case files and separately named archives are
+preserved. Successful execution requires acceptable build messages, a newly
+produced output fingerprint, and the expected measured channels. Tool errors,
+missing channels, or stale results fail the request rather than being presented
+as a successful new simulation.
+
+These are engineering safeguards, not a formal proof of end-to-end correctness.
+In particular, clearing the current raw output means that publication-grade
+reproducibility needs a separate immutable archive for every run. Each new
+submission starts another continuous EMT experiment from its specified initial
+conditions. The current system does not alter a running simulation in response
+to newly arriving controller messages.

@@ -1,0 +1,7 @@
+scenario_id,artifact_key,description,duration_s,commands,accepted_commands,switch_events,samples_per_channel,N04_below_threshold_s,N04_ongoing_at_end,N04_final_V,maximum_phase_fault_peak_kA
+S1,01_no_fault_baseline,Baseline,1.0,0,0,0,20001,0.0,False,384.8255972791032,1.2634850644771894e-06
+S2,02_single_fault_isolation,Isolation only,6.0,1,1,3,120001,0.9834999999999994,True,2.0854556915178345e-07,1.26348506735509e-06
+S3,03_tie_switch_restoration,Tie restoration,7.0,2,2,5,140001,0.9983999999999993,False,380.5067769848458,1.26348506735509e-06
+S4,04_loop_rejection,Loop rejection,6.0,1,0,0,120001,0.0,False,384.8255986018705,1.26348506735509e-06
+S5,05_degraded_control_plane,Delayed restoration,46.0,2,2,5,920001,39.998400000000004,False,380.5067769854878,1.26348506735509e-06
+S6,06_physical_fault_restoration,Physical fault,7.0,2,2,5,140001,1.1948499999999997,False,380.50677698484577,1.5543333196725602

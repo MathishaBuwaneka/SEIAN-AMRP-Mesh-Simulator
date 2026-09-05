@@ -1,0 +1,110 @@
+\section{Discussion, Limitations, and Research Agenda}
+\label{sec:discussion}
+\subsection{What the Evidence Establishes}
+The saved artifacts show consistency across three representations: a requested
+network action, the accepted operation-level schedule, and the resulting
+electrical measurements. The isolation-only and physical-fault cases separate
+two phenomena that a purely graphical demonstration might conflate.
+Disconnecting a bus is not itself a short circuit; the native fault case
+adds an independently scheduled conductive path and measured fault current.
+Similarly, tie closure is supported by measured branch current and downstream
+voltage recovery, not just a changed line color.
+
+The workflow is useful as a collaboration boundary. Networking colleagues can
+provide candidate routes without becoming responsible for PSCAD component
+identifiers, while electrical-model development can proceed without rewriting
+their routing code. The operation and measurement records make disagreements
+inspectable: a missing graph path, rejected closure, invalid mapping, failed
+build, stale output, and an electrically poor result are different failure
+classes. This separation supports debugging and subsequent experimental design.
+
+Nevertheless, traceability is not equivalent to electrical admissibility.
+Radiality and source connectivity are necessary modeling checks for the chosen
+scenario, but they are not a complete operating envelope. An overload or
+unacceptable voltage may occur in an acyclic, source-connected network. A
+future controller must use calibrated electrical constraints and independent
+interlocks before these commands could be considered for hardware.
+
+\subsection{Threats to Validity}
+\paragraph{Electrical validity.}
+The six-bus network is intentionally small and uses illustrative branch
+impedances, source settings, and resistive loads. The load-sizing scalar is
+not the load power factor, and demand is voltage dependent. There is no
+validated transformer, grounding arrangement, DER controller, switching arc,
+protection curve, or grid-forming island. The restored voltage range should
+not be generalized to a campus or community microgrid without a new parameter
+set and validation.
+
+\paragraph{Control and safety semantics.}
+The implemented route checks are local and operation based. Partial command
+execution is possible, and command warnings are not equivalent to a
+transactional abort. This is a material limitation for generalizing the
+loop-rejection result. Atomic validation, explicit safe intermediate states,
+independent permissives, and rollback or recovery policies should precede
+any live or hardware-facing controller integration.
+
+\paragraph{Timing and communications.}
+No independent communication failure is simulated in the electrical run.
+The control delay is an input, not an observed transport characteristic.
+An always-connected control-plane objective remains untested, including its
+power supply, redundancy, reconnection behavior, and failure isolation.
+The MCP service is a local automation mechanism, not a safety-rated
+field protocol or evidence of secure, reliable network delivery.
+
+\paragraph{Measurement and repeatability.}
+The analysis threshold and interval filtering are experimental definitions.
+The selected breaker-state traces are controller outputs rather than
+independent contacts. The stored 501-point previews cannot support detailed
+fault-waveform reconstruction. No timestep-convergence study, independently
+recomputed per-scenario raw-output analysis, repeated-run variance, or
+instrument calibration is supplied with this draft. The saved deterministic
+matrix supports functional inspection, not statistical reliability claims.
+
+\paragraph{Novelty and comparison.}
+Software-defined microgrids and cyber-physical testbeds already exist. The
+current manuscript does not show that its automation architecture outperforms
+those systems, or that the networking algorithm is optimal. A future venue
+submission must align its contribution with an appropriately scoped systems
+or experimental-methods claim, or add a genuinely new and evaluated control
+method.
+
+\subsection{Next Experimental Stage}
+The next stage should first freeze measured or benchmark electrical
+parameters, validate the steady state and fault level independently, and
+repeat the cases at multiple EMT time steps. A larger feeder and unbalanced
+loads would test whether the adapter remains useful beyond the current
+balanced six-bus example. Branch ampacity, source limits, neutral and grounding
+models, and load dynamics should be explicit inputs rather than inferred from
+network-capacity labels.
+
+Live integration then needs an agreed controller transport with versioned
+messages, identifiers, acknowledgments, stale-command handling, and a
+well-defined failure policy. Fault detection must originate from measured
+electrical signals if the experiment is to evaluate protection response.
+Closing the measurement-to-controller loop also requires an explicit clock
+and synchronization strategy; established federation approaches such as
+HELICS and FNCS provide relevant design precedents
+\cite{palmintier2017,ciraci2014}, but choosing or integrating one is future
+work.
+
+A useful comparative protocol would hold the electrical case fixed and vary
+only the controller and communication treatment. Candidate conditions are
+manual or fixed restoration, the current supplied-route policy, and the
+networking team's updated policy. Controlled delay, loss, disconnection, and
+recovery distributions should use documented seeds and repeated trials.
+Record detection time, issue time, receipt time, breaker operation, and load
+recovery separately; do not collapse them into a single ``SDN delay.''
+
+The evaluation should report operation-level and transaction-level rejection,
+voltage-limit violations, loading limits, switching count, recovery duration,
+and unavailable demand. For example, a future energy-not-served measure could
+be defined using a specified counterfactual demand trajectory:
+\begin{equation}
+ E_{\mathrm{NS}}=\sum_i\int
+ \max\{P_i^{\mathrm{required}}(t)-P_i^{\mathrm{served}}(t),0\}\,dt.
+\end{equation}
+This metric is not computed here. In a resistive-load model, reduced consumed
+power during undervoltage is not automatically equivalent to disconnected
+customer demand; the counterfactual must be stated before calculating such
+an index. Comparative results should include uncertainty appropriate to the
+randomized treatments and retain all raw electrical and communication logs.
