@@ -129,22 +129,41 @@ def _run_scenario(
         pscad_mapping_payload=None,
         execute_in_pscad=False,
         simulation_mode="transient",
+        physical_fault_payload=payload,
     )
     final = result.final_power_plane
     analysis = final["analysis"]
-    manifest = adapter.manifest_for_timeline(result.switching_timeline)
+    manifest = adapter.manifest_for_timeline(
+        result.switching_timeline,
+        result.physical_faults,
+    )
 
     applied: dict[str, Any] = {}
+    applied_faults: dict[str, Any] = {}
     for call in manifest["calls"]:
         arguments = call["arguments"]
         metadata = call["metadata"]
         canvas.component(arguments["component_id"]).parameters(**arguments["parameters"])
-        applied[metadata["line_id"]] = {
-            "initial_closed": metadata["initial_closed"],
-            "final_closed": metadata["final_closed"],
-            "events": metadata["events"],
-            "parameters": arguments["parameters"],
-        }
+        if metadata.get("domain") == "physical_fault":
+            fault_row = applied_faults.setdefault(
+                metadata["fault_id"],
+                {
+                    "node_id": metadata["node_id"],
+                    "requested_action": metadata["requested_action"],
+                    "components": {},
+                },
+            )
+            fault_row["components"][metadata["role"]] = {
+                "component_id": arguments["component_id"],
+                "parameters": arguments["parameters"],
+            }
+        else:
+            applied[metadata["line_id"]] = {
+                "initial_closed": metadata["initial_closed"],
+                "final_closed": metadata["final_closed"],
+                "events": metadata["events"],
+                "parameters": arguments["parameters"],
+            }
 
     project.parameters(**manifest["project_settings"])
 
@@ -158,8 +177,17 @@ def _run_scenario(
     project.run()
 
     command_times = sorted(set(result.switching_timeline.command_timestamps))
-    channels = _read_channels(project, command_times, not_before=run_started)
-    measured_metrics = _measured_metrics(channels, command_times)
+    measurement_event_times = sorted(
+        set(command_times)
+        | {fault.start_s for fault in result.physical_faults}
+        | {fault.end_s for fault in result.physical_faults}
+    )
+    channels = _read_channels(project, measurement_event_times, not_before=run_started)
+    measured_metrics = _measured_metrics(
+        channels,
+        command_times,
+        result.physical_faults,
+    )
     print(
         f"  energized={len(analysis['energized_nodes'])} "
         f"deenergized={len(analysis['deenergized_nodes'])} "
@@ -172,8 +200,10 @@ def _run_scenario(
         "commands": len(commands),
         "accepted_commands": sum(1 for plan in result.plans if plan.accepted),
         "analysis": analysis,
+        "physical_faults": [fault.to_dict() for fault in result.physical_faults],
         "timeline": result.switching_timeline.to_dict(),
         "applied_switch_schedule": applied,
+        "applied_fault_schedule": applied_faults,
         "build_messages": build_messages,
         "measured_metrics": measured_metrics,
         "channels": channels,
@@ -216,22 +246,43 @@ def _read_channels(
 def _measured_metrics(
     channels: dict[str, dict[str, Any]],
     command_times_s: list[float],
+    physical_faults: list[Any],
 ) -> dict[str, Any]:
     voltage_interruptions = {
         name.removeprefix("Vrms_"): row.get("interruptions", [])
         for name, row in channels.items()
         if name.startswith("Vrms_") and row.get("interruptions")
     }
+    event_times = sorted(
+        set(command_times_s)
+        | {fault.start_s for fault in physical_faults}
+        | {fault.end_s for fault in physical_faults}
+    )
     event_evidence = []
-    for event_time in command_times_s:
+    for event_time in event_times:
+        event_kinds = []
+        if event_time in command_times_s:
+            event_kinds.append("controller_command")
+        for fault in physical_faults:
+            if event_time == fault.start_s:
+                event_kinds.append(f"fault_inception:{fault.fault_id}")
+            if event_time == fault.end_s:
+                event_kinds.append(f"fault_clearance:{fault.fault_id}")
         evidence: dict[str, Any] = {
-            "command_time_s": event_time,
+            "event_time_s": event_time,
+            "event_kinds": event_kinds,
             "bus_voltage_kv": {},
             "breaker_state": {},
+            "fault_current_ka": {},
+            "fault_state": {},
         }
         for name, row in channels.items():
             event = next(
-                (item for item in row.get("events", []) if item["command_time_s"] == event_time),
+                (
+                    item
+                    for item in row.get("events", [])
+                    if item.get("event_time_s", item.get("command_time_s")) == event_time
+                ),
                 None,
             )
             if event is None:
@@ -241,11 +292,27 @@ def _measured_metrics(
                 evidence["bus_voltage_kv"][name.removeprefix("Vrms_")] = compact
             elif name.startswith("State_"):
                 evidence["breaker_state"][name.removeprefix("State_")] = compact
+            elif name.startswith("Ifault"):
+                evidence["fault_current_ka"][name] = compact
+            elif name.startswith("FaultState_"):
+                evidence["fault_state"][name.removeprefix("FaultState_")] = compact
         event_evidence.append(evidence)
+
+    fault_current_peaks = {
+        name: max(abs(float(row.get("min", 0.0))), abs(float(row.get("max", 0.0))))
+        for name, row in channels.items()
+        if name.startswith("Ifault")
+    }
 
     return {
         "voltage_threshold_kv": 0.2,
         "voltage_interruptions": voltage_interruptions,
+        "fault_current_peak_abs_ka": fault_current_peaks,
+        "fault_state_final": {
+            name.removeprefix("FaultState_"): row.get("final")
+            for name, row in channels.items()
+            if name.startswith("FaultState_")
+        },
         "event_evidence": event_evidence,
     }
 
@@ -314,6 +381,10 @@ def _print_summary(results: dict[str, Any]) -> None:
             print(f"    {key:24s} {volts[key] * 1000:8.1f} V")
         for key in sorted(amps):
             print(f"    {key:24s} {amps[key] * 1000:8.2f} A")
+        for key, peak in sorted(
+            row["measured_metrics"].get("fault_current_peak_abs_ka", {}).items()
+        ):
+            print(f"    {key:24s} peak {peak * 1000:8.2f} A")
         for node, intervals in row["measured_metrics"]["voltage_interruptions"].items():
             for interval in intervals:
                 suffix = " (ongoing at end)" if interval["ongoing_at_end"] else ""

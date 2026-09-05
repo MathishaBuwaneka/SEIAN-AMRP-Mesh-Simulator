@@ -100,6 +100,8 @@ class TestExtractChannelPaths:
                 {"path": "Root/Main/P_SW_G01_N02/0/1", "samples": 20001},
                 {"path": "Root/Main/Q_SW_G01_N02/0/1", "samples": 20001},
                 {"path": "Root/Main/State_SW_G01_N02/0/1", "samples": 20001},
+                {"path": "Root/Main/IfaultA_FAULT_N03/0/1", "samples": 20001},
+                {"path": "Root/Main/FaultState_FAULT_N03/0/1", "samples": 20001},
                 # animate="true" GUI fields -- not results, must be excluded
                 {"path": "Root/Main/SW_G01_N02/0/BOpen1", "samples": 1},
                 {"path": "Root/Main/PQ_SW_G01_N02/2/Pd", "samples": 3},
@@ -113,6 +115,8 @@ class TestExtractChannelPaths:
             "Root/Main/P_SW_G01_N02/0/1",
             "Root/Main/Q_SW_G01_N02/0/1",
             "Root/Main/State_SW_G01_N02/0/1",
+            "Root/Main/IfaultA_FAULT_N03/0/1",
+            "Root/Main/FaultState_FAULT_N03/0/1",
         ]
 
     def test_drops_names_with_stray_non_printable_bytes(self):
@@ -135,6 +139,20 @@ class TestExtractChannelPaths:
         }
         assert len(_extract_channel_paths(reply)) == MAX_READ_CHANNELS
 
+    def test_uncapped_selection_returns_every_recorder_channel(self):
+        from seian_power_pipeline.pscad_mcp_client import (
+            MAX_READ_CHANNELS,
+            _extract_channel_paths,
+        )
+
+        reply = {
+            "channels": [
+                {"path": f"Root/Main/Vrms_N{i:03d}/0/1", "samples": 10}
+                for i in range(MAX_READ_CHANNELS + 4)
+            ]
+        }
+        assert len(_extract_channel_paths(reply, limit=None)) == MAX_READ_CHANNELS + 4
+
     def test_bad_shapes_return_empty(self):
         from seian_power_pipeline.pscad_mcp_client import _extract_channel_paths
 
@@ -143,6 +161,40 @@ class TestExtractChannelPaths:
 
 
 class TestPscadRuntimeGuards:
+    def test_merges_chunked_channel_replies(self):
+        from seian_power_pipeline.pscad_mcp_client import _merge_channel_data
+
+        merged = _merge_channel_data(
+            [
+                {
+                    "file": "case.psout",
+                    "sample_count": 100,
+                    "channels": {"Root/Main/Vrms_N03/0/1": {"name": "Vrms_N03"}},
+                    "not_found": ["missing-a"],
+                },
+                {
+                    "result": {
+                        "file": "case.psout",
+                        "sample_count": 100,
+                        "channels": {
+                            "Root/Main/FaultState_FAULT_N03/0/1": {
+                                "name": "FaultState_FAULT_N03"
+                            }
+                        },
+                        "not_found": ["missing-a", "missing-b"],
+                    }
+                },
+            ]
+        )
+
+        assert merged["sample_count"] == 100
+        assert merged["channel_count"] == 2
+        assert set(merged["channels"]) == {
+            "Root/Main/Vrms_N03/0/1",
+            "Root/Main/FaultState_FAULT_N03/0/1",
+        }
+        assert merged["not_found"] == ["missing-a", "missing-b"]
+
     def test_extracts_distinct_errors_from_live_build_shapes(self):
         from seian_power_pipeline.pscad_mcp_client import _reported_errors
 
@@ -163,8 +215,10 @@ class TestPscadRuntimeGuards:
         assert _fresh_psout_files(before, after) == ["new.psout", "old.psout"]
 
     def test_run_acknowledgement_uses_started_flag(self):
-        from seian_power_pipeline.pscad_mcp_client import _run_started
+        from seian_power_pipeline.pscad_mcp_client import _run_completed, _run_started
 
         assert _run_started({"started": True})
         assert _run_started({"result": {"started": True}})
         assert not _run_started({"started": False, "note": "not started"})
+        assert _run_completed({"started": True, "completed": True})
+        assert not _run_completed({"started": True})

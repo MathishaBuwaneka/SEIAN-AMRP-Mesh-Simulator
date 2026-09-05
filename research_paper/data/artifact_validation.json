@@ -1,0 +1,8 @@
+{
+  "scenario_count": 6,
+  "channels_per_scenario": 31,
+  "preview_points_per_channel": 501,
+  "checks": "passed",
+  "new_pscad_runs": 0,
+  "source_revision": "7db42ae0e9f8092065cf77bb206b1a818c29eacd"
+}

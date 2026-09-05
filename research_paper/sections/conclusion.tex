@@ -1,0 +1,18 @@
+\section{Conclusion}
+This paper describes a working batch interface from structured network-control
+commands and graphical dashboard edits to timed PSCAD electrical experiments.
+The modular implementation preserves the networking code boundary while
+linking logical identifiers, operation-level decisions, component parameters,
+fresh outputs, and measured results. Six saved deterministic scenarios provide
+preliminary functional evidence for baseline operation, isolation, tie-based
+restoration, single-loop rejection, imposed waiting time, and a native
+three-phase fault.
+
+In the physical-fault case, a maximum absolute phase current of 1.554 kA
+precedes restoration of healthy downstream buses to approximately
+381--387 V, with about 1.195 s below the selected 200-V threshold. The faulted
+bus stays isolated. These observations support the command-to-EMT workflow,
+not a claim of optimal routing, measured SDN latency, or completed live
+microgrid protection. Calibrated models, atomic command semantics, independent
+fault detection, and synchronized controller feedback are the principal
+requirements for the next research stage.

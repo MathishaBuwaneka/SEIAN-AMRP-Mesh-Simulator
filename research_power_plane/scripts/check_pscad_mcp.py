@@ -12,14 +12,16 @@ from mcp.client.stdio import stdio_client
 
 
 ROOT = Path(__file__).resolve().parents[2]
+MCP_SERVER = ROOT / "research_power_plane" / "seian_power_pipeline" / "pscad_mcp_server.py"
 
 
 async def main() -> int:
     env = os.environ.copy()
+    env.pop("NoDefaultCurrentDirectoryInExePath", None)
     env["POWERIO_MCP_ALLOWED_ROOTS"] = str(ROOT)
     params = StdioServerParameters(
         command=sys.executable,
-        args=["-m", "powermcp", "run", "pscad"],
+        args=[str(MCP_SERVER)],
         env=env,
     )
     async with stdio_client(params) as (read_stream, write_stream):

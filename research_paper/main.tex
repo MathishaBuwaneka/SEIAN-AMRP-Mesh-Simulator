@@ -1,0 +1,68 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=25mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs,tabularx,array}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\setlength{\emergencystretch}{2em}
+\setlength{\parskip}{0.3em}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.12}
+\graphicspath{{figures/}}
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\unit}[1]{\,\mathrm{#1}}
+
+\title{Toward SDN-Controlled Microgrid Reconfiguration:\\
+An Auditable Python--PSCAD Switching Testbed}
+\author{Author Names to Be Confirmed\\
+\small Department and Institution to Be Confirmed\\
+\small Corresponding Author Email to Be Confirmed}
+\date{Research manuscript draft -- 5 September 2026}
+
+\begin{document}
+\maketitle
+\input{sections/abstract}
+\noindent\textbf{Keywords:} software-defined networking; low-voltage feeder;
+microgrid reconfiguration; PSCAD; electromagnetic transients; reproducibility.
+
+\input{sections/introduction}
+\input{sections/related_work}
+\input{sections/architecture}
+\input{sections/model}
+\input{sections/methods}
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/conclusion}
+
+\section*{Data and Code Availability}
+The manuscript package contains a frozen extract of the existing six-scenario
+results, scenario inputs, electrical build metadata, provenance hashes,
+generated figures, and the scripts used to produce its tables and plots.
+It does not contain a complete per-scenario archive of raw PSCAD output.
+The originating networking repository is
+\url{https://github.com/MathishaBuwaneka/SEIAN-AMRP-Mesh-Simulator}.
+That URL identifies the upstream networking work; it is not a claim that the
+local power-plane extension or this manuscript has been publicly released there.
+The availability and licensing of a submission-time research release remain
+to be confirmed by the authors.
+
+\section*{Author and Funding Statements}
+Author order, affiliations, individual contributions, acknowledgments, funding,
+and competing-interest declarations must be completed by the project team
+before submission. No external funding or deployment authorization is asserted
+in this draft.
+
+\bibliographystyle{unsrt}
+\bibliography{references}
+\clearpage
+\appendix
+\input{sections/reproducibility}
+\end{document}

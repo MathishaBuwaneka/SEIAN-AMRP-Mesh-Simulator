@@ -1,0 +1,79 @@
+\section{Background and Related Work}
+\subsection{Electrical Reconfiguration and Software-Defined Control}
+Baran and Wu formulated distribution reconfiguration in terms of electrical
+losses and load balance, establishing the relevance of switch state and radial
+network structure \cite{baran1989}. The present work uses radiality only as an
+operation-level topological constraint. It does not implement their optimization
+procedure, solve an optimal power flow, or benchmark a new route-selection
+method.
+
+OpenFlow provides an influential example of a programmable interface between
+network control and forwarding elements \cite{mckeown2008}. Applying this idea
+to an energy system requires care over which plane is being programmed. In
+conventional SDN, the data plane forwards communication traffic. In the project
+terminology, the ``power plane'' instead denotes conducting electrical paths;
+the interface described here is not an OpenFlow implementation for breakers.
+
+Software-defined microgrid control is already an established research topic.
+Wang et al. virtualize microgrid control functions as software services,
+reducing dependence on dedicated controller hardware \cite{wang2020}. Li and
+Du employ SDN and OpenFlow to support programmable communications for networked
+microgrid formation, partition, and reconfiguration \cite{li2021}. These works
+preclude a broad novelty claim that separating control from physical microgrid
+operation is itself new. The narrower focus here is retaining an evolving
+network-team command contract while producing an inspectable PSCAD switching
+experiment and measurement record.
+
+\subsection{Communications and Cyber-Physical Simulation}
+Communication behavior can influence control outcomes, but a delayed timestamp
+is not equivalent to a simulated communication network. Dorsch et al. compare
+legacy and software-defined communications in distributed smart-grid control,
+explicitly considering communication infrastructure and agent interaction
+\cite{dorsch2017}. The long-delay case in this paper instead imposes a later
+restoration time. It illustrates the electrical cost of waiting, without
+measuring packet loss, routing convergence, or SDN latency.
+
+Federated simulators address a different problem from batch automation. FNCS
+couples power-system and communication simulators with synchronization
+strategies for their exchanges \cite{ciraci2014}. HELICS supports coordinated
+event-driven and time-series simulations, including iteration among federates
+\cite{palmintier2017}. Neither framework is integrated into the current
+implementation. Their relevance is methodological: a persistent application
+connection does not supply the shared-time and causality mechanisms required
+for closed-loop co-simulation.
+
+More recent cyber-physical emulation also extends well beyond scheduled
+switching. Haque et al. combine an operational-microgrid-derived power model
+with a synthetic communication network, DNP3 exchanges, and structured threat
+scenarios \cite{haque2025}. Their work provides a useful contrast to the
+illustrative feeder and deterministic commands used here; this paper makes
+no comparative cybersecurity or resilience-performance claim.
+
+\begin{table}[tb]
+\centering\small
+\caption{Positioning against selected related work. Entries describe scope,
+not a ranking or a feature-completeness assessment.}
+\label{tab:related}
+\begin{tabularx}{\textwidth}{@{}p{32mm}XX@{}}
+\toprule
+Work & Principal emphasis & Distinction of this study \\
+\midrule
+Baran--Wu \cite{baran1989} & Electrical reconfiguration objectives & Evaluates supplied routes; no optimizer \\
+Wang et al. \cite{wang2020} & Virtualized microgrid controllers & Command-to-EMT experiment integration \\
+Li--Du \cite{li2021} & SDN-enabled networked microgrids & JSON batch interface, not live OpenFlow \\
+FNCS / HELICS \cite{ciraci2014,palmintier2017} & Synchronized simulator federation & Sequential automation of a single EMT run \\
+Haque et al. \cite{haque2025} & Cyber-physical threat emulation & Illustrative switching and fault scenarios \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{PSCAD as the Electrical Execution Layer}
+PSCAD exposes Python automation for loading and running projects
+\cite{pscadAutomation}. Its timed breaker component supports one or two
+operations associated with a breaker control signal \cite{pscadTimedBreaker}.
+The supplied fault models represent a fault using switched resistances rather
+than a detailed arc characteristic \cite{pscadFaults}. These documented
+facilities are sufficient for the deterministic switching cases examined here.
+The project-specific contribution lies in translating commands, managing run
+completion and result freshness, and connecting the results to research
+artifacts; it is not a replacement for the underlying EMT solver.

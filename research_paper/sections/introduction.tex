@@ -1,0 +1,56 @@
+\section{Introduction}
+Distribution feeder reconfiguration changes which sectionalizing and tie
+switches conduct, allowing the same physical infrastructure to supply loads
+through different connected configurations. Classical work treats this as an
+electrical-network problem with objectives such as loss reduction and load
+balancing \cite{baran1989}. Software-defined networking (SDN), by comparison,
+separates programmable forwarding decisions from the mechanisms that execute
+them in a communication network \cite{mckeown2008}. The conceptual separation
+is attractive for a project in which one team develops network-control logic
+and another investigates physical low-voltage (LV) switching.
+
+The analogy has an important boundary. Alternating-current power is not
+forwarded as independently addressed packets through passive feeder branches.
+Switching alters circuit connectivity, after which voltages and currents follow
+the network impedances, source characteristics, and electrical dynamics.
+Consequently, a route returned by a networking algorithm must be translated
+into a physically represented switching sequence and evaluated in an
+electrical simulator. A graph can establish connectivity; it cannot, by
+itself, establish acceptable voltage, equipment loading, transient behavior,
+or protection coordination.
+
+The broader project aims to maintain a communication control plane independently
+of switchable power paths. Its present electrical realization is a single-source
+LV feeder, not a complete multi-resource microgrid. This distinction matters:
+the U.S. Department of Energy's microgrid description includes local energy
+resources, controllability as an entity, and grid-connected or islanded
+operation \cite{doeMicrogrids}. The current case has neither distributed
+energy resource (DER) control nor a demonstrated islanding transition. The
+term ``toward'' in the title therefore denotes a research trajectory rather
+than an already validated operating capability.
+
+This paper asks three practical questions. First, can externally specified
+network commands be mapped consistently onto physical breaker schedules while
+retaining identifiers and operation-level decisions? Second, do the saved EMT
+measurements show the expected distinction between fault inception, isolation,
+and restoration of healthy loads? Third, can graphical dashboard edits trigger
+fresh, inspectable PSCAD experiments without changing the networking team's
+implementation?
+
+The resulting contributions are:
+\begin{enumerate}
+\item A modular command-to-power-plane workflow that retains a structured
+controller contract, operation-level graph checks, explicit component bindings,
+and a reproducible timed experiment manifest.
+\item A PSCAD automation path with native breaker and fault components,
+serialized run ownership, fresh-result checks, and a defined set of 31 research
+channels exposed through a graphical JSON-backed dashboard.
+\item An evidence-bounded analysis of six saved deterministic scenarios,
+including a physical fault, downstream restoration, and an explicitly imposed
+restoration delay, accompanied by reproducible publication assets.
+\end{enumerate}
+These are integration and functional-validation contributions. No superiority
+over established reconfiguration algorithms or cyber-physical testbeds is
+claimed. The experiments support further research on the interface between
+network decisions and electrical consequences; they are not evidence that
+the proposed architecture is ready to operate a physical feeder.

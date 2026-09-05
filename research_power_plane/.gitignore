@@ -1,8 +1,10 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+.pytest_tmp*/
 
 # PSCAD generated build products
 pscad_workspace/*.gf46/
 pscad_workspace/*.bakx
-pscad_workspace/bootstrap_error.txt
+pscad_workspace/*_error.txt
+pscad_workspace/scenario03_*.json

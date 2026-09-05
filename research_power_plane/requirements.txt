@@ -1,2 +1,3 @@
 -r ../requirements.txt
 powermcp[pscad-windows]>=0.3.0
+streamlit>=1.63,<2

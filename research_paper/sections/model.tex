@@ -1,0 +1,99 @@
+\section{Electrical Test System}
+\label{sec:model}
+\subsection{Feeder and Load Representation}
+The generated case, \code{SEIAN_LV_Timed_Switching}, comprises buses G01 and
+N02--N06, seven three-phase switchable series R/L branches, and five balanced
+Y-connected resistive loads. G01 is supplied by a Thevenin source configured
+at 0.4 kV line-to-line RMS and 50 Hz, with a source resistance setting of
+$0.02\unit{\Omega}$. The declared source setting and implemented branch values
+are illustrative; they are not a short-circuit calibration against a measured
+transformer or utility supply.
+
+Five branches form the initial radial tree; N02--N05 and N04--N06 are normally
+open ties. Opening N02--N03, N03--N04, and N03--N05 isolates N03. Closing both
+ties then supplies the healthy downstream buses through
+G01--N02--N05--N06--N04, as shown in Figure~\ref{fig:feeder}.
+
+\begin{figure}[tb]
+\centering\includegraphics[width=\textwidth]{feeder.pdf}
+\caption{Original schematic of the modeled electrical connectivity before and
+after restoration. Lines represent three-phase branches, not communication
+links or geographical cable routing. Node positions are diagrammatic.}
+\label{fig:feeder}
+\end{figure}
+
+\begin{table}[tb]
+\centering\small
+\caption{Implemented per-phase branch parameters, extracted from the saved
+PSCAD build report. These values are illustrative, not measured cable data.}
+\label{tab:lines}
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+Branch & $R_e$ ($\Omega$) & $L_e$ ($\mu$H) & Initial state \\
+\midrule
+\input{tables/line_rows}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The builder assigns resistance from a nominal branch-capacity field. For a
+numerical capacity entry $q_e$ in kW, its heuristic is
+\begin{equation}
+ R_e = \frac{3}{q_e}\unit{\Omega},\qquad
+ L_e = \frac{0.3R_e}{2\pi f},\qquad f=50\unit{Hz}.
+\end{equation}
+The constant 3 is an implementation sizing heuristic with the implied unit
+conversion, not a conductor law. Consequently, \code{capacity_kw} should
+not be interpreted as an enforced thermal rating. Table~\ref{tab:lines}
+reports the actual generated impedances directly.
+
+The loads require similarly careful interpretation. The source builder
+contains a scalar named \code{LOAD_PF}, set to $0.98$, but uses it to multiply
+the target active power when calculating resistance. It does not introduce a
+reactive load or enforce a 0.98 electrical power factor. If $P_i^{\mathrm{set}}$
+is expressed in watts and $V_{LL,0}=400\unit{V}$, the implemented phase
+resistance is
+\begin{equation}
+ R_{i,\phi}=
+ \frac{(V_{LL,0}/\sqrt{3})^2}{0.98 P_i^{\mathrm{set}}/3}
+ =\frac{V_{LL,0}^{2}}{0.98 P_i^{\mathrm{set}}}.
+\label{eq:load}
+\end{equation}
+Thus the nominal-voltage resistive demand is $0.98P_i^{\mathrm{set}}$ and
+varies approximately with the square of applied balanced RMS voltage. These
+are not constant-power loads. Table~\ref{tab:loads} records both the original
+sizing labels and the resulting nominal-voltage demands.
+
+\begin{table}[tb]
+\centering\small
+\caption{Resistive load sizing. The demand column refers to 400-V operation,
+not the measured demand at the loaded bus voltage.}
+\label{tab:loads}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Bus & Sizing label (kW) & Demand at 400 V (kW) & $R_{i,\phi}$ ($\Omega$) \\
+\midrule
+\input{tables/load_rows}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Fault and Numerical Configuration}
+The physical-fault scenario uses a native three-phase-to-ground fault at N03,
+with an on-resistance of $0.05\unit{\Omega}$ and an off-resistance of
+$10^6\unit{\Omega}$. Its programmed inception is 4.8 s, duration 0.4 s,
+and clearing time 5.2 s. All incident N03 breakers are commanded open at
+5.0 s and both ties close at 6.0 s. Fault activation uses the native
+\code{tpflt} and \code{tfaultn} components; it is not synthesized by manually
+changing a plotted voltage trace. Finite off-resistance produces small leakage
+when the fault is inactive. The native resistive-switch abstraction does not
+model fault-arc dynamics \cite{pscadFaults}.
+
+PSCAD advances the EMT solution with a $25\unit{\mu s}$ time step and records
+research signals every $50\unit{\mu s}$. A duration-$T$ experiment therefore
+contains $T/(50\unit{\mu s})+1$ recorded samples per channel when both endpoints
+are included. Startup is included in the saved trajectories but excluded from
+the interruption metric as described below. Time-step convergence, frequency
+dependence of line parameters, grounding calibration, unbalanced demand,
+inverter dynamics, and transformer detail have not been established for this
+case.

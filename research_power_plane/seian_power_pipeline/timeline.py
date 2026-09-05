@@ -144,7 +144,7 @@ def build_switching_timeline(
         if duration_s < required_duration_s:
             raise ValueError(
                 f"PSCAD duration {duration_s:g}s is too short; at least "
-                f"{required_duration_s:g}s is required for the command timeline."
+                f"{required_duration_s:g}s is required for the event timeline."
             )
 
     return SwitchingTimeline(

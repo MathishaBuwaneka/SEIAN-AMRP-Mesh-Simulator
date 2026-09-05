@@ -1,0 +1,169 @@
+{
+  "snapshot_utc": "2026-09-05T11:38:30.716999+00:00",
+  "repository_revision": "7db42ae0e9f8092065cf77bb206b1a818c29eacd",
+  "inputs": [
+    {
+      "path": "research_power_plane/pscad_workspace/transient_scenario_results.json",
+      "bytes": 5350723,
+      "sha256": "5fe9a64795b6f194fe0a2abe9c741d681613654fa6f53244e878081149e33181"
+    },
+    {
+      "path": "research_power_plane/pscad_workspace/timed_feeder_build_report.json",
+      "bytes": 9639,
+      "sha256": "2114c66b9c99dd63cb67a515f06d5a5bf88665cba78f44b29f53021e834cec40"
+    },
+    {
+      "path": "research_power_plane/pscad_workspace/validation/graphical_gui_validation.json",
+      "bytes": 717,
+      "sha256": "4863a373dbfb3c8e08ff26ba7202a5b44166e3a4a9b876d825298abbc64254b1"
+    },
+    {
+      "path": "research_power_plane/pscad_workspace/validation/graphical_command_edit.json",
+      "bytes": 974407,
+      "sha256": "25f70be8a05d8fc023efae3c73a281256dc1d483d0e413a70dae8145a2f1e755"
+    },
+    {
+      "path": "research_power_plane/examples/scenarios/01_no_fault_baseline.json",
+      "bytes": 399,
+      "sha256": "74781e1f72ec328cb1a328d6b74abb64c294873bc479a53877cb83b2d6604272"
+    },
+    {
+      "path": "research_power_plane/examples/scenarios/02_single_fault_isolation.json",
+      "bytes": 730,
+      "sha256": "93c88831e23b32682040b190dd7e90052ca8b4371645c0c1b56bb41e04874b38"
+    },
+    {
+      "path": "research_power_plane/examples/scenarios/03_tie_switch_restoration.json",
+      "bytes": 1327,
+      "sha256": "9df7e75e7279f5817eb767d1df91e9fafe3e0543c4a745e9dc217bf01cd2ba8a"
+    },
+    {
+      "path": "research_power_plane/examples/scenarios/04_loop_rejection.json",
+      "bytes": 1003,
+      "sha256": "dfeceecd20369ed023776d63cc9197144aed36eaf42ce2f74f7c1823158064a0"
+    },
+    {
+      "path": "research_power_plane/examples/scenarios/05_degraded_control_plane.json",
+      "bytes": 1792,
+      "sha256": "d5ec88de92d6ec8f8830763cd4b4373316b28be24a6b8eb23c2cc356a1759bae"
+    },
+    {
+      "path": "research_power_plane/examples/scenarios/06_physical_fault_restoration.json",
+      "bytes": 1403,
+      "sha256": "1926b7bb9b7f6af8d0def5d495f64f14e18bc4e75202ac3dd3161473164e8cf7"
+    },
+    {
+      "path": "research_power_plane/AI_CONTEXT.md",
+      "bytes": 18570,
+      "sha256": "690d464830103ac07219b507a8bd02bd590c7de32ee0479d6d92cddbf3c2ecb8"
+    },
+    {
+      "path": "research_power_plane/scripts/build_lv_feeder.py",
+      "bytes": 22657,
+      "sha256": "ebbc5a4321b44c54da99a75d6e3f63151c086e7f14821e5803bae82c036e44a9"
+    },
+    {
+      "path": "research_power_plane/scripts/run_scenarios.py",
+      "bytes": 14854,
+      "sha256": "cb0b1515628dd8b576d71a06be29d15bfdef7554e64238649eb438349ebaeefd"
+    },
+    {
+      "path": "research_power_plane/dashboard.py",
+      "bytes": 16435,
+      "sha256": "3e819dc109a08633be05b4efe6966f35df8ba08a0a2c3221d8c20a97d4a256a2"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/__init__.py",
+      "bytes": 558,
+      "sha256": "56a66626a92a9bcba31d1a91aefd49293f81614d3c88c99c1f9107fe2d72bf5f"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/control_plane.py",
+      "bytes": 6660,
+      "sha256": "2af349c9e008b3dd93019e246c7b13733b0e1c90c893a845b49b91d732fe8b54"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/controller_adapter.py",
+      "bytes": 8023,
+      "sha256": "ec4ad562812d1e5ba2ae54c463a888d358e8c46d6534023d3ff5490693eea991"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/faults.py",
+      "bytes": 4768,
+      "sha256": "c925d358b1b5ba3ad321fac2a1fe06f863ffac9e203ca5d8edeaad26f1b9db87"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/pipeline.py",
+      "bytes": 8056,
+      "sha256": "d093fc1725de7feeb54d27ea0270cb16d6b17c393385390242a85c15b169c1ce"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/power_plane.py",
+      "bytes": 13974,
+      "sha256": "1c9575db33a99660f0823b6245be10d2baf77b028db48239d38a265063452bc0"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/project_config.py",
+      "bytes": 1161,
+      "sha256": "c0e0aaa146633723ed3d0e0da2cc90fc70c22957041f128108f277481e2d7148"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/pscad_adapter.py",
+      "bytes": 20046,
+      "sha256": "2702a7d00228831e91c143a9f65eb2a29a8bbf253f3dcdb36df82dcea6a19185"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/pscad_gui.py",
+      "bytes": 4757,
+      "sha256": "f9cc67d0f0342c9b3ec0dd9d5c30808a43441d60f65822f60b9111133c5f9bd3"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/pscad_mcp_client.py",
+      "bytes": 24479,
+      "sha256": "2ccb1e8f968b3f0db8aae0f0a53ffd597d4cf3ea982612740b03d203c7c31d32"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/pscad_mcp_server.py",
+      "bytes": 7070,
+      "sha256": "b1d3665e0dc24cdde79b4e07e7b3a16b89d48092d2527a32061aeb76c7f7b0f8"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/pscad_run_lock.py",
+      "bytes": 1309,
+      "sha256": "68c1568512db285a6f02b50483d3bfb80c1d5477194ed5a6d4f6ad780d9677ec"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/psout_channels.py",
+      "bytes": 3608,
+      "sha256": "7cb985299634c4f5ab6ee50b4b31d90fe7e260f03b546272f69111dd30d95b76"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/psout_reader.py",
+      "bytes": 3190,
+      "sha256": "7627e607bd05ff700dc83e34d9637682ee738ec10237430d077cf7f4892f189c"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/timeline.py",
+      "bytes": 7013,
+      "sha256": "4a716648057532e59c7697f956c522c56aa7c313993bf6ecfd9149c8741bd96a"
+    },
+    {
+      "path": "research_power_plane/seian_power_pipeline/transient_analysis.py",
+      "bytes": 5212,
+      "sha256": "8b9b32ff7bdf6117061100d21a58072b261d7db0d2516f6e7ad0015d1abc73cd"
+    },
+    {
+      "path": "research_power_plane/pscad_workspace/SEIAN_LV_Timed_Switching.pscx",
+      "bytes": 128040,
+      "sha256": "ae91e87496bc4dfff5c60e8db846c23e49fa5140b8f9f149066a5e2b8e89fbeb"
+    },
+    {
+      "path": "research_power_plane/pscad_workspace/seian_pscad_timed_component_map.generated.json",
+      "bytes": 5508,
+      "sha256": "030047efd586977b30550696e55704b803e35259a9a4bed097e6631643982854"
+    }
+  ],
+  "method": "Read-only snapshot of existing saved experiments; no new PSCAD runs.",
+  "raw_psout_included": false,
+  "trace_previews_are_decimated": true
+}

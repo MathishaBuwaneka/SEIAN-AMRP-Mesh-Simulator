@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from seian_power_pipeline.faults import PhysicalFaultEvent
 from seian_power_pipeline.power_plane import PowerPlaneState, SwitchingPlan
 from seian_power_pipeline.timeline import LineSwitchSchedule, SwitchingTimeline
 
@@ -125,6 +126,71 @@ class PscadLineBinding:
 
 
 @dataclass(slots=True)
+class PscadFaultBinding:
+    """Mapping from one physical fault ID to native PSCAD fault components."""
+
+    fault_id: str
+    node_id: str
+    logic_component_id: int
+    fault_component_id: int
+    start_parameter: str = "TF"
+    duration_parameter: str = "DF"
+    resistance_parameter: str = "RON"
+    phase_a_parameter: str = "A"
+    phase_b_parameter: str = "B"
+    phase_c_parameter: str = "C"
+    ground_parameter: str = "G"
+    inactive_duration_s: float = 0.05
+    default_resistance_ohm: float = 0.05
+
+    @classmethod
+    def from_dict(cls, row: dict[str, Any]) -> "PscadFaultBinding":
+        return cls(
+            fault_id=str(row["fault_id"]),
+            node_id=str(row["node_id"]),
+            logic_component_id=int(row["logic_component_id"]),
+            fault_component_id=int(row["fault_component_id"]),
+            start_parameter=str(row.get("start_parameter", "TF")),
+            duration_parameter=str(row.get("duration_parameter", "DF")),
+            resistance_parameter=str(row.get("resistance_parameter", "RON")),
+            phase_a_parameter=str(row.get("phase_a_parameter", "A")),
+            phase_b_parameter=str(row.get("phase_b_parameter", "B")),
+            phase_c_parameter=str(row.get("phase_c_parameter", "C")),
+            ground_parameter=str(row.get("ground_parameter", "G")),
+            inactive_duration_s=float(row.get("inactive_duration_s", 0.05)),
+            default_resistance_ohm=float(row.get("default_resistance_ohm", 0.05)),
+        )
+
+    def logic_parameters_for(
+        self,
+        fault: PhysicalFaultEvent | None,
+        *,
+        duration_s: float,
+    ) -> dict[str, Any]:
+        if fault is None:
+            return {
+                self.start_parameter: max(float(duration_s) + 1.0, 1.0),
+                self.duration_parameter: self.inactive_duration_s,
+            }
+        return {
+            self.start_parameter: fault.start_s,
+            self.duration_parameter: fault.duration_s,
+        }
+
+    def fault_parameters_for(self, fault: PhysicalFaultEvent | None) -> dict[str, Any]:
+        flags = fault.phase_flags if fault is not None else {"A": 1, "B": 1, "C": 1, "G": 1}
+        return {
+            self.resistance_parameter: (
+                fault.resistance_ohm if fault is not None else self.default_resistance_ohm
+            ),
+            self.phase_a_parameter: flags["A"],
+            self.phase_b_parameter: flags["B"],
+            self.phase_c_parameter: flags["C"],
+            self.ground_parameter: flags["G"],
+        }
+
+
+@dataclass(slots=True)
 class PscadParameterOperation:
     """One MCP-ready PSCAD component parameter update."""
 
@@ -159,20 +225,39 @@ class PscadParameterOperation:
 class PscadSwitchingAdapter:
     """Build PSCAD operations from accepted SEIAN switching plans."""
 
-    def __init__(self, project_name: str, bindings: dict[str, PscadLineBinding]) -> None:
+    def __init__(
+        self,
+        project_name: str,
+        bindings: dict[str, PscadLineBinding],
+        fault_bindings: dict[str, PscadFaultBinding] | None = None,
+    ) -> None:
         self.project_name = project_name
         self.bindings = dict(bindings)
+        self.fault_bindings = dict(fault_bindings or {})
 
     @classmethod
     def from_mapping_payload(cls, payload: dict[str, Any], *, project_name: str | None = None) -> "PscadSwitchingAdapter":
         rows = payload.get("line_bindings", payload.get("bindings", []))
         if not isinstance(rows, list):
             raise ValueError("PSCAD mapping must include a 'line_bindings' list.")
+        fault_rows = payload.get("fault_bindings", [])
+        if not isinstance(fault_rows, list):
+            raise ValueError("PSCAD mapping 'fault_bindings' must be a list.")
         selected_project = project_name or str(payload.get("project_name", ""))
         if not selected_project:
             raise ValueError("PSCAD project_name is required.")
         bindings = [PscadLineBinding.from_dict(row) for row in rows]
-        return cls(selected_project, {binding.line_id: binding for binding in bindings})
+        fault_bindings = [PscadFaultBinding.from_dict(row) for row in fault_rows]
+        duplicate_fault_ids = _duplicates(binding.fault_id for binding in fault_bindings)
+        if duplicate_fault_ids:
+            raise ValueError(
+                "Duplicate PSCAD fault binding IDs: " + ", ".join(duplicate_fault_ids)
+            )
+        return cls(
+            selected_project,
+            {binding.line_id: binding for binding in bindings},
+            {binding.fault_id: binding for binding in fault_bindings},
+        )
 
     @classmethod
     def from_mapping_file(cls, path: str | Path, *, project_name: str | None = None) -> "PscadSwitchingAdapter":
@@ -241,20 +326,33 @@ class PscadSwitchingAdapter:
                 )
             )
 
+        calls = [operation.to_mcp_call() for operation in operations]
+        calls.extend(self._fault_calls([], duration_s=1.0))
         changed_manifest = self.manifest_for_plans(plans)
         missing_bindings = sorted(line_id for line_id in power_plane.lines if line_id not in self.bindings)
         return {
             "project_name": self.project_name,
             "mcp_server": "powermcp_pscad",
             "mode": "final_state_snapshot",
-            "operation_count": len(operations),
+            "operation_count": len(calls),
             "missing_line_bindings": missing_bindings,
+            "missing_fault_bindings": [],
+            "physical_fault_event_count": 0,
+            "physical_faults": [],
             "changed_operation_count": changed_manifest["operation_count"],
             "changed_calls": changed_manifest["calls"],
-            "calls": [operation.to_mcp_call() for operation in operations],
+            "project_settings": {
+                "time_duration": 1.0,
+                "PlotType": "PSOUT",
+            },
+            "calls": calls,
         }
 
-    def manifest_for_timeline(self, timeline: SwitchingTimeline) -> dict[str, Any]:
+    def manifest_for_timeline(
+        self,
+        timeline: SwitchingTimeline,
+        physical_faults: list[PhysicalFaultEvent] | None = None,
+    ) -> dict[str, Any]:
         """Build full native timed-breaker schedules for every mapped line."""
 
         calls: list[dict[str, Any]] = []
@@ -293,6 +391,9 @@ class PscadSwitchingAdapter:
                 f"definition: {', '.join(unsupported_bindings)}. Rebuild the PSCAD feeder."
             )
 
+        faults = list(physical_faults or [])
+        calls.extend(self._fault_calls(faults, duration_s=timeline.duration_s))
+
         return {
             "project_name": self.project_name,
             "mcp_server": "powermcp_pscad",
@@ -300,6 +401,9 @@ class PscadSwitchingAdapter:
             "operation_count": len(calls),
             "changed_operation_count": len(timeline.events),
             "missing_line_bindings": missing_bindings,
+            "missing_fault_bindings": [],
+            "physical_fault_event_count": len(faults),
+            "physical_faults": [fault.to_dict() for fault in faults],
             "project_settings": {
                 "time_duration": timeline.duration_s,
                 "PlotType": "PSOUT",
@@ -307,3 +411,77 @@ class PscadSwitchingAdapter:
             "timeline": timeline.to_dict(),
             "calls": calls,
         }
+
+    def _fault_calls(
+        self,
+        faults: list[PhysicalFaultEvent],
+        *,
+        duration_s: float,
+    ) -> list[dict[str, Any]]:
+        active_by_id = {fault.fault_id: fault for fault in faults}
+        missing = sorted(set(active_by_id) - set(self.fault_bindings))
+        if missing:
+            raise ValueError(
+                "Physical faults have no PSCAD component binding: " + ", ".join(missing)
+            )
+
+        calls: list[dict[str, Any]] = []
+        for fault_id, binding in sorted(self.fault_bindings.items()):
+            fault = active_by_id.get(fault_id)
+            if fault is not None and fault.node_id != binding.node_id:
+                raise ValueError(
+                    f"{fault_id}: command targets {fault.node_id}, but its PSCAD fault "
+                    f"element is connected at {binding.node_id}."
+                )
+            action = "schedule_fault" if fault is not None else "disable_fault"
+            common_metadata = {
+                "domain": "physical_fault",
+                "fault_id": fault_id,
+                "node_id": binding.node_id,
+                "requested_action": action,
+            }
+            calls.append(
+                _component_parameter_call(
+                    project_name=self.project_name,
+                    component_id=binding.logic_component_id,
+                    parameters=binding.logic_parameters_for(fault, duration_s=duration_s),
+                    metadata={**common_metadata, "operation_id": f"fault-logic-{fault_id}", "role": "timing"},
+                )
+            )
+            calls.append(
+                _component_parameter_call(
+                    project_name=self.project_name,
+                    component_id=binding.fault_component_id,
+                    parameters=binding.fault_parameters_for(fault),
+                    metadata={**common_metadata, "operation_id": f"fault-element-{fault_id}", "role": "element"},
+                )
+            )
+        return calls
+
+
+def _component_parameter_call(
+    *,
+    project_name: str,
+    component_id: int,
+    parameters: dict[str, Any],
+    metadata: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "tool": "set_component_parameters",
+        "arguments": {
+            "project_name": project_name,
+            "component_id": component_id,
+            "parameters": parameters,
+        },
+        "metadata": metadata,
+    }
+
+
+def _duplicates(values: Any) -> list[str]:
+    seen: set[str] = set()
+    duplicates: set[str] = set()
+    for value in values:
+        if value in seen:
+            duplicates.add(value)
+        seen.add(value)
+    return sorted(duplicates)

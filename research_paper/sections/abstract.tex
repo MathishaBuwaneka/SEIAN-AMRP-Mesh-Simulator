@@ -1,0 +1,22 @@
+\begin{abstract}
+Separating network-control development from electrical-model development is
+useful for studying programmable feeder restoration, but a graph-valid route
+alone does not establish its electrical behavior. This paper presents an
+SDN-inspired Python--PSCAD testbed that translates structured controller
+commands into timed low-voltage breaker operations, executes an electromagnetic
+transient experiment, and returns traceable measurements to a graphical
+dashboard. The implementation retains the networking simulator separately from
+the power-plane integration and preserves JSON as the exchange contract beneath
+graphical editing. A six-bus, seven-branch, 400-V feeder with two normally open
+ties provides the initial electrical case. A read-only analysis of six saved
+PSCAD experiments examines baseline operation, isolation, restoration, loop
+rejection, imposed control delay, and a native three-phase-to-ground fault.
+In the physical-fault case, the maximum absolute phase current is 1.554 kA;
+healthy downstream buses recover to 380.5--387.4 V after approximately 1.195 s
+below a 200-V analysis threshold, while the faulted bus remains isolated.
+The contribution is an auditable command-to-EMT workflow and its preliminary
+functional evidence, not a new optimal reconfiguration algorithm or a
+demonstration of real-time closed-loop SDN protection. Illustrative electrical
+parameters, non-transactional command handling, and the absence of live
+controller feedback delimit the results and motivate the next validation stage.
+\end{abstract}
