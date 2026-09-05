@@ -2,6 +2,36 @@
 
 Last updated: 2026-09-05 Asia/Colombo
 
+## Graphical Editor Update
+
+The dashboard now wraps the existing JSON in graphical controls. Work is
+contained in `dashboard_ui/` and `dashboard.py`; the networking simulator and
+electrical model are unchanged. Feeder/breaker selection, a scheduled-state
+preview, command/fault forms, initial switch states, readable PSCAD bindings,
+and all six presets are implemented. Raw editors and JSON downloads remain in
+the collapsed `Advanced JSON` section.
+
+Canonical JSON is separate from raw widget state so form-triggered reruns do
+not delete documents. Apply actions update only owned fields and retain
+colleagues' metadata. Preview/selection changes never launch PSCAD; committed
+edits use the existing automatic-run path. Bus wiring is not editable through
+this layer because it must match the generated physical PSCAD case.
+
+Validation complete: 114 repository tests passed. The actual Edge browser
+selected N03 on the feeder, selected baseline and physical-fault presets, and
+applied a graphical isolation-time edit from 5.0 to 5.1 s. All three runs
+produced fresh PSCAD results with 31 channels and zero errors, using one
+PSCAD instance (PID 33424 during this validation). Metadata and the unchanged
+physical-fault schedule survived the command edit. Desktop/mobile screenshots
+were inspected; the 390px page has no horizontal overflow.
+
+Evidence: `pscad_workspace/validation/graphical_gui_validation.json`,
+`graphical_baseline.json`, `graphical_physical_fault.json`,
+`graphical_command_edit.json`, and `graphical_*.png` screenshots. Repeat with
+`scripts/validate_graphical_dashboard.py`. `validate_dashboard.py` still tests
+raw JSON editing through the collapsed Advanced JSON section. The research
+layer now requires Streamlit >=1.63 for its graphical widget API.
+
 ## Finalization Checkpoint
 
 Unattended Scenario 06 completed with 9 writes, 31 selected channels,
@@ -26,7 +56,7 @@ were captured; the mobile page has no horizontal overflow.
 Evidence lives in `pscad_workspace/validation/`: two downloaded research
 artifacts, desktop/mobile screenshots, and `dashboard_gui_validation.json`.
 Repeat with `scripts/validate_dashboard.py` against the running dashboard.
-The full test suite passed (101 tests), including uploaded-file editor
+The full test suite now passes (114 tests), including graphical and uploaded-file editor
 persistence. Implementation and documentation are complete for the automatic
 batch pipeline. The research dashboard is served on http://localhost:8502;
 the timed SEIAN case is left open in PSCAD. Only the next-stage research work
@@ -61,7 +91,7 @@ The controller-to-PSCAD transient pipeline works end to end.
 - A run succeeds only when its `.psout` is newly created or modified.
 - The dashboard uses the same PowerMCP path and charts all 31 research traces.
 - All six paper scenarios build with zero errors and zero warnings.
-- The complete repository test suite passes: **101 passed**.
+- The complete repository test suite passes: **114 passed**.
 
 ## Quick Start
 
@@ -327,7 +357,7 @@ It records: connected=true, 9 applied parameter writes, one fresh `.psout`,
 
 ```text
 py -3.13 -m pytest tests research_power_plane\tests -q -p no:cacheprovider
-101 passed in 9.11s
+114 passed in 8.99s
 ```
 
 Coverage includes command parsing/order, topology safety, radiality rejection,

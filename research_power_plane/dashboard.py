@@ -90,11 +90,13 @@ def load_default_state() -> None:
     st.session_state.observed_inputs = None
     st.session_state.pipeline_error = None
     st.session_state.experiment_choice = "Physical fault and restoration"
+    st.session_state.editor_command_index = 0
 
 
 def load_experiment() -> None:
     path = EXAMPLES / "scenarios" / EXPERIMENTS[st.session_state.experiment_choice]
     st.session_state.command_text = read_text(path)
+    st.session_state.editor_command_index = 0
 
 
 def apply_raw_edit(target: str) -> None:
@@ -105,6 +107,7 @@ if "topology_text" not in st.session_state:
     load_default_state()
 
 
+st.html("<style>.stMain h1 {font-size: 1.75rem; line-height: 1.3; letter-spacing: 0;}</style>")
 st.title("SEIAN AMRP to PSCAD Co-Simulation")
 
 with st.sidebar:

@@ -1,0 +1,31 @@
+{
+  "validated_at_utc": "2026-09-05T10:23:29.853297+00:00",
+  "url": "http://localhost:8502",
+  "runs": [
+    {
+      "action": "baseline",
+      "pscad_pid": 33424,
+      "samples": 20001,
+      "channels": 31,
+      "fault_peak_ka": 1.2634850644771894e-06,
+      "errors": []
+    },
+    {
+      "action": "physical_fault",
+      "pscad_pid": 33424,
+      "samples": 140001,
+      "channels": 31,
+      "fault_peak_ka": 1.551991167694848,
+      "errors": []
+    },
+    {
+      "action": "command_edit",
+      "pscad_pid": 33424,
+      "samples": 140001,
+      "channels": 31,
+      "fault_peak_ka": 1.551991167694848,
+      "errors": []
+    }
+  ],
+  "mobile_horizontal_overflow_px": 0
+}

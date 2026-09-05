@@ -34,6 +34,7 @@ def main() -> int:
         context = browser.new_context(viewport={"width": 1440, "height": 1000}, accept_downloads=True)
         page = context.new_page()
         page.goto(args.url)
+        page.get_by_text("Advanced JSON", exact=True).click()
         editor = page.get_by_role("textbox", name="Command JSON", exact=True)
         expect(editor).to_be_visible(timeout=30000)
         for name, payload in scenarios:

@@ -29,11 +29,35 @@ The research dashboard defaults to Scenario 06, the generated timed case,
 and its matching component map.
 
 Keep `Auto-run PSCAD after replay` and `Simulate input changes` enabled.
-Edit the command JSON and commit the edit by leaving the field (Tab works).
+Choose a scenario preset or edit a graphical form and press its Apply button.
 The dashboard automatically validates commands, schedules breakers, runs
 PSCAD, verifies a fresh `.psout`, and charts the measurements. `Replay and
 Simulate` runs the initial example or repeats unchanged inputs. Initial page
-loads and download clicks do not trigger extra simulations.
+loads, graph selection, preview time changes, and downloads do not start runs.
+
+## Graphical Controls
+
+- **Feeder:** select a bus or breaker in the diagram. Solid green paths are
+  closed and source-connected; dashed paths are open. The view is a digital
+  switch-state preview, not a calculated voltage or power-flow result.
+- **Scheduled state:** scrub through accepted breaker events and the physical
+  fault interval. Actual electrical measurements remain in the PSCAD charts.
+- **Commands:** add, edit, or delete timed commands. Choose buses, breakers,
+  an ordered reroute path, and blocked buses without writing JSON.
+- **Faults:** enable/disable a bound fault and set its phase type, start,
+  duration, and resistance. The location is tied to the wired PSCAD component.
+- **Breakers:** change initial and normally-closed states. Loop-forming initial
+  states are rejected when radiality protection is enabled.
+- **Bindings:** inspect logical-breaker-to-PSCAD controller IDs in a table and
+  edit component IDs without disturbing their native timing parameters.
+
+Forms are drafts until Apply; changing one field does not submit a half-edited
+command. Apply updates the underlying JSON while retaining metadata and other
+fields. **Advanced JSON** retains the raw editors and downloads; imports are
+in the sidebar's **Import JSON** section. Committing
+a raw edit still updates the graphical view and runs the pipeline.
+Bus wiring and source/line electrical parameters are not changed by this UI;
+those require regenerating the physical PSCAD case and its matching map.
 
 The project-local MCP service starts automatically at
 `http://127.0.0.1:8765/mcp` and retains its PSCAD connection across runs.
@@ -80,6 +104,10 @@ research_power_plane/
   run_dashboard.py                     Dashboard launcher
   cli.py                               Batch and live PSCAD CLI
   AI_CONTEXT.md                        Detailed handoff and verified facts
+  dashboard_ui/
+    models.py                          Lossless JSON updates and state preview
+    figures.py                         Feeder and switching-timeline diagrams
+    editors.py                         Graphical command/fault/breaker forms
   examples/
     lv_power_plane_microgrid.json      Six-bus LV topology
     network_control_commands.json      Default dashboard command batch
@@ -99,6 +127,7 @@ research_power_plane/
     diagnose_feeder.py                 Inspect schematic geometry
     check_pscad_mcp.py                 Check MCP availability
     validate_dashboard.py             Real browser -> PSCAD validation
+    validate_graphical_dashboard.py   Graphical forms -> JSON -> PSCAD checks
   seian_power_pipeline/
     control_plane.py                   Stable controller command contract
     controller_adapter.py              Colleagues' events -> commands
@@ -252,6 +281,7 @@ It uses installed Edge and saves artifacts/screenshots in
 ```powershell
 py -3.13 -m pip install playwright
 py -3.13 research_power_plane\scripts\validate_dashboard.py --url http://localhost:8502
+py -3.13 research_power_plane\scripts\validate_graphical_dashboard.py --url http://localhost:8502
 ```
 
 ## PowerMCP Note

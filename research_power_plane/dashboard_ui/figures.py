@@ -18,6 +18,7 @@ SOURCE = "#d7a43e"
 def feeder_figure(topology: dict[str, Any], state: dict[str, Any]) -> go.Figure:
     nodes = {row["node_id"]: row for row in topology["nodes"]}
     positions = {name: (float(row.get("x", index * 100)), float(row.get("y", 0))) for index, (name, row) in enumerate(nodes.items())}
+    middle_y = sum(y for _, y in positions.values()) / len(positions)
     figure = go.Figure()
     for line in topology["power_lines"]:
         a, b = endpoints(line)
@@ -43,7 +44,7 @@ def feeder_figure(topology: dict[str, Any], state: dict[str, Any]) -> go.Figure:
         color = FAULT if fault else SOURCE if source else CONNECTED if connected else OPEN
         label = "Fault applied" if fault else "Source" if source else "Source-connected" if connected else "Isolated"
         figure.add_trace(go.Scatter(
-            x=[x], y=[y], mode="markers+text", text=[escape(node_id)], textposition="top center",
+            x=[x], y=[y], mode="markers+text", text=[escape(node_id)], textposition="bottom center" if y > middle_y else "top center",
             textfont={"size": 14}, marker={"size": 23, "color": color, "symbol": "diamond" if source else "circle", "line": {"color": color, "width": 3}},
             customdata=[["node", node_id]], hovertemplate=f"{escape(node_id)}<br>{label}<extra></extra>", showlegend=False,
         ))
