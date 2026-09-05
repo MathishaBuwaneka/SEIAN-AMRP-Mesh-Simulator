@@ -1,11 +1,11 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "project_name": "SEIAN_LV_Timed_Switching",
   "control_model": "master:tbreakn",
   "line_bindings": [
     {
       "line_id": "SW_G01_N02",
-      "component_id": 1160344068,
+      "component_id": 1950731909,
       "closed_parameter": "INIT",
       "closed_value": 0,
       "open_value": 1,
@@ -34,7 +34,7 @@
     },
     {
       "line_id": "SW_N02_N03",
-      "component_id": 1005810785,
+      "component_id": 1345486506,
       "closed_parameter": "INIT",
       "closed_value": 0,
       "open_value": 1,
@@ -63,7 +63,7 @@
     },
     {
       "line_id": "SW_N03_N04",
-      "component_id": 2126892932,
+      "component_id": 615585725,
       "closed_parameter": "INIT",
       "closed_value": 0,
       "open_value": 1,
@@ -92,7 +92,7 @@
     },
     {
       "line_id": "SW_N05_N06",
-      "component_id": 1543334196,
+      "component_id": 1526945825,
       "closed_parameter": "INIT",
       "closed_value": 0,
       "open_value": 1,
@@ -121,7 +121,7 @@
     },
     {
       "line_id": "SW_N03_N05",
-      "component_id": 1989702524,
+      "component_id": 326046501,
       "closed_parameter": "INIT",
       "closed_value": 0,
       "open_value": 1,
@@ -150,7 +150,7 @@
     },
     {
       "line_id": "SW_N02_N05_TIE",
-      "component_id": 393678319,
+      "component_id": 1639307121,
       "closed_parameter": "INIT",
       "closed_value": 0,
       "open_value": 1,
@@ -179,7 +179,7 @@
     },
     {
       "line_id": "SW_N04_N06_TIE",
-      "component_id": 1459536611,
+      "component_id": 1869894713,
       "closed_parameter": "INIT",
       "closed_value": 0,
       "open_value": 1,
@@ -205,6 +205,23 @@
         "closed_value": 0,
         "open_value": 1
       }
+    }
+  ],
+  "fault_bindings": [
+    {
+      "fault_id": "FAULT_N03",
+      "node_id": "N03",
+      "logic_component_id": 1846895047,
+      "fault_component_id": 861473361,
+      "start_parameter": "TF",
+      "duration_parameter": "DF",
+      "resistance_parameter": "RON",
+      "phase_a_parameter": "A",
+      "phase_b_parameter": "B",
+      "phase_c_parameter": "C",
+      "ground_parameter": "G",
+      "inactive_duration_s": 0.05,
+      "default_resistance_ohm": 0.05
     }
   ]
 }

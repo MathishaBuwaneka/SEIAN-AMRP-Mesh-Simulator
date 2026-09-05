@@ -66,6 +66,7 @@ def main() -> int:
             simulation_mode=args.simulation_mode,
             post_event_window_s=args.post_event_seconds,
             duration_override_s=args.duration_seconds,
+            physical_fault_payload=(command_payload if isinstance(command_payload, dict) else None),
         )
     except (OSError, ValueError, TypeError, json.JSONDecodeError, KeyError) as exc:
         parser.error(str(exc))
@@ -75,7 +76,7 @@ def main() -> int:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(result.to_dict(), indent=2), encoding="utf-8")
         print(f"Full result written to {args.output}")
-    return 0
+    return 1 if result.pscad_execution and result.pscad_execution.errors else 0
 
 
 def _read_json_object(path: Path | None) -> dict[str, Any]:

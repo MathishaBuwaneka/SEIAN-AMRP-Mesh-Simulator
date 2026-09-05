@@ -9,8 +9,10 @@ PSCAD MCP server's ``read_output_channels``::
                                              "preview": {"time": [...], "values": [...]}}}}
 
 Channel naming comes from ``build_lv_feeder.py``: ``Vrms_<node>`` for bus RMS
-voltage, ``Irms_<line_id>`` for line RMS current, ``P_<line_id>``/``Q_<line_id>``
-for line power flow, and ``State_<line_id>`` for the commanded breaker state.
+voltage, ``Irms_<line_id>`` for line RMS current, ``P_<line_id>`` for active
+power flow, and ``State_<line_id>`` for the commanded breaker state. Physical
+fault evidence uses ``Ifault[A-C]_<fault_id>`` and ``FaultState_<fault_id>``.
+``Q_`` is also understood for future reactive-power recorders.
 """
 
 from __future__ import annotations
@@ -26,6 +28,8 @@ CHANNEL_GROUPS: tuple[tuple[str, str], ...] = (
     ("Line Active Power (MW)", "P_"),
     ("Line Reactive Power (MVAR)", "Q_"),
     ("Breaker Command State (0 closed, 1 open)", "State_"),
+    ("Physical Fault Current (kA)", "Ifault"),
+    ("Physical Fault State (0 clear, 1 active)", "FaultState_"),
 )
 
 

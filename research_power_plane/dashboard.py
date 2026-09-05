@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -26,6 +27,7 @@ from seian_power_pipeline.psout_channels import extract_channel_series, group_ch
 from research_power_plane.scripts.bootstrap_pscad_workspace import (
     bootstrap_workspace,
 )
+from research_power_plane.dashboard_ui.editors import render_graphical_inputs
 
 
 HERE = Path(__file__).resolve().parent
@@ -33,6 +35,14 @@ EXAMPLES = HERE / "examples"
 DEFAULT_WORKSPACE_FILE = WORKSPACE_FILE
 DEFAULT_PSCAD_PROJECT = DEFAULT_CASE_NAME
 GENERATED_MAP_FILE = DEFAULT_MAP_FILE
+EXPERIMENTS = {
+    "Baseline": "01_no_fault_baseline.json",
+    "Fault isolation": "02_single_fault_isolation.json",
+    "Tie restoration": "03_tie_switch_restoration.json",
+    "Loop rejection": "04_loop_rejection.json",
+    "Degraded control": "05_degraded_control_plane.json",
+    "Physical fault and restoration": "06_physical_fault_restoration.json",
+}
 
 
 st.set_page_config(page_title="SEIAN PSCAD Co-Simulation", layout="wide")
@@ -50,9 +60,23 @@ def read_json_text(path: Path) -> tuple[str, dict[str, Any]]:
     return text, payload
 
 
+def apply_uploaded_text(upload: Any, target: str) -> None:
+    marker = f"upload_digest_{target}"
+    if upload is None:
+        st.session_state.pop(marker, None)
+        return
+    content = upload.getvalue()
+    digest = hashlib.sha256(content).hexdigest()
+    if st.session_state.get(marker) != digest:
+        st.session_state[target] = content.decode("utf-8-sig")
+        st.session_state[marker] = digest
+
+
 def load_default_state() -> None:
     topology_text, topology_payload = read_json_text(EXAMPLES / "lv_power_plane_microgrid.json")
-    commands_text, _ = read_json_text(EXAMPLES / "network_control_commands.json")
+    commands_text, _ = read_json_text(
+        EXAMPLES / "scenarios" / "06_physical_fault_restoration.json"
+    )
     mapping_path = GENERATED_MAP_FILE if GENERATED_MAP_FILE.exists() else EXAMPLES / "pscad_component_map.example.json"
     mapping_text, _ = read_json_text(mapping_path)
     st.session_state.topology_text = topology_text
@@ -63,6 +87,18 @@ def load_default_state() -> None:
     st.session_state.workspace_file = str(DEFAULT_WORKSPACE_FILE) if DEFAULT_WORKSPACE_FILE.exists() else ""
     st.session_state.pipeline_result = None
     st.session_state.pscad_status = None
+    st.session_state.observed_inputs = None
+    st.session_state.pipeline_error = None
+    st.session_state.experiment_choice = "Physical fault and restoration"
+
+
+def load_experiment() -> None:
+    path = EXAMPLES / "scenarios" / EXPERIMENTS[st.session_state.experiment_choice]
+    st.session_state.command_text = read_text(path)
+
+
+def apply_raw_edit(target: str) -> None:
+    st.session_state[target] = st.session_state[f"raw_{target}"]
 
 
 if "topology_text" not in st.session_state:
@@ -70,32 +106,26 @@ if "topology_text" not in st.session_state:
 
 
 st.title("SEIAN AMRP to PSCAD Co-Simulation")
-st.caption(
-    "A separate research dashboard that leaves the networking simulator code untouched: "
-    "controller commands are replayed into a switchable LV power plane and optionally executed in PSCAD."
-)
 
 with st.sidebar:
-    st.header("Inputs")
-    if st.button("Reload example files", use_container_width=True):
+    st.header("Experiment")
+    st.selectbox("Scenario preset", list(EXPERIMENTS), key="experiment_choice", on_change=load_experiment)
+    if st.button("Reload example files", icon=":material/refresh:", width="stretch"):
         load_default_state()
         st.rerun()
 
-    topology_file = st.file_uploader("Topology JSON", type=["json"])
-    if topology_file is not None:
-        st.session_state.topology_text = topology_file.getvalue().decode("utf-8")
-
-    command_file = st.file_uploader("Control commands JSON", type=["json"])
-    if command_file is not None:
-        st.session_state.command_text = command_file.getvalue().decode("utf-8")
-
-    mapping_file = st.file_uploader("PSCAD component map JSON", type=["json"])
-    if mapping_file is not None:
-        st.session_state.mapping_text = mapping_file.getvalue().decode("utf-8")
+    with st.expander("Import JSON"):
+        topology_file = st.file_uploader("Topology JSON", type=["json"])
+        apply_uploaded_text(topology_file, "topology_text")
+        command_file = st.file_uploader("Control commands JSON", type=["json"])
+        apply_uploaded_text(command_file, "command_text")
+        mapping_file = st.file_uploader("PSCAD component map JSON", type=["json"])
+        apply_uploaded_text(mapping_file, "mapping_text")
 
     st.divider()
     st.header("PSCAD")
     execute_pscad = st.toggle("Auto-run PSCAD after replay", value=GENERATED_MAP_FILE.exists())
+    simulate_changes = st.toggle("Simulate input changes", value=True)
     mode_label = st.segmented_control(
         "Simulation mode",
         options=("Controller timeline", "Final steady state"),
@@ -161,23 +191,44 @@ with st.sidebar:
         st.rerun()
 
 
-left, right = st.columns(2)
-with left:
-    st.subheader("Power Topology")
-    topology_text = st.text_area("Topology JSON", value=st.session_state.topology_text, height=360)
-with right:
-    st.subheader("Controller Commands")
-    command_text = st.text_area("Command JSON", value=st.session_state.command_text, height=360)
+run_col, clear_col = st.columns([3, 1])
+requested_run = run_col.button("Replay and Simulate", icon=":material/play_arrow:", type="primary", width="stretch")
+if clear_col.button("Clear result", icon=":material/clear:", width="stretch"):
+    st.session_state.pipeline_result = None
+    st.session_state.pipeline_error = None
+    st.rerun()
 
-st.subheader("PSCAD Mapping")
-mapping_text = st.text_area(
-    "Map logical switch IDs to PSCAD component IDs",
-    value=st.session_state.mapping_text,
-    height=260,
-)
+render_graphical_inputs(preserve_radial=preserve_radial, post_event_seconds=float(post_event_seconds))
 
-run_col, clear_col = st.columns([1, 1])
-if run_col.button("Replay and Simulate", type="primary", use_container_width=True):
+with st.expander("Advanced JSON"):
+    # Canonical documents outlive widgets that are skipped during a form rerun.
+    for target, label, height in [
+        ("topology_text", "Topology JSON", 260),
+        ("command_text", "Command JSON", 300),
+        ("mapping_text", "Map logical switch IDs to PSCAD component IDs", 260),
+    ]:
+        st.session_state[f"raw_{target}"] = st.session_state[target]
+        st.text_area(label, key=f"raw_{target}", height=height, on_change=apply_raw_edit, args=(target,))
+    topology_text = st.session_state.topology_text
+    command_text = st.session_state.command_text
+    mapping_text = st.session_state.mapping_text
+    downloads = st.columns(3)
+    for column, label, content, filename in [
+        (downloads[0], "Topology", topology_text, "topology.json"),
+        (downloads[1], "Commands", command_text, "commands.json"),
+        (downloads[2], "Bindings", mapping_text, "pscad_mapping.json"),
+    ]:
+        column.download_button(label, content, filename, mime="application/json", icon=":material/download:", width="stretch")
+input_signature = hashlib.sha256(json.dumps([
+    topology_text, command_text, mapping_text, pscad_project_name, workspace_file,
+    simulation_mode, float(post_event_seconds), preserve_radial,
+]).encode("utf-8")).hexdigest()
+previous_signature = st.session_state.get("observed_inputs")
+inputs_changed = previous_signature is not None and previous_signature != input_signature
+st.session_state.observed_inputs = input_signature
+if requested_run or (simulate_changes and inputs_changed):
+    st.session_state.pipeline_error = None
+    st.session_state.pipeline_result = None
     try:
         topology_payload = json.loads(topology_text)
         command_payload = json.loads(command_text)
@@ -186,32 +237,30 @@ if run_col.button("Replay and Simulate", type="primary", use_container_width=Tru
             raise ValueError("Topology and PSCAD mapping must be JSON objects.")
         commands = control_commands_from_payload(command_payload)
         project_name = pscad_project_name.strip() or DEFAULT_PSCAD_PROJECT
-        result = run_control_pipeline(
-            topology_payload=topology_payload,
-            commands=commands,
-            preserve_radial=preserve_radial,
-            pscad_mapping_payload=mapping_payload,
-            pscad_project_name=project_name,
-            execute_in_pscad=execute_pscad,
-            pscad_workspace_files=[workspace_file.strip()] if workspace_file.strip() else [],
-            pscad_allowed_roots=[str(ROOT)],
-            pscad_poll_s=float(poll_seconds),
-            pscad_read_outputs=read_outputs,
-            simulation_mode=simulation_mode,
-            post_event_window_s=float(post_event_seconds),
-        )
+        with st.spinner("Running PSCAD simulation..." if execute_pscad else "Replaying controller commands..."):
+            result = run_control_pipeline(
+                topology_payload=topology_payload,
+                commands=commands,
+                preserve_radial=preserve_radial,
+                pscad_mapping_payload=mapping_payload,
+                pscad_project_name=project_name,
+                execute_in_pscad=execute_pscad,
+                pscad_workspace_files=[workspace_file.strip()] if workspace_file.strip() else [],
+                pscad_allowed_roots=[str(ROOT)],
+                pscad_poll_s=float(poll_seconds),
+                pscad_read_outputs=read_outputs,
+                simulation_mode=simulation_mode,
+                post_event_window_s=float(post_event_seconds),
+                physical_fault_payload=(command_payload if isinstance(command_payload, dict) else None),
+            )
     except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
-        st.error(f"Pipeline failed: {exc}")
+        st.session_state.pipeline_error = f"Pipeline failed: {exc}"
     else:
-        st.session_state.topology_text = topology_text
-        st.session_state.command_text = command_text
-        st.session_state.mapping_text = mapping_text
         st.session_state.pipeline_result = result.to_dict()
         st.rerun()
 
-if clear_col.button("Clear result", use_container_width=True):
-    st.session_state.pipeline_result = None
-    st.rerun()
+if st.session_state.get("pipeline_error"):
+    st.error(st.session_state.pipeline_error)
 
 if st.session_state.pscad_status:
     st.subheader("PSCAD Connection")
@@ -220,7 +269,8 @@ if st.session_state.pscad_status:
 result = st.session_state.pipeline_result
 if isinstance(result, dict):
     st.subheader("Pipeline Result")
-    st.text(pipeline_summary(result))
+    with st.expander("Run summary"):
+        st.text(pipeline_summary(result))
 
     analysis = result["final_power_plane"]["analysis"]
     metrics = st.columns(6)
@@ -245,29 +295,32 @@ if isinstance(result, dict):
     st.dataframe(pd.DataFrame(plans), use_container_width=True, hide_index=True)
 
     operations = [operation for plan in result["plans"] for operation in plan["operations"]]
-    st.write("Switch Operations")
-    st.dataframe(pd.DataFrame(operations), use_container_width=True, hide_index=True)
+    with st.expander("Switch operations"):
+        st.dataframe(pd.DataFrame(operations), width="stretch", hide_index=True)
 
     timeline = result.get("switching_timeline")
     if timeline:
-        st.write("Physical Switching Timeline")
         timeline_events = [
             event
             for schedule in timeline.get("line_schedules", [])
             for event in schedule.get("events", [])
         ]
         if timeline_events:
-            st.dataframe(pd.DataFrame(timeline_events), use_container_width=True, hide_index=True)
-        else:
-            st.caption(f"No accepted breaker transitions; PSCAD records {timeline['duration_s']:g} s.")
+            with st.expander("Accepted breaker events"):
+                st.dataframe(pd.DataFrame(timeline_events), width="stretch", hide_index=True)
 
-    st.write("Final Power Plane")
-    st.dataframe(pd.DataFrame(result["final_power_plane"]["lines"]), use_container_width=True, hide_index=True)
-    st.json(analysis)
+    physical_faults = result.get("physical_faults", [])
+    if physical_faults:
+        with st.expander("Physical fault events"):
+            st.dataframe(pd.DataFrame(physical_faults), width="stretch", hide_index=True)
+
+    with st.expander("Final power-plane record"):
+        st.dataframe(pd.DataFrame(result["final_power_plane"]["lines"]), width="stretch", hide_index=True)
+        st.json(analysis)
 
     if result.get("pscad_manifest"):
-        st.write("PSCAD MCP Manifest")
-        st.json(result["pscad_manifest"])
+        with st.expander("PSCAD MCP manifest"):
+            st.json(result["pscad_manifest"])
 
     if result.get("pscad_execution"):
         st.write("Live PSCAD Execution")
@@ -279,7 +332,7 @@ if isinstance(result, dict):
             st.success("PSCAD completed the run and produced fresh output data.")
 
         execution_metrics = st.columns(4)
-        execution_metrics[0].metric("Applied schedules", execution.get("applied_operation_count", 0))
+        execution_metrics[0].metric("Applied parameter writes", execution.get("applied_operation_count", 0))
         execution_metrics[1].metric(
             "Status polls", len(execution.get("run_status_history", []))
         )

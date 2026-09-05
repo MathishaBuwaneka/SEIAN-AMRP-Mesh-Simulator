@@ -1,0 +1,41 @@
+{
+  "physical_faults": [
+    {
+      "fault_id": "FAULT_N03",
+      "node_id": "N03",
+      "start_s": 4.8,
+      "duration_s": 0.4,
+      "fault_type": "abc_ground",
+      "resistance_ohm": 0.05
+    }
+  ],
+  "commands": [
+    {
+      "command_id": "physical-fault-isolate-n03",
+      "timestamp": 5.0,
+      "controller_id": "amrp-sdn-controller",
+      "action": "isolate_node",
+      "target_node_id": "N03",
+      "reason": "Protection detects the physical N03 fault and isolates every incident LV path."
+    },
+    {
+      "command_id": "physical-fault-reroute-via-ties",
+      "timestamp": 6.0,
+      "controller_id": "amrp-sdn-controller",
+      "action": "reroute_power_path",
+      "source_node_id": "G01",
+      "destination_node_id": "N04",
+      "blocked_nodes": ["N03"],
+      "path": ["G01", "N02", "N05", "N06", "N04"],
+      "close_lines": [["N02", "N05"], ["N04", "N06"]],
+      "reason": "Restore healthy downstream buses through the alternate radial path after isolation.",
+      "metadata": {
+        "paper_case": "physical three-phase N03 fault, SDN isolation, and tie restoration"
+      }
+    }
+  ],
+  "scenario": {
+    "name": "Physical fault with SDN restoration",
+    "description": "A native PSCAD ABC-to-ground fault starts at N03 at 4.8 s. The controller isolates N03 at 5.0 s, the fault logic clears at 5.2 s, and the alternate N02-N05-N06-N04 path closes at 6.0 s."
+  }
+}

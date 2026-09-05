@@ -1,0 +1,55 @@
+{
+  "validated_at_utc": "2026-09-05T05:01:05.987396+00:00",
+  "url": "http://localhost:8502",
+  "runs": [
+    {
+      "scenario": "baseline",
+      "trigger": "command JSON edit committed by Tab; no Replay click",
+      "pscad_pid": 27608,
+      "fresh_outputs": [
+        "D:\\Oshadha\\Professional Self Projects\\SEIAN_power_routing_protocol\\research_power_plane\\pscad_workspace\\SEIAN_LV_Timed_Switching.gf46\\SEIAN_LV_Timed_Switching.psout"
+      ],
+      "channels": 31,
+      "samples": 20001,
+      "fault_peak_ka": {
+        "IfaultB_FAULT_N03": 1.263468442091644e-06,
+        "IfaultC_FAULT_N03": 1.263467047768523e-06,
+        "IfaultA_FAULT_N03": 1.2634850644771894e-06
+      },
+      "final_bus_kv": {
+        "Vrms_N03": 0.38696845341601893,
+        "Vrms_N02": 0.39301735918751846,
+        "Vrms_G01": 0.39824121845339555,
+        "Vrms_N05": 0.38351216729992854,
+        "Vrms_N06": 0.38203471881887285,
+        "Vrms_N04": 0.3848255972791032
+      },
+      "errors": []
+    },
+    {
+      "scenario": "physical_fault",
+      "trigger": "command JSON edit committed by Tab; no Replay click",
+      "pscad_pid": 27608,
+      "fresh_outputs": [
+        "D:\\Oshadha\\Professional Self Projects\\SEIAN_power_routing_protocol\\research_power_plane\\pscad_workspace\\SEIAN_LV_Timed_Switching.gf46\\SEIAN_LV_Timed_Switching.psout"
+      ],
+      "channels": 31,
+      "samples": 140001,
+      "fault_peak_ka": {
+        "IfaultB_FAULT_N03": 1.5543333196725602,
+        "IfaultC_FAULT_N03": 1.5519595988539696,
+        "IfaultA_FAULT_N03": 1.551991167694848
+      },
+      "final_bus_kv": {
+        "Vrms_N03": 2.371704992887692e-05,
+        "Vrms_N02": 0.3944391964715633,
+        "Vrms_G01": 0.39861954562493296,
+        "Vrms_N05": 0.38736564112312777,
+        "Vrms_N06": 0.3834275785585982,
+        "Vrms_N04": 0.38050677698484575
+      },
+      "errors": []
+    }
+  ],
+  "mobile_horizontal_overflow_px": 0
+}

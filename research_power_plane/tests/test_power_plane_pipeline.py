@@ -123,6 +123,7 @@ def test_pscad_state_snapshot_contains_all_mapped_final_switches():
     assert manifest["mode"] == "final_state_snapshot"
     assert manifest["operation_count"] == 2
     assert manifest["changed_operation_count"] == 1
+    assert manifest["project_settings"]["time_duration"] == 1.0
     assert calls_by_component[101]["arguments"]["parameters"] == {"Closed": 1}
     assert calls_by_component[202]["arguments"]["parameters"] == {"Closed": 0}
 

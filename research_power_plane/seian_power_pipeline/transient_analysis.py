@@ -39,6 +39,7 @@ def analyze_trace(
         after_sample_time, after_value = sample_nearest(usable_times, usable_values, after_time)
         events.append(
             {
+                "event_time_s": event_time,
                 "command_time_s": event_time,
                 "before_time_s": before_sample_time,
                 "before": before_value,

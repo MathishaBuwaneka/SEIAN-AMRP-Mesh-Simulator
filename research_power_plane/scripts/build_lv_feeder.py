@@ -2,8 +2,8 @@
 
 Builds, on the existing case's Main canvas: a Thevenin source at G01, buses at
 every node, a breaker3 on every logical line, lumped R/L branches for line
-impedance, Y-connected loads at N02..N06, and multimeter instrumentation
-(bus RMS voltage, per-line RMS current and active power).
+impedance, Y-connected loads at N02..N06, a controller-scheduled three-phase
+fault element at N03, and research instrumentation.
 
 Two PSCAD mechanics drive the whole design, both of which are easy to get
 wrong (see AI_CONTEXT.md for the dead ends):
@@ -85,6 +85,9 @@ LOAD_PF = 0.98           # near-unity resistive load approximation
 BREAKER_CLOSED = 0
 BREAKER_OPEN = 1
 IDLE_OPERATION_TIME_S = 1_000_000.0
+FAULT_ID = "FAULT_N03"
+FAULT_NODE = "N03"
+FAULT_RESISTANCE_OHM = 0.05
 
 # Bus layout (PSCAD grid units) -- graph shape mirrors the JSON topology.
 # New PSCAD cases clamp negative and very large coordinates when reopened, so
@@ -126,6 +129,7 @@ def main() -> int:
         print(f"Feeder build failed. See {ERROR_FILE}")
         return 1
 
+    ERROR_FILE.unlink(missing_ok=True)
     REPORT_FILE.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
     print(
         json.dumps(
@@ -135,6 +139,7 @@ def main() -> int:
                 "line_count": len(report["lines"]),
                 "load_count": len(report["loads"]),
                 "voltmeter_count": len(report["voltmeters"]),
+                "fault_count": len(report["faults"]),
                 "recorded_channel_count": len(report["recorders"]),
             },
             indent=2,
@@ -223,6 +228,15 @@ def build_feeder() -> dict[str, Any]:
         )
         line_report.append(chain)
 
+    fault_report = [
+        _build_physical_fault(
+            main,
+            fault_id=FAULT_ID,
+            node_id=FAULT_NODE,
+            bus_point=BUS_XY[FAULT_NODE],
+        )
+    ]
+
     load_report = []
     for node, kw in LOAD_KW.items():
         load_report.append(_build_load(main, node, BUS_XY[node], kw))
@@ -239,6 +253,9 @@ def build_feeder() -> dict[str, Any]:
         for name in row["signals"]:
             signals.append((name, name, "kA" if name.startswith("Irms_") else "MW"))
         signals.append((row["control_signal"], f"State_{row['line_id']}", "binary"))
+    for row in fault_report:
+        signals.extend((name, name, "kA") for name in row["current_signals"])
+        signals.append((row["control_signal"], row["control_signal"], "binary"))
     recorder_report = _build_recorders(main, signals)
 
     project.parameters(time_duration=1.0, time_step=25.0, sample_step=50.0, PlotType="PSOUT")
@@ -246,7 +263,7 @@ def build_feeder() -> dict[str, Any]:
     pscad.save_workspace(str(WORKSPACE_FILE))
 
     mapping = {
-        "schema_version": 2,
+        "schema_version": 3,
         "project_name": CASE_NAME,
         "control_model": "master:tbreakn",
         "line_bindings": [
@@ -279,6 +296,24 @@ def build_feeder() -> dict[str, Any]:
             }
             for row in line_report
         ],
+        "fault_bindings": [
+            {
+                "fault_id": row["fault_id"],
+                "node_id": row["node_id"],
+                "logic_component_id": row["logic_component_id"],
+                "fault_component_id": row["fault_component_id"],
+                "start_parameter": "TF",
+                "duration_parameter": "DF",
+                "resistance_parameter": "RON",
+                "phase_a_parameter": "A",
+                "phase_b_parameter": "B",
+                "phase_c_parameter": "C",
+                "ground_parameter": "G",
+                "inactive_duration_s": 0.05,
+                "default_resistance_ohm": FAULT_RESISTANCE_OHM,
+            }
+            for row in fault_report
+        ],
     }
     MAP_FILE.write_text(json.dumps(mapping, indent=2), encoding="utf-8")
 
@@ -290,6 +325,7 @@ def build_feeder() -> dict[str, Any]:
         "lines": line_report,
         "loads": load_report,
         "voltmeters": voltmeter_report,
+        "faults": fault_report,
         "recorders": recorder_report,
     }
 
@@ -420,6 +456,85 @@ def _build_load(main: Any, node: str, bus_point: tuple[int, int], kw: float) -> 
     }
 
 
+def _build_physical_fault(
+    main: Any,
+    *,
+    fault_id: str,
+    node_id: str,
+    bus_point: tuple[int, int],
+) -> dict[str, Any]:
+    """Attach a native timed three-phase fault branch to one LV bus."""
+
+    fault_x, fault_y = 185, 105
+    current_signals = [
+        f"IfaultA_{fault_id}",
+        f"IfaultB_{fault_id}",
+        f"IfaultC_{fault_id}",
+    ]
+    fault = main.create_component(
+        "master:tpflt",
+        fault_x,
+        fault_y,
+        Name=fault_id,
+        Ctype=0,
+        OpCur=1,
+        Grnd=1,
+        View=1,
+        CLVL=0.0,
+        RON=FAULT_RESISTANCE_OHM,
+        ROFF=1_000_000.0,
+        A=1,
+        B=1,
+        C=1,
+        G=1,
+        Ifla=current_signals[0],
+        Iflb=current_signals[1],
+        Iflc=current_signals[2],
+    )
+    logic = main.create_component(
+        "master:tfaultn",
+        fault_x + 6,
+        fault_y + 2,
+        Name=f"CTRL_{fault_id}",
+        TF=IDLE_OPERATION_TIME_S,
+        DF=0.05,
+    )
+
+    # The short horizontal signal wire links Timed Fault Logic (integer Y) to
+    # the fault's IS port. A labelled branch publishes the same state to the
+    # recorder bank without running a long signal wire across the schematic.
+    signal_junction = (fault_x + 3, fault_y + 2)
+    main.create_wire(logic.port("Y"), signal_junction, fault.port("IS"))
+    control_signal = f"FaultState_{fault_id}"
+    state_label = main.create_component(
+        "master:datalabel",
+        fault_x + 3,
+        fault_y + 8,
+        Name=control_signal,
+    )
+    main.create_wire(signal_junction, state_label.port("A"))
+
+    # Keep this branch clear of the N03-N05 feeder corridor and the N03 load.
+    main.create_wire(
+        fault.port("N"),
+        (fault_x + 1, 92),
+        (174, 92),
+        (174, bus_point[1]),
+        bus_point,
+    )
+
+    return {
+        "fault_id": fault_id,
+        "node_id": node_id,
+        "fault_component_id": _iid(fault),
+        "logic_component_id": _iid(logic),
+        "current_signals": current_signals,
+        "control_signal": control_signal,
+        "default_fault_type": "abc_ground",
+        "default_resistance_ohm": FAULT_RESISTANCE_OHM,
+    }
+
+
 def _build_bus_voltmeter(main: Any, node: str, bus_point: tuple[int, int]) -> dict[str, Any]:
     # master:voltmetergnd only carries a cosmetic "Name" label (no recorded
     # channel -- see the line-meter comment above), so this uses multimeter
@@ -459,8 +574,8 @@ def _build_recorders(main: Any, signals: list[tuple[str, str, str]]) -> list[dic
 
     report: list[dict[str, Any]] = []
     for index, (source_signal, channel_name, unit) in enumerate(signals):
-        x = 10 + (index % 9) * 35
-        y = 15 + (index // 9) * 10
+        x = 5 + (index % 11) * 30
+        y = 10 + (index // 11) * 12
         label = main.create_component("master:datalabel", x, y, Name=source_signal)
         channel = main.create_component(
             "master:pgb",

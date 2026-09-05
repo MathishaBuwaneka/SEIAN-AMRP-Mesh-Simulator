@@ -1,16 +1,16 @@
 {
   "case_file": "D:\\Oshadha\\Professional Self Projects\\SEIAN_power_routing_protocol\\research_power_plane\\pscad_workspace\\SEIAN_LV_Timed_Switching.pscx",
   "mapping_file": "D:\\Oshadha\\Professional Self Projects\\SEIAN_power_routing_protocol\\research_power_plane\\pscad_workspace\\seian_pscad_timed_component_map.generated.json",
-  "source_id": 79372773,
-  "ground_id": 1860071146,
+  "source_id": 1366985468,
+  "ground_id": 1900016260,
   "lines": [
     {
       "line_id": "SW_G01_N02",
-      "ammeter_id": 1637446585,
-      "breaker_id": 1098689065,
-      "switch_id": 1160344068,
-      "resistor_id": 53848017,
-      "inductor_id": 14643592,
+      "ammeter_id": 1703077467,
+      "breaker_id": 974267794,
+      "switch_id": 1950731909,
+      "resistor_id": 1513083775,
+      "inductor_id": 262890719,
       "signals": [
         "Irms_SW_G01_N02",
         "P_SW_G01_N02"
@@ -22,11 +22,11 @@
     },
     {
       "line_id": "SW_N02_N03",
-      "ammeter_id": 405741659,
-      "breaker_id": 695238059,
-      "switch_id": 1005810785,
-      "resistor_id": 1795548528,
-      "inductor_id": 1343998566,
+      "ammeter_id": 193116705,
+      "breaker_id": 698703157,
+      "switch_id": 1345486506,
+      "resistor_id": 389963263,
+      "inductor_id": 916184477,
       "signals": [
         "Irms_SW_N02_N03",
         "P_SW_N02_N03"
@@ -38,11 +38,11 @@
     },
     {
       "line_id": "SW_N03_N04",
-      "ammeter_id": 362089064,
-      "breaker_id": 178813154,
-      "switch_id": 2126892932,
-      "resistor_id": 2051507829,
-      "inductor_id": 928939344,
+      "ammeter_id": 818031414,
+      "breaker_id": 281838678,
+      "switch_id": 615585725,
+      "resistor_id": 979323284,
+      "inductor_id": 2017594367,
       "signals": [
         "Irms_SW_N03_N04",
         "P_SW_N03_N04"
@@ -54,11 +54,11 @@
     },
     {
       "line_id": "SW_N05_N06",
-      "ammeter_id": 1473690354,
-      "breaker_id": 1388919251,
-      "switch_id": 1543334196,
-      "resistor_id": 1728079233,
-      "inductor_id": 811294150,
+      "ammeter_id": 1290500002,
+      "breaker_id": 418307957,
+      "switch_id": 1526945825,
+      "resistor_id": 31752429,
+      "inductor_id": 1156075114,
       "signals": [
         "Irms_SW_N05_N06",
         "P_SW_N05_N06"
@@ -70,11 +70,11 @@
     },
     {
       "line_id": "SW_N03_N05",
-      "ammeter_id": 1761832297,
-      "breaker_id": 1751425778,
-      "switch_id": 1989702524,
-      "resistor_id": 855044863,
-      "inductor_id": 499453561,
+      "ammeter_id": 339076208,
+      "breaker_id": 97807888,
+      "switch_id": 326046501,
+      "resistor_id": 1149517892,
+      "inductor_id": 1238773758,
       "signals": [
         "Irms_SW_N03_N05",
         "P_SW_N03_N05"
@@ -86,11 +86,11 @@
     },
     {
       "line_id": "SW_N02_N05_TIE",
-      "ammeter_id": 765053215,
-      "breaker_id": 2082711494,
-      "switch_id": 393678319,
-      "resistor_id": 37178620,
-      "inductor_id": 579881127,
+      "ammeter_id": 179558877,
+      "breaker_id": 475692401,
+      "switch_id": 1639307121,
+      "resistor_id": 1146426036,
+      "inductor_id": 1448964106,
       "signals": [
         "Irms_SW_N02_N05_TIE",
         "P_SW_N02_N05_TIE"
@@ -102,11 +102,11 @@
     },
     {
       "line_id": "SW_N04_N06_TIE",
-      "ammeter_id": 1958468721,
-      "breaker_id": 537948512,
-      "switch_id": 1459536611,
-      "resistor_id": 1813005781,
-      "inductor_id": 678387562,
+      "ammeter_id": 427992075,
+      "breaker_id": 1084361978,
+      "switch_id": 1869894713,
+      "resistor_id": 340285110,
+      "inductor_id": 302644783,
       "signals": [
         "Irms_SW_N04_N06_TIE",
         "P_SW_N04_N06_TIE"
@@ -120,31 +120,31 @@
   "loads": [
     {
       "node": "N02",
-      "load_id": 265318822,
+      "load_id": 311201149,
       "kw": 8.0,
       "r_phase_ohm": 20.40816326530613
     },
     {
       "node": "N03",
-      "load_id": 1839644894,
+      "load_id": 1027262914,
       "kw": 8.0,
       "r_phase_ohm": 20.40816326530613
     },
     {
       "node": "N04",
-      "load_id": 741157441,
+      "load_id": 508078847,
       "kw": 10.0,
       "r_phase_ohm": 16.3265306122449
     },
     {
       "node": "N05",
-      "load_id": 728044043,
+      "load_id": 128449432,
       "kw": 8.0,
       "r_phase_ohm": 20.40816326530613
     },
     {
       "node": "N06",
-      "load_id": 317213711,
+      "load_id": 1562593181,
       "kw": 6.0,
       "r_phase_ohm": 27.210884353741502
     }
@@ -152,45 +152,61 @@
   "voltmeters": [
     {
       "node": "G01",
-      "voltmeter_id": 731730132,
+      "voltmeter_id": 351226667,
       "signals": [
         "Vrms_G01"
       ]
     },
     {
       "node": "N02",
-      "voltmeter_id": 1766123152,
+      "voltmeter_id": 2000510601,
       "signals": [
         "Vrms_N02"
       ]
     },
     {
       "node": "N03",
-      "voltmeter_id": 1439698768,
+      "voltmeter_id": 550118936,
       "signals": [
         "Vrms_N03"
       ]
     },
     {
       "node": "N04",
-      "voltmeter_id": 333579866,
+      "voltmeter_id": 1336361834,
       "signals": [
         "Vrms_N04"
       ]
     },
     {
       "node": "N05",
-      "voltmeter_id": 1025181608,
+      "voltmeter_id": 2137592190,
       "signals": [
         "Vrms_N05"
       ]
     },
     {
       "node": "N06",
-      "voltmeter_id": 1851963925,
+      "voltmeter_id": 1629964942,
       "signals": [
         "Vrms_N06"
       ]
+    }
+  ],
+  "faults": [
+    {
+      "fault_id": "FAULT_N03",
+      "node_id": "N03",
+      "fault_component_id": 861473361,
+      "logic_component_id": 1846895047,
+      "current_signals": [
+        "IfaultA_FAULT_N03",
+        "IfaultB_FAULT_N03",
+        "IfaultC_FAULT_N03"
+      ],
+      "control_signal": "FaultState_FAULT_N03",
+      "default_fault_type": "abc_ground",
+      "default_resistance_ohm": 0.05
     }
   ],
   "recorders": [
@@ -198,163 +214,187 @@
       "source_signal": "Vrms_G01",
       "signal": "Vrms_G01",
       "unit": "kV",
-      "pgb_id": 54873211
+      "pgb_id": 617458814
     },
     {
       "source_signal": "Vrms_N02",
       "signal": "Vrms_N02",
       "unit": "kV",
-      "pgb_id": 1776844322
+      "pgb_id": 597772575
     },
     {
       "source_signal": "Vrms_N03",
       "signal": "Vrms_N03",
       "unit": "kV",
-      "pgb_id": 1506254725
+      "pgb_id": 530317079
     },
     {
       "source_signal": "Vrms_N04",
       "signal": "Vrms_N04",
       "unit": "kV",
-      "pgb_id": 627756186
+      "pgb_id": 1657668463
     },
     {
       "source_signal": "Vrms_N05",
       "signal": "Vrms_N05",
       "unit": "kV",
-      "pgb_id": 1954806118
+      "pgb_id": 1095834082
     },
     {
       "source_signal": "Vrms_N06",
       "signal": "Vrms_N06",
       "unit": "kV",
-      "pgb_id": 246575070
+      "pgb_id": 1554136919
     },
     {
       "source_signal": "Irms_SW_G01_N02",
       "signal": "Irms_SW_G01_N02",
       "unit": "kA",
-      "pgb_id": 843525573
+      "pgb_id": 1957198589
     },
     {
       "source_signal": "P_SW_G01_N02",
       "signal": "P_SW_G01_N02",
       "unit": "MW",
-      "pgb_id": 36391997
+      "pgb_id": 1754992689
     },
     {
       "source_signal": "SW_G01_N02",
       "signal": "State_SW_G01_N02",
       "unit": "binary",
-      "pgb_id": 1307093695
+      "pgb_id": 1997172127
     },
     {
       "source_signal": "Irms_SW_N02_N03",
       "signal": "Irms_SW_N02_N03",
       "unit": "kA",
-      "pgb_id": 488117304
+      "pgb_id": 2109866896
     },
     {
       "source_signal": "P_SW_N02_N03",
       "signal": "P_SW_N02_N03",
       "unit": "MW",
-      "pgb_id": 321556598
+      "pgb_id": 1842200071
     },
     {
       "source_signal": "SW_N02_N03",
       "signal": "State_SW_N02_N03",
       "unit": "binary",
-      "pgb_id": 1097235504
+      "pgb_id": 882057678
     },
     {
       "source_signal": "Irms_SW_N03_N04",
       "signal": "Irms_SW_N03_N04",
       "unit": "kA",
-      "pgb_id": 29372331
+      "pgb_id": 133807806
     },
     {
       "source_signal": "P_SW_N03_N04",
       "signal": "P_SW_N03_N04",
       "unit": "MW",
-      "pgb_id": 1943540078
+      "pgb_id": 104142843
     },
     {
       "source_signal": "SW_N03_N04",
       "signal": "State_SW_N03_N04",
       "unit": "binary",
-      "pgb_id": 147165679
+      "pgb_id": 2125344615
     },
     {
       "source_signal": "Irms_SW_N05_N06",
       "signal": "Irms_SW_N05_N06",
       "unit": "kA",
-      "pgb_id": 755295539
+      "pgb_id": 96721137
     },
     {
       "source_signal": "P_SW_N05_N06",
       "signal": "P_SW_N05_N06",
       "unit": "MW",
-      "pgb_id": 1065989588
+      "pgb_id": 1007910258
     },
     {
       "source_signal": "SW_N05_N06",
       "signal": "State_SW_N05_N06",
       "unit": "binary",
-      "pgb_id": 786055201
+      "pgb_id": 357352687
     },
     {
       "source_signal": "Irms_SW_N03_N05",
       "signal": "Irms_SW_N03_N05",
       "unit": "kA",
-      "pgb_id": 577544508
+      "pgb_id": 656892077
     },
     {
       "source_signal": "P_SW_N03_N05",
       "signal": "P_SW_N03_N05",
       "unit": "MW",
-      "pgb_id": 155168565
+      "pgb_id": 1717362559
     },
     {
       "source_signal": "SW_N03_N05",
       "signal": "State_SW_N03_N05",
       "unit": "binary",
-      "pgb_id": 1631964580
+      "pgb_id": 1496911207
     },
     {
       "source_signal": "Irms_SW_N02_N05_TIE",
       "signal": "Irms_SW_N02_N05_TIE",
       "unit": "kA",
-      "pgb_id": 1974657365
+      "pgb_id": 2033851717
     },
     {
       "source_signal": "P_SW_N02_N05_TIE",
       "signal": "P_SW_N02_N05_TIE",
       "unit": "MW",
-      "pgb_id": 1359971686
+      "pgb_id": 1425303645
     },
     {
       "source_signal": "SW_N02_N05_TIE",
       "signal": "State_SW_N02_N05_TIE",
       "unit": "binary",
-      "pgb_id": 308778083
+      "pgb_id": 325409237
     },
     {
       "source_signal": "Irms_SW_N04_N06_TIE",
       "signal": "Irms_SW_N04_N06_TIE",
       "unit": "kA",
-      "pgb_id": 1442858806
+      "pgb_id": 1058777389
     },
     {
       "source_signal": "P_SW_N04_N06_TIE",
       "signal": "P_SW_N04_N06_TIE",
       "unit": "MW",
-      "pgb_id": 531979571
+      "pgb_id": 2011850602
     },
     {
       "source_signal": "SW_N04_N06_TIE",
       "signal": "State_SW_N04_N06_TIE",
       "unit": "binary",
-      "pgb_id": 1450764740
+      "pgb_id": 2056510217
+    },
+    {
+      "source_signal": "IfaultA_FAULT_N03",
+      "signal": "IfaultA_FAULT_N03",
+      "unit": "kA",
+      "pgb_id": 1965841769
+    },
+    {
+      "source_signal": "IfaultB_FAULT_N03",
+      "signal": "IfaultB_FAULT_N03",
+      "unit": "kA",
+      "pgb_id": 792631070
+    },
+    {
+      "source_signal": "IfaultC_FAULT_N03",
+      "signal": "IfaultC_FAULT_N03",
+      "unit": "kA",
+      "pgb_id": 1578579729
+    },
+    {
+      "source_signal": "FaultState_FAULT_N03",
+      "signal": "FaultState_FAULT_N03",
+      "unit": "binary",
+      "pgb_id": 309263945
     }
   ]
 }

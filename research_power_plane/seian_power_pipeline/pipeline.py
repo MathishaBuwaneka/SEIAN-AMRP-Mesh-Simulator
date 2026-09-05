@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from seian_sim.scenarios import build_from_topology
 
 from seian_power_pipeline.control_plane import NetworkControlCommand, chronological_commands
+from seian_power_pipeline.faults import PhysicalFaultEvent, physical_faults_from_payload
 from seian_power_pipeline.power_plane import PowerPlaneState, SwitchingPlan
 from seian_power_pipeline.pscad_adapter import PscadSwitchingAdapter
 from seian_power_pipeline.pscad_mcp_client import (
@@ -25,6 +26,7 @@ class PipelineResult:
     topology: dict[str, Any]
     plans: list[SwitchingPlan]
     final_power_plane: dict[str, Any]
+    physical_faults: list[PhysicalFaultEvent] = field(default_factory=list)
     switching_timeline: SwitchingTimeline | None = None
     pscad_manifest: dict[str, Any] | None = None
     pscad_execution: PscadExecutionResult | None = None
@@ -34,6 +36,7 @@ class PipelineResult:
             "topology": self.topology,
             "plans": [plan.to_dict() for plan in self.plans],
             "final_power_plane": self.final_power_plane,
+            "physical_faults": [fault.to_dict() for fault in self.physical_faults],
             "switching_timeline": self.switching_timeline.to_dict() if self.switching_timeline else None,
             "pscad_manifest": self.pscad_manifest,
             "pscad_execution": self.pscad_execution.to_dict() if self.pscad_execution else None,
@@ -55,10 +58,15 @@ def run_control_pipeline(
     simulation_mode: str = "steady_state",
     post_event_window_s: float = 1.0,
     duration_override_s: float | None = None,
+    physical_fault_payload: Any = None,
 ) -> PipelineResult:
     """Replay controller commands and optionally run the PSCAD case."""
 
     simulator = build_from_topology(topology_payload)
+    physical_faults = physical_faults_from_payload(
+        physical_fault_payload,
+        known_nodes=simulator.nodes,
+    )
     power_plane = PowerPlaneState.from_topology_payload(
         topology_payload,
         simulator,
@@ -77,12 +85,19 @@ def run_control_pipeline(
     normalized_mode = simulation_mode.strip().lower().replace("-", "_")
     if normalized_mode not in {"steady_state", "transient"}:
         raise ValueError("simulation_mode must be 'steady_state' or 'transient'.")
+    if physical_faults and normalized_mode != "transient":
+        raise ValueError("Physical PSCAD faults require simulation_mode='transient'.")
 
     timeline = None
     if normalized_mode == "transient":
+        fault_observation_end_s = max(
+            (fault.end_s + post_event_window_s for fault in physical_faults),
+            default=1.0,
+        )
         timeline = build_switching_timeline(
             topology_payload,
             plans,
+            minimum_duration_s=max(1.0, fault_observation_end_s),
             post_event_window_s=post_event_window_s,
             duration_override_s=duration_override_s,
         )
@@ -95,7 +110,7 @@ def run_control_pipeline(
             project_name=pscad_project_name,
         )
         manifest = (
-            adapter.manifest_for_timeline(timeline)
+            adapter.manifest_for_timeline(timeline, physical_faults)
             if timeline is not None
             else adapter.manifest_for_state(power_plane, plans)
         )
@@ -119,6 +134,7 @@ def run_control_pipeline(
         topology=topology,
         plans=plans,
         final_power_plane=final_power_plane,
+        physical_faults=physical_faults,
         switching_timeline=timeline,
         pscad_manifest=manifest,
         pscad_execution=execution,
@@ -135,6 +151,7 @@ def pipeline_summary(result: PipelineResult | dict[str, Any]) -> str:
     analysis = payload["final_power_plane"]["analysis"]
     lines = [
         f"commands: {len(plans)} ({accepted} accepted)",
+        f"physical faults: {len(payload.get('physical_faults', []))}",
         f"switch operations: {operations}",
         f"energized nodes: {len(analysis['energized_nodes'])}",
         f"deenergized nodes: {len(analysis['deenergized_nodes'])}",
@@ -147,7 +164,12 @@ def pipeline_summary(result: PipelineResult | dict[str, Any]) -> str:
         changed_count = manifest.get("changed_operation_count")
         if mode == "timed_event_sequence" and changed_count is not None:
             duration = manifest.get("timeline", {}).get("duration_s")
-            lines.append(f"PSCAD timed state writes: {manifest['operation_count']} ({changed_count} events)")
+            fault_count = manifest.get("physical_fault_event_count", 0)
+            fault_label = "fault" if fault_count == 1 else "faults"
+            lines.append(
+                f"PSCAD parameter writes: {manifest['operation_count']} "
+                f"({changed_count} breaker events, {fault_count} physical {fault_label})"
+            )
             if duration is not None:
                 lines.append(f"PSCAD transient duration: {duration:g} s")
         elif mode == "final_state_snapshot" and changed_count is not None:
