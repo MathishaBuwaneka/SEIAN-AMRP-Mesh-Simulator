@@ -159,7 +159,7 @@ with st.sidebar:
     preserve_radial = st.toggle("Reject loop-forming closures", value=True)
 
     st.divider()
-    if st.button("Open SEIAN PSCAD Workspace", use_container_width=True):
+    if st.button("Open SEIAN PSCAD Workspace", width="stretch"):
         try:
             if not DEFAULT_WORKSPACE_FILE.exists():
                 report = bootstrap_workspace()
@@ -180,7 +180,7 @@ with st.sidebar:
             st.session_state.pscad_status = {"errors": [str(exc)]}
         st.rerun()
 
-    if st.button("Check PSCAD connection", use_container_width=True):
+    if st.button("Check PSCAD connection", width="stretch"):
         result = execute_pscad_manifest(
             {"calls": []},
             PscadRuntimeConfig(
@@ -295,7 +295,7 @@ if isinstance(result, dict):
         }
         for plan in result["plans"]
     ]
-    st.dataframe(pd.DataFrame(plans), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(plans), width="stretch", hide_index=True)
 
     operations = [operation for plan in result["plans"] for operation in plan["operations"]]
     with st.expander("Switch operations"):
@@ -378,5 +378,5 @@ if isinstance(result, dict):
         json.dumps(result, indent=2),
         "seian_pscad_pipeline_result.json",
         mime="application/json",
-        use_container_width=True,
+        width="stretch",
     )

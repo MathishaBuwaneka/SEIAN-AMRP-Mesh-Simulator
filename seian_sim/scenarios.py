@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+
 from seian_sim.config import SimulationConfig
 from seian_sim.enums import FaultStatus, FaultType
 from seian_sim.simulator import SeianMeshSimulator
@@ -161,7 +163,9 @@ def build_from_topology(data: dict, config: SimulationConfig | None = None) -> S
     if not isinstance(nodes, list):
         raise ValueError("Topology JSON must include a 'nodes' list.")
 
-    cfg = config or SimulationConfig()
+    # The file's own area and radio settings win, so copy first: the caller's
+    # config object must not pick up values from whatever topology was loaded.
+    cfg = deepcopy(config) if config is not None else SimulationConfig()
     cfg.network_id = str(data.get("network_id", cfg.network_id))
     cfg.area_width_m = float(data.get("area_width_m", cfg.area_width_m))
     cfg.area_height_m = float(data.get("area_height_m", cfg.area_height_m))

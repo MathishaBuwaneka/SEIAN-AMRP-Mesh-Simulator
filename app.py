@@ -86,6 +86,18 @@ def make_config(
     return config
 
 
+def clamp_coordinate(value: float, maximum: float) -> float:
+    """Keep a seeded coordinate inside the sidebar's current area bounds.
+
+    Shrinking the area, or loading a topology laid out on a larger canvas,
+    must not leave a number input's value above its own maximum. Streamlit
+    raises StreamlitValueAboveMaxError in that case, which blanks the page
+    until the area is widened again.
+    """
+
+    return min(max(float(value), 0.0), float(maximum))
+
+
 def reset_builder_state() -> None:
     """Reset interactive-canvas state after replacing the network."""
 
@@ -161,7 +173,7 @@ with st.sidebar:
         neighbor_timeout=float(neighbor_timeout),
     )
 
-    if st.button("Create / Reset Network", type="primary", use_container_width=True):
+    if st.button("Create / Reset Network", type="primary", width="stretch"):
         if scenario == "Create own network":
             st.session_state.sim = build_empty_topology(config)
             set_builder_notice(
@@ -180,7 +192,7 @@ with st.sidebar:
     uploaded_topology = st.file_uploader("Load topology JSON", type=["json"])
     if st.button(
         "Load Uploaded Topology",
-        use_container_width=True,
+        width="stretch",
         disabled=uploaded_topology is None,
     ):
         try:
@@ -202,19 +214,23 @@ with st.sidebar:
     manual_id = st.text_input("New node ID", value=suggested_id)
     manual_x = st.number_input(
         "Node X (m)",
-        value=float(sidebar_selected.position_x if sidebar_selected else 100.0),
+        value=clamp_coordinate(
+            sidebar_selected.position_x if sidebar_selected else 100.0, area_width
+        ),
         min_value=0.0,
         max_value=float(area_width),
     )
     manual_y = st.number_input(
         "Node Y (m)",
-        value=float(sidebar_selected.position_y if sidebar_selected else 100.0),
+        value=clamp_coordinate(
+            sidebar_selected.position_y if sidebar_selected else 100.0, area_height
+        ),
         min_value=0.0,
         max_value=float(area_height),
     )
     manual_gateway = st.checkbox("New node is an online gateway")
 
-    if st.button("Add Node by Coordinates", use_container_width=True):
+    if st.button("Add Node by Coordinates", width="stretch"):
         sim_for_edit = st.session_state.sim
         if not manual_id.strip():
             st.error("Node ID cannot be empty.")
@@ -234,26 +250,26 @@ with st.sidebar:
             st.rerun()
 
     edit_cols = st.columns(2)
-    if sidebar_selected_node and edit_cols[0].button("Move Node", use_container_width=True):
+    if sidebar_selected_node and edit_cols[0].button("Move Node", width="stretch"):
         st.session_state.sim.move_node(sidebar_selected_node, float(manual_x), float(manual_y))
         st.session_state.builder_selected_node = sidebar_selected_node
         st.rerun()
-    if sidebar_selected_node and edit_cols[1].button("Remove Node", use_container_width=True):
+    if sidebar_selected_node and edit_cols[1].button("Remove Node", width="stretch"):
         st.session_state.sim.remove_node(sidebar_selected_node)
         if st.session_state.builder_selected_node == sidebar_selected_node:
             st.session_state.builder_selected_node = None
         st.rerun()
 
-    if st.button("Discover Neighbors / Rebuild Routes", use_container_width=True):
+    if st.button("Discover Neighbors / Rebuild Routes", width="stretch"):
         st.session_state.sim.discover_neighbors()
         st.rerun()
 
     st.divider()
     st.header("Simulation Actions")
-    if st.button("Run Batch", use_container_width=True):
+    if st.button("Run Batch", width="stretch"):
         st.session_state.sim.run(float(duration), float(simulation_step))
         st.rerun()
-    if st.button("Advance One Step", use_container_width=True):
+    if st.button("Advance One Step", width="stretch"):
         st.session_state.sim.run(float(simulation_step), float(simulation_step))
         st.rerun()
 
@@ -261,7 +277,7 @@ with st.sidebar:
     severity = st.selectbox(
         "Fault severity", ["minor", "moderate", "severe", "emergency"], index=2
     )
-    if sidebar_selected_node and st.button("Inject Fault", use_container_width=True):
+    if sidebar_selected_node and st.button("Inject Fault", width="stretch"):
         st.session_state.sim.inject_fault(
             sidebar_selected_node, FaultType(fault_type), severity=severity
         )
@@ -269,18 +285,18 @@ with st.sidebar:
         st.rerun()
 
     action_cols = st.columns(2)
-    if sidebar_selected_node and action_cols[0].button("Fail Node", use_container_width=True):
+    if sidebar_selected_node and action_cols[0].button("Fail Node", width="stretch"):
         st.session_state.sim.fail_node(sidebar_selected_node)
         st.rerun()
-    if sidebar_selected_node and action_cols[1].button("Recover Node", use_container_width=True):
+    if sidebar_selected_node and action_cols[1].button("Recover Node", width="stretch"):
         st.session_state.sim.recover_node(sidebar_selected_node)
         st.rerun()
 
     gateway_cols = st.columns(2)
-    if sidebar_selected_node and gateway_cols[0].button("Gateway Off", use_container_width=True):
+    if sidebar_selected_node and gateway_cols[0].button("Gateway Off", width="stretch"):
         st.session_state.sim.set_gateway(sidebar_selected_node, False)
         st.rerun()
-    if sidebar_selected_node and gateway_cols[1].button("Gateway On", use_container_width=True):
+    if sidebar_selected_node and gateway_cols[1].button("Gateway On", width="stretch"):
         st.session_state.sim.set_gateway(sidebar_selected_node, True)
         st.rerun()
 
@@ -365,7 +381,7 @@ with tab_builder:
             st.warning("Click directly on the node that should be deleted.")
 
         button_left, button_right = st.columns(2)
-        if button_left.button("Undo Place", use_container_width=True):
+        if button_left.button("Undo Place", width="stretch"):
             placed_order = st.session_state.builder_placed_order
             while placed_order and placed_order[-1] not in sim.nodes:
                 placed_order.pop()
@@ -380,13 +396,13 @@ with tab_builder:
                 st.session_state.builder_canvas_version += 1
             st.rerun()
 
-        if button_right.button("Clear All", use_container_width=True):
+        if button_right.button("Clear All", width="stretch"):
             st.session_state.sim = build_empty_topology(sim.config)
             reset_builder_state()
             set_builder_notice("success", "Canvas cleared. Click to place a new network.")
             st.rerun()
 
-        if st.button("Rebuild Links and Routes", use_container_width=True):
+        if st.button("Rebuild Links and Routes", width="stretch"):
             sim.discover_neighbors()
             set_builder_notice("success", "Neighbor discovery and route calculation completed.")
             st.session_state.builder_canvas_version += 1
@@ -405,7 +421,7 @@ with tab_builder:
                 snap_m=float(snap_m),
                 show_radio_range=show_radio_range,
             ),
-            use_container_width=True,
+            width="stretch",
             key=f"builder_canvas_{st.session_state.builder_canvas_version}",
             on_select="rerun",
             selection_mode="points",
@@ -452,7 +468,7 @@ with tab_builder:
             }
             for node in sim.nodes.values()
         ]
-        st.dataframe(pd.DataFrame(builder_table), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(builder_table), width="stretch", hide_index=True)
     else:
         st.info("The canvas is empty. Select Place standard node or Place gateway node and click.")
 
@@ -513,7 +529,7 @@ with tab_packet:
             )
 
         start_col, forward_col, reset_col = st.columns(3)
-        if start_col.button("Create Packet", type="primary", use_container_width=True):
+        if start_col.button("Create Packet", type="primary", width="stretch"):
             try:
                 payload = json.loads(payload_text) if payload_text.strip() else {}
                 if not isinstance(payload, dict):
@@ -536,14 +552,14 @@ with tab_packet:
         trace: ManualPacketSession | None = st.session_state.packet_trace
         if forward_col.button(
             "Forward ▶",
-            use_container_width=True,
+            width="stretch",
             disabled=trace is None or trace.pending_count == 0,
             help="Executes exactly one waiting transmission event.",
         ):
             trace.forward_one(sim)
             st.rerun()
 
-        if reset_col.button("Reset Trace", use_container_width=True, disabled=trace is None):
+        if reset_col.button("Reset Trace", width="stretch", disabled=trace is None):
             st.session_state.packet_trace = None
             st.rerun()
 
@@ -570,7 +586,7 @@ with tab_packet:
 
             st.plotly_chart(
                 packet_trace_figure(sim, trace),
-                use_container_width=True,
+                width="stretch",
                 key=f"packet_trace_{len(trace.history)}_{trace.pending_count}",
                 config={"displaylogo": False, "scrollZoom": True},
             )
@@ -589,7 +605,7 @@ with tab_packet:
                 st.write("Waiting event queue")
                 pending_rows = trace.pending_rows()
                 if pending_rows:
-                    st.dataframe(pd.DataFrame(pending_rows), use_container_width=True, hide_index=True)
+                    st.dataframe(pd.DataFrame(pending_rows), width="stretch", hide_index=True)
                 else:
                     st.caption("No waiting transmissions.")
             with table_right:
@@ -614,7 +630,7 @@ with tab_packet:
             st.write("Event history")
             history_rows = trace.history_rows()
             if history_rows:
-                st.dataframe(pd.DataFrame(history_rows), use_container_width=True, hide_index=True)
+                st.dataframe(pd.DataFrame(history_rows), width="stretch", hide_index=True)
             else:
                 st.caption("Packet created. Press Forward to produce the first event.")
 
@@ -660,7 +676,7 @@ with tab_topology:
             highlight_path=route_path,
             critical_nodes=set(topology_report["articulation_points"]),
         ),
-        use_container_width=True,
+        width="stretch",
     )
 
     health_cols = st.columns(4)
@@ -688,12 +704,12 @@ with tab_topology:
     detail_left, detail_right = st.columns(2)
     with detail_left:
         st.subheader("Physical Link Table")
-        st.dataframe(pd.DataFrame(link_table(sim)), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(link_table(sim)), width="stretch", hide_index=True)
     with detail_right:
         st.subheader("Single-Node Failure Impact")
         st.dataframe(
             pd.DataFrame(node_failure_impact(sim)),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
 
@@ -722,13 +738,13 @@ with tab_node:
         st.write("Neighbor table")
         st.dataframe(
             pd.DataFrame([asdict(entry) for entry in node.neighbor_table.values()]),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
         st.write("Routing table")
         st.dataframe(
             pd.DataFrame([asdict(entry) for entry in node.routing_table.values()]),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
         st.write("Recent packets")
@@ -736,7 +752,7 @@ with tab_node:
             pd.DataFrame(
                 node.recent_received_packets[-25:] + node.recent_transmitted_packets[-25:]
             ),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
         st.write("Packet-drop reasons")
@@ -753,21 +769,21 @@ with tab_charts:
     chart_left, chart_right = st.columns(2)
     chart_left.plotly_chart(
         time_series_figure(measurements, "voltage_rms", "Voltage over time"),
-        use_container_width=True,
+        width="stretch",
     )
     chart_right.plotly_chart(
         time_series_figure(measurements, "frequency_hz", "Frequency over time"),
-        use_container_width=True,
+        width="stretch",
     )
     chart_left.plotly_chart(
         time_series_figure(measurements, "load_percent", "Node load over time"),
-        use_container_width=True,
+        width="stretch",
     )
     chart_right.plotly_chart(
         time_series_figure(measurements, "temperature_c", "Temperature over time"),
-        use_container_width=True,
+        width="stretch",
     )
-    st.plotly_chart(drop_reason_figure(sim), use_container_width=True)
+    st.plotly_chart(drop_reason_figure(sim), width="stretch")
 
 with tab_events:
     categories = ["all", *[category.value for category in EventCategory]]
@@ -775,7 +791,7 @@ with tab_events:
     events_df = sim.export_dataframes()["events"]
     if not events_df.empty and category_filter != "all":
         events_df = events_df[events_df["category"] == category_filter]
-    st.dataframe(events_df.tail(500), use_container_width=True, hide_index=True)
+    st.dataframe(events_df.tail(500), width="stretch", hide_index=True)
 
 with tab_exports:
     frames = sim.export_dataframes()

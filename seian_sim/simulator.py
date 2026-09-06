@@ -97,27 +97,29 @@ class SeianMeshSimulator:
         return node
 
     def move_node(self, node_id: str, x: float, y: float) -> None:
+        """Move a node and rebuild discovery/routing from the new geometry."""
+
         node = self.nodes[node_id]
         node.position_x = x
         node.position_y = y
-
-        for node in self.nodes.values():
-            node.neighbor_table.clear()
-            node.routing_table.clear()
-
+        for other in self.nodes.values():
+            other.neighbor_table.clear()
+            other.routing_table.clear()
         self.discover_neighbors()
 
     def remove_node(self, node_id: str) -> None:
+        """Remove a node from the simulated network."""
+
         self.nodes.pop(node_id, None)
         self.whitelist.discard(node_id)
-
         for node in self.nodes.values():
             node.neighbor_table.pop(node_id, None)
             node.routing_table.pop(node_id, None)
-
         self.recalculate_routes("node removed")
 
     def clear_network(self) -> None:
+        """Remove all nodes, events, routes, packets, and metrics."""
+
         self.nodes.clear()
         self.whitelist.clear()
         self.events.clear()
@@ -126,8 +128,6 @@ class SeianMeshSimulator:
         self.route_history.clear()
         self.fault_events.clear()
         self.metrics = Metrics()
-
-    
 
     def log(
         self,
@@ -400,8 +400,13 @@ class SeianMeshSimulator:
             self._drop(receiver, obs.drop_reason or "radio_drop", packet.packet_type)
             return False
         self.metrics.packets_transmitted += 1
-        
         self.metrics.throughput_by_time[int(self.now)] += 1
+
+        self._add_neighbor(receiver, source, obs.rssi, obs.snr, obs.link_quality)
+        # The frame reached the receiver's radio, so the transmission counts.
+        # Whether it survives the receiver's queue decides this one row's
+        # outcome; recording the row first would double-count an overflow.
+        queued = receiver.enqueue_packet(packet, self.now, self.config.queue_limit)
 
         event_row = {
             "timestamp": self.now,
@@ -416,19 +421,17 @@ class SeianMeshSimulator:
             "source_y": source.position_y,
             "receiver_x": receiver.position_x,
             "receiver_y": receiver.position_y,
-            "delivered": True,
-            "drop_reason": None,
+            "delivered": queued,
+            "drop_reason": None if queued else "queue_overflow",
             "path": "->".join(packet.path),
         }
 
         self.packet_events.append(event_row)
         source.recent_transmitted_packets.append(event_row)
 
-        self._add_neighbor(receiver, source, obs.rssi, obs.snr, obs.link_quality)
-        queued = receiver.enqueue_packet(packet, self.now, self.config.queue_limit)
         if not queued:
             self.metrics.queue_drops_by_priority[packet.priority] += 1
-            self._drop(receiver, "queue_overflow", packet.packet_type)
+            self._count_drop(receiver, "queue_overflow", packet.packet_type)
             return False
         return True
 
@@ -591,9 +594,18 @@ class SeianMeshSimulator:
         self.broadcast(source_id, packet)
         self.process_queues()
 
-    def _drop(self, node: SeianNode, reason: str, packet_type: PacketType | str) -> None:
+    def _count_drop(self, node: SeianNode, reason: str, packet_type: PacketType | str) -> None:
+        """Record drop counters and the event-log line, without a packet row.
+
+        Callers that already appended an accurate ``packet_events`` row for the
+        same transmission use this so one physical send never produces two rows.
+        """
+
         node.remember_drop(reason)
         self.metrics.record_drop(reason)
+        self.log(EventCategory.PACKET, f"Packet dropped: {reason}.", node_id=node.node_id, packet_type=packet_type)
+
+    def _drop(self, node: SeianNode, reason: str, packet_type: PacketType | str) -> None:
         packet_type_value = packet_type.value if isinstance(packet_type, PacketType) else str(packet_type)
         self.packet_events.append({
             "timestamp": self.now,
@@ -612,7 +624,7 @@ class SeianMeshSimulator:
             "drop_reason": reason,
             "path": "",
         })
-        self.log(EventCategory.PACKET, f"Packet dropped: {reason}.", node_id=node.node_id, packet_type=packet_type)
+        self._count_drop(node, reason, packet_type)
 
     def _sample_gateway_reachability(self) -> None:
         gateways = [n.node_id for n in self.nodes.values() if n.gateway_capable and n.gateway_online and n.active]
@@ -650,36 +662,6 @@ class SeianMeshSimulator:
             "configuration": _jsonable(self.config),
             "summary_report": self.metrics.summary(),
         }
-    
-    def clear_network(self) -> None:
-        """Remove all nodes, events, routes, packets, and metrics."""
-        self.nodes.clear()
-        self.whitelist.clear()
-        self.events.clear()
-        self.measurements.clear()
-        self.packet_events.clear()
-        self.route_history.clear()
-        self.fault_events.clear()
-        self.metrics = Metrics()
-
-    def move_node(self, node_id: str, x: float, y: float) -> None:
-        """Move a node and rebuild discovery/routing from the new geometry."""
-        node = self.nodes[node_id]
-        node.position_x = x
-        node.position_y = y
-        for n in self.nodes.values():
-            n.neighbor_table.clear()
-            n.routing_table.clear()
-        self.discover_neighbors()
-
-    def remove_node(self, node_id: str) -> None:
-        """Remove a node from the simulated network."""
-        self.nodes.pop(node_id, None)
-        self.whitelist.discard(node_id)
-        for node in self.nodes.values():
-            node.neighbor_table.pop(node_id, None)
-            node.routing_table.pop(node_id, None)
-        self.recalculate_routes("node removed")
 
 
 def _jsonable(value: Any) -> Any:

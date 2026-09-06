@@ -1,3 +1,7 @@
 -r ../requirements.txt
 powermcp[pscad-windows]>=0.3.0
 streamlit>=1.63,<2
+
+# Only needed by scripts/validate_dashboard.py and
+# scripts/validate_graphical_dashboard.py to drive the dashboard in a browser.
+playwright>=1.44,<2

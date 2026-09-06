@@ -247,6 +247,11 @@ class PscadSwitchingAdapter:
         if not selected_project:
             raise ValueError("PSCAD project_name is required.")
         bindings = [PscadLineBinding.from_dict(row) for row in rows]
+        duplicate_line_ids = _duplicates(binding.line_id for binding in bindings)
+        if duplicate_line_ids:
+            raise ValueError(
+                "Duplicate PSCAD line binding IDs: " + ", ".join(duplicate_line_ids)
+            )
         fault_bindings = [PscadFaultBinding.from_dict(row) for row in fault_rows]
         duplicate_fault_ids = _duplicates(binding.fault_id for binding in fault_bindings)
         if duplicate_fault_ids:

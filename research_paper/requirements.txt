@@ -1,3 +1,7 @@
 # Only needed to regenerate figures; not needed to compile LaTeX.
 matplotlib>=3.8,<4
 numpy>=1.26,<3
+
+# Only needed by scripts/verify_paper.py to inspect the compiled PDF.
+pymupdf>=1.24,<2
+pillow>=10.0,<12

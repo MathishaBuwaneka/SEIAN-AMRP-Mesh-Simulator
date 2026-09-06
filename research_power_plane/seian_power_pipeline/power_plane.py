@@ -233,6 +233,17 @@ class PowerPlaneState:
             warnings.append("Path does not start at source_node_id.")
         if command.path and command.destination_node_id and command.path[-1] != command.destination_node_id:
             warnings.append("Path does not end at destination_node_id.")
+        isolated = set(command.blocked_nodes)
+        if command.target_node_id and command.action in {
+            ControlAction.ISOLATE_NODE,
+            ControlAction.REROUTE_POWER_PATH,
+        }:
+            isolated.add(command.target_node_id)
+        crossing = sorted(isolated.intersection(command.path))
+        if crossing:
+            warnings.append(
+                f"Path routes through node(s) the same command isolates: {', '.join(crossing)}"
+            )
         for edge in command_edges_for_path(command.path) if command.path else []:
             if edge not in self._line_by_endpoints:
                 warnings.append(f"Path references unknown line: {edge[0]}-{edge[1]}")
@@ -364,12 +375,17 @@ def _default_line_id(node_a: str, node_b: str) -> str:
 
 
 def _dedupe_switch_requests(requests: list[tuple[str, bool, str]]) -> list[tuple[str, bool, str]]:
-    deduped: list[tuple[str, bool, str]] = []
-    seen: set[tuple[str, bool]] = set()
+    """Keep one request per line, preferring the open (de-energizing) one.
+
+    One command can ask for both states on the same line -- a reroute whose
+    path crosses its own blocked node, for example. Applying both in sequence
+    would let the later close silently undo the isolation, so the open wins.
+    ``PowerPlaneState._validate_command`` reports the conflict separately.
+    """
+
+    chosen: dict[str, tuple[str, bool, str]] = {}
     for line_id, close, reason in requests:
-        key = (line_id, close)
-        if key in seen:
-            continue
-        seen.add(key)
-        deduped.append((line_id, close, reason))
-    return deduped
+        existing = chosen.get(line_id)
+        if existing is None or (existing[1] and not close):
+            chosen[line_id] = (line_id, close, reason)
+    return list(chosen.values())
