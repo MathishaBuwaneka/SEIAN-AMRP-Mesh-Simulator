@@ -27,7 +27,7 @@ def build_topology_graph(sim: "SeianMeshSimulator", *, active_only: bool = True)
 
     graph = nx.Graph()
     for node in sim.nodes.values():
-        if active_only and not node.active:
+        if active_only and not node.communication_available:
             continue
         graph.add_node(node.node_id)
 
@@ -61,7 +61,7 @@ def trace_route(sim: "SeianMeshSimulator", source_id: str, destination_id: str) 
         raise ValueError("Source and destination must exist in the simulation.")
     if source_id == destination_id:
         return [source_id]
-    if not sim.nodes[source_id].active or not sim.nodes[destination_id].active:
+    if not sim.nodes[source_id].communication_available or not sim.nodes[destination_id].communication_available:
         return []
 
     path = [source_id]
@@ -74,7 +74,7 @@ def trace_route(sim: "SeianMeshSimulator", source_id: str, destination_id: str) 
         next_hop = entry.next_hop_id
         if next_hop in visited or next_hop not in sim.nodes:
             return []
-        if not sim.nodes[next_hop].active:
+        if not sim.nodes[next_hop].communication_available:
             return []
         if next_hop not in sim.nodes[current].neighbor_table:
             return []
@@ -131,7 +131,7 @@ def node_failure_impact(sim: "SeianMeshSimulator") -> list[dict[str, Any]]:
     gateways = sorted(
         node.node_id
         for node in sim.nodes.values()
-        if node.active and node.gateway_capable and node.gateway_online
+        if node.communication_available and node.gateway_capable and node.gateway_online
     )
     baseline = _gateway_reachable_nodes(graph, gateways)
     rows: list[dict[str, Any]] = []
@@ -164,7 +164,7 @@ def analyze_topology(sim: "SeianMeshSimulator") -> dict[str, Any]:
     online_gateways = sorted(
         node.node_id
         for node in sim.nodes.values()
-        if node.active and node.gateway_capable and node.gateway_online
+        if node.communication_available and node.gateway_capable and node.gateway_online
     )
     components = [sorted(component) for component in nx.connected_components(graph)] if active_nodes else []
     components.sort(key=lambda component: (-len(component), component))
@@ -176,16 +176,16 @@ def analyze_topology(sim: "SeianMeshSimulator") -> dict[str, Any]:
 
     asymmetric_links: list[tuple[str, str]] = []
     for node in sim.nodes.values():
-        if not node.active:
+        if not node.communication_available:
             continue
         for neighbor_id in node.neighbor_table:
             neighbor = sim.nodes.get(neighbor_id)
-            if neighbor and neighbor.active and node.node_id not in neighbor.neighbor_table:
+            if neighbor and neighbor.communication_available and node.node_id not in neighbor.neighbor_table:
                 asymmetric_links.append((node.node_id, neighbor_id))
 
     invalid_routes: list[str] = []
     for source_id, node in sim.nodes.items():
-        if not node.active:
+        if not node.communication_available:
             continue
         for destination_id in node.routing_table:
             if destination_id == source_id:
@@ -282,7 +282,7 @@ def analyze_topology(sim: "SeianMeshSimulator") -> dict[str, Any]:
 
     return {
         "active_node_count": graph.number_of_nodes(),
-        "inactive_node_count": sum(1 for node in sim.nodes.values() if not node.active),
+        "inactive_node_count": sum(1 for node in sim.nodes.values() if not node.communication_available),
         "link_count": graph.number_of_edges(),
         "connected": connected,
         "component_count": len(components),

@@ -29,6 +29,30 @@ class FaultStatus(str, Enum):
     FAULT = "fault"
 
 
+class CommunicationStatus(str, Enum):
+    """Operational state of a node's communication plane."""
+
+    OPERATIONAL = "operational"
+    DEGRADED = "degraded"
+    FAILED = "failed"
+
+
+class CommunicationFaultStatus(str, Enum):
+    """Communication-specific fault state used by CCP routing."""
+
+    NORMAL = "normal"
+    WARNING = "warning"
+    FAULT = "fault"
+
+
+class FaultDomain(str, Enum):
+    """Subsystem in which a reported fault originates."""
+
+    POWER = "power"
+    COMMUNICATION = "communication"
+    DEVICE = "device"
+
+
 class FaultType(str, Enum):
     """Supported simulated grid and communication faults."""
 

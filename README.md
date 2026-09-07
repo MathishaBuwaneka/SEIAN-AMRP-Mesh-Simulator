@@ -2,7 +2,7 @@
 
 A local Streamlit application for designing and checking SEIAN smart-inverter LoRa mesh topologies using the proposed SEIAN Adaptive Mesh Routing Protocol (SEIAN-AMRP).
 
-The simulator is intended for topology design, protocol research, demonstrations, and controlled experiments. It does **not** control real inverters or replace electrical protection studies.
+The simulator is intended for topology design, protocol research, demonstrations, and controlled experiments. Its Communication and Coordination Plane is explicitly separated from synthetic Electrical Plane state: an electrical fault does not automatically disable communication, and a communication failure does not automatically fail the power stage. It does **not** control real inverters or replace electrical protection studies.
 
 
 ## Packet Tracer-style manual mode
@@ -42,7 +42,7 @@ The **Topology Check** dashboard identifies:
 The project also models:
 
 - HELLO-style discovery and neighbor tables.
-- Grid-aware route selection and backup next hops.
+- Communication-aware route selection and backup next hops.
 - Approximate LoRa RSSI, SNR, range, loss, collision, and channel-busy behaviour.
 - Grid-state telemetry and gateway forwarding.
 - Gateway outage and cached telemetry.
@@ -51,7 +51,10 @@ The project also models:
 - Fault-boundary classification.
 - Packet, route, fault, grid, and event metrics.
 
+Packet timing and delivery metrics distinguish generated unicasts, physical transmission attempts, successful radio links, accepted relay receptions, and final destination deliveries. Manual and batch packet forwarding both consume the approximate per-link delay, and end-to-end latency preserves the original packet creation time across relays.
+
 See [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) for a precise list of what was already present, what was updated, and what still needs to be implemented.
+See [docs/TWO_PLANE_ARCHITECTURE.md](docs/TWO_PLANE_ARCHITECTURE.md) for the CCP/EP state model, route-cost inputs, fault domains, and packet semantics.
 
 ## Project structure
 
@@ -63,7 +66,7 @@ seian_sim/models.py            Neighbor, route, event, and fault records
 seian_sim/node.py              Node state and priority queue
 seian_sim/packets.py           Packet model and duplicate cache
 seian_sim/lora_channel.py      Approximate LoRa channel
-seian_sim/routing.py           Grid-aware topology routing
+seian_sim/routing.py           Communication-aware topology routing
 seian_sim/topology.py          Connectivity and resilience analysis
 seian_sim/grid_model.py        Simplified grid measurements
 seian_sim/fault_model.py       Fault injection and boundary classification
@@ -185,3 +188,5 @@ Current result for this version:
 ## Important modelling limitation
 
 The current routing engine uses a complete NetworkX graph to calculate routes. This makes it effective for **topology feasibility and resilience checking**, but it is not yet a fully decentralized packet-level implementation of ROUTE_ADVERTISEMENT learning. That is the next major protocol update.
+
+LoRa airtime is still approximate and batch transmissions are currently serialized by the deterministic simulation clock. Event-derived concurrent collisions and exact LoRa PHY timing remain future work.

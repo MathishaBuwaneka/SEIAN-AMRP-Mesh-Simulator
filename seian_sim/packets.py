@@ -30,6 +30,7 @@ class Packet:
     hop_count: int
     ttl: int
     timestamp: float
+    last_forwarded_at: float
     flags: dict[str, Any] = field(default_factory=dict)
     payload_length: int = 0
     payload: dict[str, Any] = field(default_factory=dict)
@@ -46,7 +47,7 @@ class Packet:
         return (self.origin_id, self.sequence_number)
 
     def forwarded(self, new_source_id: str, timestamp: float) -> "Packet":
-        """Create a forwarded packet with decremented TTL and extended path."""
+        """Create a forwarded packet while preserving its original creation time."""
 
         return Packet(
             version=self.version,
@@ -58,7 +59,8 @@ class Packet:
             priority=self.priority,
             hop_count=self.hop_count + 1,
             ttl=self.ttl - 1,
-            timestamp=timestamp,
+            timestamp=self.timestamp,
+            last_forwarded_at=timestamp,
             flags=dict(self.flags),
             payload_length=self.payload_length,
             payload=dict(self.payload),

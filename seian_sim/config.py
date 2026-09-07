@@ -7,14 +7,15 @@ from dataclasses import dataclass, field
 
 @dataclass(slots=True)
 class RoutingWeights:
-    """Weights for grid-aware route cost."""
+    """Weights for communication-plane route cost."""
 
     hop_count: float = 2.0
     link_loss: float = 1.5
-    node_health: float = 3.0
-    load: float = 1.0
-    fault: float = 10.0
+    communication_health: float = 3.0
+    communication_congestion: float = 1.0
+    communication_fault: float = 10.0
     gateway_bonus: float = -1.0
+    cross_plane_risk: float = 0.0
 
 
 @dataclass(slots=True)

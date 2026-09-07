@@ -60,8 +60,28 @@ The uploaded Python project was already a substantial simulator rather than an e
 - Corrected queue overflow logic so emergency traffic can evict low-priority telemetry instead of accidentally removing the highest-priority packet.
 - Removed duplicate packet-event recording that counted one physical delivery twice.
 - Added automated tests for topology analysis, route tracing, gateway outage classification, and priority queue eviction.
+- Preserved the original packet creation timestamp across forwarding hops.
+- Applied the approximate LoRa link delay in both manual and batch packet forwarding.
+- Separated generated unicasts, physical transmission attempts, successful radio transmissions, accepted receptions, and final destination deliveries.
+- Defined PDR from unique final unicast deliveries divided by unique generated unicasts.
+- Restricted latency metrics to end-to-end final unicast deliveries.
 
-Current automated result: **27 tests passed**.
+### Communication/electrical plane separation
+
+- Added explicit communication status, health, fault, load, congestion, and link-reliability state.
+- Retained electrical measurements and legacy fields as separate application/EP state.
+- Changed route cost to use only hop count, link quality, communication health, communication congestion, communication fault state, and gateway preference.
+- Removed voltage, frequency, inverter load, electrical health, and electrical fault state from route selection.
+- Added `POWER`, `COMMUNICATION`, and `DEVICE` fault domains.
+- Kept power-faulted nodes available for packet origination and relay forwarding when their radios remain healthy.
+- Made communication failure and recovery independent from power-stage failure and recovery.
+- Defined `FAULT_ACK` as acknowledgement of alert receipt, not confirmation that a fault was corrected.
+- Added explicit `fault_domain` fields to fault-alert and control-coordination payloads.
+- Added regression tests for independent CCP/EP state and transport-only grid data.
+
+The detailed contract is documented in `docs/TWO_PLANE_ARCHITECTURE.md`.
+
+Current automated result: **39 tests passed**.
 
 ## 3. Important simulator limitations that still require updates
 

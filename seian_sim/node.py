@@ -6,7 +6,13 @@ import heapq
 from dataclasses import dataclass, field
 from typing import Any
 
-from seian_sim.enums import FaultStatus, NodeRole, TrustStatus
+from seian_sim.enums import (
+    CommunicationFaultStatus,
+    CommunicationStatus,
+    FaultStatus,
+    NodeRole,
+    TrustStatus,
+)
 from seian_sim.models import NeighborEntry, RoutingEntry
 from seian_sim.packets import DuplicateCache, Packet
 
@@ -33,6 +39,13 @@ class SeianNode:
     gateway_capable: bool = False
     gateway_online: bool = False
     active: bool = True
+    communication_status: CommunicationStatus = CommunicationStatus.OPERATIONAL
+    communication_health: float = 1.0
+    communication_fault_status: CommunicationFaultStatus = CommunicationFaultStatus.NORMAL
+    communication_load: float = 0.0
+    communication_congestion: float = 0.0
+    link_reliability: float = 1.0
+    power_stage_operational: bool = True
     health_score: float = 1.0
     trust_status: TrustStatus = TrustStatus.TRUSTED
     voltage_rms: float = 230.0
@@ -56,6 +69,7 @@ class SeianNode:
     recent_transmitted_packets: list[dict[str, Any]] = field(default_factory=list)
     packet_drop_reasons: dict[str, int] = field(default_factory=dict)
     _packet_queue: list[QueuedPacket] = field(default_factory=list)
+    _queue_limit_hint: int = 1
     _queue_counter: int = 0
     _sequence: int = 0
 
@@ -70,6 +84,32 @@ class SeianNode:
         """Expose the internal priority queue for inspection."""
 
         return self._packet_queue
+
+    @property
+    def communication_available(self) -> bool:
+        """Return whether the CCP radio can currently send and receive."""
+
+        return self.active and self.communication_status != CommunicationStatus.FAILED
+
+    @property
+    def power_health(self) -> float:
+        """Expose the legacy electrical health field with explicit EP naming."""
+
+        return self.health_score
+
+    @power_health.setter
+    def power_health(self, value: float) -> None:
+        self.health_score = value
+
+    @property
+    def power_fault_status(self) -> FaultStatus:
+        """Expose the legacy fault field as electrical-plane state."""
+
+        return self.fault_status
+
+    @power_fault_status.setter
+    def power_fault_status(self, value: FaultStatus) -> None:
+        self.fault_status = value
 
     def next_sequence(self) -> int:
         """Return the next local sequence number."""
@@ -94,10 +134,13 @@ class SeianNode:
                 self._packet_queue.remove(victim)
                 heapq.heapify(self._packet_queue)
             else:
+                self.communication_load = min(1.0, len(self._packet_queue) / max(1, queue_limit))
                 return False
+        self._queue_limit_hint = max(1, queue_limit)
         self._queue_counter += 1
         key = (-packet.priority, timestamp, self._queue_counter)
         heapq.heappush(self._packet_queue, QueuedPacket(key, packet, timestamp))
+        self.communication_load = min(1.0, len(self._packet_queue) / self._queue_limit_hint)
         return True
 
     def dequeue_packet(self) -> QueuedPacket | None:
@@ -105,7 +148,9 @@ class SeianNode:
 
         if not self._packet_queue:
             return None
-        return heapq.heappop(self._packet_queue)
+        item = heapq.heappop(self._packet_queue)
+        self.communication_load = min(1.0, len(self._packet_queue) / self._queue_limit_hint)
+        return item
 
     def remember_drop(self, reason: str) -> None:
         """Record a node-local packet drop reason."""

@@ -57,6 +57,25 @@ def default_sim() -> SeianMeshSimulator:
     return build_scenario("Basic five-node mesh", SimulationConfig())
 
 
+def packet_header_view(packet: object) -> dict[str, object]:
+    """Return protocol fields separately from payload and simulator metadata."""
+
+    packet_type = getattr(packet, "packet_type")
+    return {
+        "version": getattr(packet, "version"),
+        "packet_type": packet_type.value,
+        "source_id": getattr(packet, "source_id"),
+        "origin_id": getattr(packet, "origin_id"),
+        "destination_id": getattr(packet, "destination_id") or "BROADCAST",
+        "sequence_number": getattr(packet, "sequence_number"),
+        "priority": getattr(packet, "priority"),
+        "hop_count": getattr(packet, "hop_count"),
+        "ttl": getattr(packet, "ttl"),
+        "network_id": getattr(packet, "network_id"),
+        "payload_length": getattr(packet, "payload_length"),
+    }
+
+
 def make_config(
     *,
     seed: int,
@@ -269,11 +288,19 @@ with st.sidebar:
         st.rerun()
 
     action_cols = st.columns(2)
-    if sidebar_selected_node and action_cols[0].button("Fail Node", use_container_width=True):
+    if sidebar_selected_node and action_cols[0].button("Fail CCP", use_container_width=True):
         st.session_state.sim.fail_node(sidebar_selected_node)
         st.rerun()
-    if sidebar_selected_node and action_cols[1].button("Recover Node", use_container_width=True):
+    if sidebar_selected_node and action_cols[1].button("Recover CCP", use_container_width=True):
         st.session_state.sim.recover_node(sidebar_selected_node)
+        st.rerun()
+
+    power_cols = st.columns(2)
+    if sidebar_selected_node and power_cols[0].button("Fail Power Stage", use_container_width=True):
+        st.session_state.sim.fail_power_stage(sidebar_selected_node)
+        st.rerun()
+    if sidebar_selected_node and power_cols[1].button("Recover Power Stage", use_container_width=True):
+        st.session_state.sim.recover_power_stage(sidebar_selected_node)
         st.rerun()
 
     gateway_cols = st.columns(2)
@@ -552,6 +579,12 @@ with tab_packet:
             st.info("Configure a packet and press Create Packet. Nothing will move until Forward is pressed.")
         else:
             packet = trace.packet
+            trace_last_forwarded_at = getattr(
+                trace,
+                "last_forwarded_at",
+                packet.last_forwarded_at,
+            )
+            last_transmitted_packet = getattr(trace, "last_transmitted_packet", None)
             header_cols = st.columns(6)
             header_cols[0].metric("Sequence", packet.sequence_number)
             header_cols[1].metric("Priority", packet.priority)
@@ -559,6 +592,11 @@ with tab_packet:
             header_cols[3].metric("Completed events", len(trace.history))
             header_cols[4].metric("Waiting events", trace.pending_count)
             header_cols[5].metric("Receivers", len(trace.delivered_nodes))
+            st.caption(
+                f"Packet created at {packet.timestamp:.3f} s | "
+                f"Last forwarded at {trace_last_forwarded_at:.3f} s | "
+                f"Current simulated time {sim.now:.3f} s"
+            )
 
             if trace.complete:
                 if trace.destination_id is None or trace.destination_id in trace.delivered_nodes:
@@ -593,23 +631,23 @@ with tab_packet:
                 else:
                     st.caption("No waiting transmissions.")
             with table_right:
-                st.write("Packet header")
+                st.write("Original logical packet")
+                st.json(packet_header_view(packet))
+                st.write("Last transmitted header")
+                if last_transmitted_packet is None:
+                    st.caption("No physical transmission has been attempted yet.")
+                else:
+                    st.json(packet_header_view(last_transmitted_packet))
+                st.write("Simulator timing metadata")
                 st.json(
                     {
-                        "version": packet.version,
-                        "packet_type": packet.packet_type.value,
-                        "source_id": packet.source_id,
-                        "origin_id": packet.origin_id,
-                        "destination_id": packet.destination_id or "BROADCAST",
-                        "sequence_number": packet.sequence_number,
-                        "priority": packet.priority,
-                        "hop_count": packet.hop_count,
-                        "ttl": packet.ttl,
-                        "network_id": packet.network_id,
-                        "payload_length": packet.payload_length,
-                        "payload": packet.payload,
+                        "created_at_s": packet.timestamp,
+                        "last_forwarded_at_s": trace_last_forwarded_at,
+                        "current_simulated_time_s": sim.now,
                     }
                 )
+                st.write("Payload")
+                st.json(packet.payload)
 
             st.write("Event history")
             history_rows = trace.history_rows()
@@ -704,7 +742,20 @@ with tab_node:
         st.json(
             {
                 "role": node.role.value,
-                "active": node.active,
+                "communication_plane": {
+                    "available": node.communication_available,
+                    "status": node.communication_status.value,
+                    "health": round(node.communication_health, 3),
+                    "fault_status": node.communication_fault_status.value,
+                    "queue_load": round(node.communication_load, 3),
+                    "congestion": round(node.communication_congestion, 3),
+                    "link_reliability": round(node.link_reliability, 3),
+                },
+                "electrical_plane": {
+                    "power_stage_operational": node.power_stage_operational,
+                    "health_score": round(node.health_score, 3),
+                    "fault_state": node.fault_status.value,
+                },
                 "gateway_capable": node.gateway_capable,
                 "gateway_online": node.gateway_online,
                 "position_x_m": round(node.position_x, 2),
@@ -713,8 +764,6 @@ with tab_node:
                 "frequency_hz": round(node.frequency_hz, 3),
                 "load_percent": round(node.load_percent, 2),
                 "temperature_c": round(node.temperature_c, 2),
-                "fault_state": node.fault_status.value,
-                "health_score": round(node.health_score, 3),
                 "gateway_distance": node.gateway_distance,
                 "cached_gateway_telemetry": len(node.cached_gateway_telemetry),
             }

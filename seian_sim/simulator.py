@@ -11,7 +11,16 @@ from typing import Any
 import pandas as pd
 
 from seian_sim.config import SimulationConfig
-from seian_sim.enums import EventCategory, FaultStatus, FaultType, NodeRole, PacketType, TrustStatus
+from seian_sim.enums import (
+    CommunicationFaultStatus,
+    CommunicationStatus,
+    EventCategory,
+    FaultDomain,
+    FaultType,
+    NodeRole,
+    PacketType,
+    TrustStatus,
+)
 from seian_sim.fault_model import SEVERITY_TTL, apply_fault_to_nodes, classify_fault_boundary, create_fault
 from seian_sim.grid_model import GridModel
 from seian_sim.lora_channel import LoraChannel
@@ -76,6 +85,9 @@ class SeianMeshSimulator:
         role: NodeRole | None = None,
         load_percent: float | None = None,
         health_score: float = 1.0,
+        communication_health: float = 1.0,
+        communication_load: float = 0.0,
+        communication_congestion: float = 0.0,
     ) -> SeianNode:
         """Add one inverter node to the simulation."""
 
@@ -91,6 +103,9 @@ class SeianMeshSimulator:
             gateway_online=gateway_online,
             load_percent=load_percent if load_percent is not None else self.rng.uniform(25.0, 70.0),
             health_score=health_score,
+            communication_health=communication_health,
+            communication_load=communication_load,
+            communication_congestion=communication_congestion,
         )
         self.nodes[node_id] = node
         self.whitelist.add(node_id)
@@ -172,7 +187,7 @@ class SeianMeshSimulator:
         """Create a protocol packet from node state."""
 
         data = payload or {}
-        return Packet(
+        packet = Packet(
             version=1,
             packet_type=packet_type,
             source_id=source.node_id,
@@ -183,6 +198,7 @@ class SeianMeshSimulator:
             hop_count=0,
             ttl=ttl,
             timestamp=self.now,
+            last_forwarded_at=self.now,
             payload_length=len(json.dumps(data, sort_keys=True)),
             payload=data,
             crc_valid=crc_valid,
@@ -191,6 +207,8 @@ class SeianMeshSimulator:
             key_id=self.config.key_id,
             path=[source.node_id],
         )
+        self.metrics.record_packet_generated(packet.duplicate_key, packet.destination_id)
+        return packet
 
     def discover_neighbors(self) -> None:
         """Perform startup discovery and route-advertisement behavior."""
@@ -200,14 +218,14 @@ class SeianMeshSimulator:
             node.routing_table.clear()
             self.log(EventCategory.DISCOVERY, "Initialized radio, neighbor table, and routing table.", node_id=node.node_id)
         for sender in self.nodes.values():
-            if not sender.active:
+            if not sender.communication_available:
                 continue
             self.log(EventCategory.DISCOVERY, "Broadcast HELLO.", node_id=sender.node_id, packet_type=PacketType.HELLO)
             for receiver in self.nodes.values():
                 if sender.node_id == receiver.node_id:
                     continue
                 obs = self.channel.observe(sender.position, receiver.position)
-                if not receiver.active:
+                if not receiver.communication_available:
                     self._drop(receiver, "receiver_inactive", PacketType.HELLO)
                     continue
                 if sender.network_id != receiver.network_id:
@@ -236,12 +254,12 @@ class SeianMeshSimulator:
             last_seen=self.now,
             hop_count=1,
             link_quality=quality,
-            neighbor_health_score=neighbor.health_score,
-            neighbor_fault_status=neighbor.fault_status,
-            neighbor_voltage=neighbor.voltage_rms,
-            neighbor_frequency=neighbor.frequency_hz,
-            neighbor_phase_angle=neighbor.phase_angle_deg,
-            neighbor_load_percent=neighbor.load_percent,
+            link_reliability=min(quality, neighbor.link_reliability),
+            communication_status=neighbor.communication_status,
+            communication_health=neighbor.communication_health,
+            communication_fault_status=neighbor.communication_fault_status,
+            communication_load=neighbor.communication_load,
+            communication_congestion=neighbor.communication_congestion,
             gateway_distance=neighbor.gateway_distance,
             route_cost=0.0,
             trust_status=neighbor.trust_status,
@@ -301,14 +319,14 @@ class SeianMeshSimulator:
 
     def _step(self) -> None:
         for node in self.nodes.values():
-            if not node.active:
-                continue
-            self.grid.update_node(node, self.now)
+            if node.power_stage_operational:
+                self.grid.update_node(node, self.now)
             self.measurements.append(NodeSnapshot(self.now, node.node_id, node.voltage_rms, node.frequency_hz, node.phase_angle_deg, node.current_a, node.active_power_kw, node.reactive_power_kvar, node.load_percent, node.power_factor, node.thd_percent, node.temperature_c, node.fault_status))
+            if not node.communication_available:
+                continue
             self._send_heartbeat(node)
             self._send_telemetry(node)
         self.expire_neighbors()
-        self.recalculate_routes("grid-state update")
         self.process_queues()
         self._sample_gateway_reachability()
 
@@ -317,7 +335,13 @@ class SeianMeshSimulator:
         self.broadcast(node.node_id, packet)
 
     def _send_telemetry(self, node: SeianNode) -> None:
-        gateways = [n.node_id for n in self.nodes.values() if n.gateway_capable and n.gateway_online and n.active]
+        gateways = [
+            candidate.node_id
+            for candidate in self.nodes.values()
+            if candidate.gateway_capable
+            and candidate.gateway_online
+            and candidate.communication_available
+        ]
         payload = self._measurement_payload(node)
         if not gateways:
             node.cached_gateway_telemetry.append({"timestamp": self.now, **payload})
@@ -341,6 +365,9 @@ class SeianMeshSimulator:
         """Deliver a packet to all current neighbors."""
 
         source = self.nodes[source_id]
+        if not source.communication_available:
+            self._drop(source, "sender_inactive", packet.packet_type)
+            return False
         delivered_any = False
         for neighbor_id in list(source.neighbor_table):
             if exclude and neighbor_id in exclude:
@@ -352,6 +379,9 @@ class SeianMeshSimulator:
         """Route a unicast packet, falling back to local broadcast for alerts."""
 
         source = self.nodes[source_id]
+        if not source.communication_available:
+            self._drop(source, "sender_inactive", packet.packet_type)
+            return False
         if packet.destination_id is None:
             return self.broadcast(source_id, packet)
         if packet.destination_id == source_id:
@@ -372,10 +402,14 @@ class SeianMeshSimulator:
     def _deliver(self, source_id: str, receiver_id: str, packet: Packet) -> bool:
         source = self.nodes[source_id]
         receiver = self.nodes.get(receiver_id)
-        if receiver is None or not receiver.active:
+        if receiver is None or not receiver.communication_available:
             self._drop(source, "receiver_inactive", packet.packet_type)
             return False
+        self.metrics.record_transmission_attempt()
         obs = self.channel.observe(source.position, receiver.position, packet.payload_length)
+        self.env.run(until=self.now + max(0.001, obs.delay_s))
+        if obs.delivered:
+            self.metrics.record_link_success()
         if packet.network_id != receiver.network_id:
             self._drop(receiver, "wrong_network_id", packet.packet_type)
             return False
@@ -399,8 +433,6 @@ class SeianMeshSimulator:
                 self.metrics.channel_busy_events += 1
             self._drop(receiver, obs.drop_reason or "radio_drop", packet.packet_type)
             return False
-        self.metrics.packets_transmitted += 1
-        
         self.metrics.throughput_by_time[int(self.now)] += 1
 
         event_row = {
@@ -458,7 +490,6 @@ class SeianMeshSimulator:
                 return False
         receiver.recent_received_packets.append({"timestamp": self.now, "from": packet.source_id, "type": packet.packet_type.value, "priority": packet.priority})
         self.metrics.packets_delivered += 1
-        self.metrics.record_latency(packet.priority, max(0.0, self.now - packet.timestamp))
         if packet.priority >= PRIORITY_FAULT:
             self.metrics.emergency_delivered += 1
         # Physical delivery attempts are recorded once in _deliver().  The
@@ -466,6 +497,11 @@ class SeianMeshSimulator:
         # second packet_events row here would double-count each transmission.
 
         if packet.destination_id == receiver_id:
+            self.metrics.record_final_delivery(
+                packet.duplicate_key,
+                packet.priority,
+                max(0.0, self.now - packet.timestamp),
+            )
             return True
         if packet.packet_type == PacketType.FAULT_ALERT:
             self._handle_fault_alert(receiver, packet)
@@ -484,8 +520,13 @@ class SeianMeshSimulator:
 
     def _handle_fault_alert(self, receiver: SeianNode, packet: Packet) -> None:
         fault_id = str(packet.payload.get("fault_id", "unknown"))
-        self.log(EventCategory.FAULT, "Fault alert received and acknowledged.", node_id=receiver.node_id, packet_type=packet.packet_type, priority=packet.priority, fault_id=fault_id)
-        ack = self.create_packet(receiver, PacketType.FAULT_ACK, destination_id=packet.origin_id, priority=PRIORITY_CONTROL, ttl=self.config.max_hops, payload={"fault_id": fault_id})
+        fault_domain = str(packet.payload.get("fault_domain", FaultDomain.DEVICE.value))
+        self.log(EventCategory.FAULT, "Fault alert received; receipt acknowledged.", node_id=receiver.node_id, packet_type=packet.packet_type, priority=packet.priority, fault_id=fault_id)
+        ack = self.create_packet(receiver, PacketType.FAULT_ACK, destination_id=packet.origin_id, priority=PRIORITY_CONTROL, ttl=self.config.max_hops, payload={
+            "fault_id": fault_id,
+            "fault_domain": fault_domain,
+            "acknowledges": "alert_receipt",
+        })
         self.log(EventCategory.FAULT, "Fault acknowledgement generated.", node_id=receiver.node_id, packet_type=PacketType.FAULT_ACK, priority=PRIORITY_CONTROL, fault_id=fault_id)
         self.route_packet(receiver.node_id, ack)
 
@@ -515,40 +556,68 @@ class SeianMeshSimulator:
         packet = self.create_packet(origin, PacketType.FAULT_ALERT, priority=priority, ttl=ttl, payload={
             "fault_id": fault.fault_id,
             "fault_type": fault.fault_type.value,
+            "fault_domain": fault.fault_domain.value,
             "severity": severity,
             "recommended_action": fault.recommended_action,
         })
         self.broadcast(origin.node_id, packet)
-        coord = self.create_packet(origin, PacketType.CONTROL_COORDINATION, priority=PRIORITY_CONTROL, ttl=ttl, payload={
-            "fault_id": fault.fault_id,
-            "recommendation": fault.recommended_action,
-            "safety_note": "Simulated recommendation only; local protection overrides network coordination.",
-        })
-        self.broadcast(origin.node_id, coord)
-        self.recalculate_routes("fault state change")
+        if fault.fault_domain != FaultDomain.COMMUNICATION:
+            coord = self.create_packet(origin, PacketType.CONTROL_COORDINATION, priority=PRIORITY_CONTROL, ttl=ttl, payload={
+                "fault_id": fault.fault_id,
+                "fault_domain": fault.fault_domain.value,
+                "recommendation": fault.recommended_action,
+                "safety_note": "Transported recommendation only; local protection overrides network coordination.",
+            })
+            self.broadcast(origin.node_id, coord)
+        if fault.fault_domain == FaultDomain.COMMUNICATION:
+            self.fail_communication(origin.node_id)
         return fault
 
     def fail_node(self, node_id: str) -> None:
-        """Deactivate a node and trigger rerouting."""
+        """Backward-compatible alias for a communication-plane failure."""
+
+        self.fail_communication(node_id)
+
+    def fail_communication(self, node_id: str) -> None:
+        """Fail only the node's CCP radio and trigger route recovery."""
 
         node = self.nodes[node_id]
         node.active = False
-        node.health_score = 0.0
-        node.fault_status = FaultStatus.FAULT
+        node.communication_status = CommunicationStatus.FAILED
+        node.communication_health = 0.0
+        node.communication_fault_status = CommunicationFaultStatus.FAULT
         for other in self.nodes.values():
             other.neighbor_table.pop(node_id, None)
-        self.log(EventCategory.ROUTING, "Node failed; ROUTE_ERROR generated where needed.", node_id=node_id, packet_type=PacketType.ROUTE_ERROR)
-        self.recalculate_routes("node failure")
+        self.log(EventCategory.ROUTING, "Communication failed; ROUTE_ERROR generated where needed.", node_id=node_id, packet_type=PacketType.ROUTE_ERROR)
+        self.recalculate_routes("communication failure")
 
     def recover_node(self, node_id: str) -> None:
-        """Reactivate a node and rediscover links."""
+        """Backward-compatible alias for communication recovery."""
+
+        self.recover_communication(node_id)
+
+    def recover_communication(self, node_id: str) -> None:
+        """Recover only the node's CCP radio and rediscover links."""
 
         node = self.nodes[node_id]
         node.active = True
-        node.health_score = max(0.75, node.health_score)
-        node.fault_status = FaultStatus.NORMAL
-        self.log(EventCategory.ROUTING, "Node recovered.", node_id=node_id)
+        node.communication_status = CommunicationStatus.OPERATIONAL
+        node.communication_health = max(0.75, node.communication_health)
+        node.communication_fault_status = CommunicationFaultStatus.NORMAL
+        self.log(EventCategory.ROUTING, "Communication recovered.", node_id=node_id)
         self.discover_neighbors()
+
+    def fail_power_stage(self, node_id: str) -> None:
+        """Fail only the electrical power stage; CCP remains available."""
+
+        self.nodes[node_id].power_stage_operational = False
+        self.log(EventCategory.GRID, "Power stage failed; communication remains available.", node_id=node_id)
+
+    def recover_power_stage(self, node_id: str) -> None:
+        """Recover only the electrical power stage."""
+
+        self.nodes[node_id].power_stage_operational = True
+        self.log(EventCategory.GRID, "Power stage recovered.", node_id=node_id)
 
     def set_gateway(self, node_id: str, online: bool = True) -> None:
         """Change gateway state for a node."""
@@ -615,9 +684,13 @@ class SeianMeshSimulator:
         self.log(EventCategory.PACKET, f"Packet dropped: {reason}.", node_id=node.node_id, packet_type=packet_type)
 
     def _sample_gateway_reachability(self) -> None:
-        gateways = [n.node_id for n in self.nodes.values() if n.gateway_capable and n.gateway_online and n.active]
+        gateways = [
+            node.node_id
+            for node in self.nodes.values()
+            if node.gateway_capable and node.gateway_online and node.communication_available
+        ]
         for node in self.nodes.values():
-            if not node.active:
+            if not node.communication_available:
                 continue
             self.metrics.gateway_total_samples += 1
             if node.node_id in gateways or any(gid in node.routing_table for gid in gateways):

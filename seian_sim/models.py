@@ -5,7 +5,16 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from seian_sim.enums import EventCategory, FaultStatus, FaultType, NodeRole, TrustStatus
+from seian_sim.enums import (
+    CommunicationFaultStatus,
+    CommunicationStatus,
+    EventCategory,
+    FaultDomain,
+    FaultStatus,
+    FaultType,
+    NodeRole,
+    TrustStatus,
+)
 
 
 @dataclass(slots=True)
@@ -18,12 +27,12 @@ class NeighborEntry:
     last_seen: float
     hop_count: int
     link_quality: float
-    neighbor_health_score: float
-    neighbor_fault_status: FaultStatus
-    neighbor_voltage: float
-    neighbor_frequency: float
-    neighbor_phase_angle: float
-    neighbor_load_percent: float
+    link_reliability: float
+    communication_status: CommunicationStatus
+    communication_health: float
+    communication_fault_status: CommunicationFaultStatus
+    communication_load: float
+    communication_congestion: float
     gateway_distance: int | None
     route_cost: float
     trust_status: TrustStatus
@@ -74,6 +83,7 @@ class FaultEvent:
     phase_impact: float
     load_impact: float
     recommended_action: str
+    fault_domain: FaultDomain = FaultDomain.DEVICE
 
 
 @dataclass(slots=True)

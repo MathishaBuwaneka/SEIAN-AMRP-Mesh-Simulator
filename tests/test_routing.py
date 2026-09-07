@@ -1,4 +1,4 @@
-from seian_sim.enums import FaultStatus
+from seian_sim.enums import CommunicationFaultStatus, CommunicationStatus
 from seian_sim.scenarios import build_scenario
 from tests.test_discovery import reliable_config
 
@@ -18,12 +18,13 @@ def test_backup_route_is_used_when_available():
     assert route.backup_next_hop is not None
 
 
-def test_unhealthy_direct_route_can_lose_to_healthy_multihop():
+def test_communication_unhealthy_route_can_lose_to_healthy_multihop():
     sim = build_scenario("Healthy route versus short unhealthy route", reliable_config())
-    sim.nodes["N02"].health_score = 0.1
-    sim.nodes["N02"].load_percent = 115
-    sim.nodes["N02"].fault_status = FaultStatus.FAULT
-    sim.recalculate_routes("test direct unhealthy")
+    sim.nodes["N02"].communication_status = CommunicationStatus.DEGRADED
+    sim.nodes["N02"].communication_health = 0.1
+    sim.nodes["N02"].communication_congestion = 1.0
+    sim.nodes["N02"].communication_fault_status = CommunicationFaultStatus.FAULT
+    sim.recalculate_routes("test communication degradation")
     route = sim.nodes["N04"].routing_table["N01"]
     assert route.next_hop_id == "N03"
     assert route.hop_count == 2

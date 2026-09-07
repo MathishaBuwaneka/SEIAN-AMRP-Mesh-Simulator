@@ -5,8 +5,8 @@ from __future__ import annotations
 import networkx as nx
 
 from seian_sim.config import RoutingWeights
-from seian_sim.enums import FaultStatus
-from seian_sim.models import RoutingEntry, fault_penalty
+from seian_sim.enums import CommunicationFaultStatus
+from seian_sim.models import RoutingEntry
 from seian_sim.node import SeianNode
 
 
@@ -14,20 +14,26 @@ def route_cost(
     *,
     hop_count: int,
     link_quality: float,
-    health_score: float,
-    load_percent: float,
-    fault_status: FaultStatus,
+    communication_health: float,
+    communication_congestion: float,
+    communication_fault_status: CommunicationFaultStatus,
     leads_to_gateway: bool,
     weights: RoutingWeights,
 ) -> float:
-    """Compute SEIAN-AMRP grid-aware route cost; lower is better."""
+    """Compute the communication-plane route cost; lower is better."""
+
+    fault_penalty = {
+        CommunicationFaultStatus.NORMAL: 0.0,
+        CommunicationFaultStatus.WARNING: 0.4,
+        CommunicationFaultStatus.FAULT: 1.0,
+    }[communication_fault_status]
 
     return (
         weights.hop_count * hop_count
         + weights.link_loss * (1.0 - link_quality)
-        + weights.node_health * (1.0 - health_score)
-        + weights.load * (load_percent / 100.0)
-        + weights.fault * fault_penalty(fault_status)
+        + weights.communication_health * (1.0 - communication_health)
+        + weights.communication_congestion * communication_congestion
+        + weights.communication_fault * fault_penalty
         + weights.gateway_bonus * (1.0 if leads_to_gateway else 0.0)
     )
 
@@ -45,23 +51,30 @@ class RoutingEngine:
 
         graph = nx.Graph()
         for node in nodes.values():
-            if node.active:
+            if node.communication_available:
                 graph.add_node(node.node_id)
-        online_gateways = {n.node_id for n in nodes.values() if n.gateway_capable and n.gateway_online and n.active}
+        online_gateways = {
+            node.node_id
+            for node in nodes.values()
+            if node.gateway_capable and node.gateway_online and node.communication_available
+        }
         for node in nodes.values():
-            if not node.active:
+            if not node.communication_available:
                 continue
             for neighbor_id, entry in node.neighbor_table.items():
                 neighbor = nodes.get(neighbor_id)
-                if not neighbor or not neighbor.active:
+                if not neighbor or not neighbor.communication_available:
                     continue
                 leads_to_gateway = neighbor_id in online_gateways or neighbor.gateway_distance is not None
                 cost = route_cost(
                     hop_count=1,
-                    link_quality=entry.link_quality,
-                    health_score=neighbor.health_score,
-                    load_percent=neighbor.load_percent,
-                    fault_status=neighbor.fault_status,
+                    link_quality=min(entry.link_quality, entry.link_reliability),
+                    communication_health=neighbor.communication_health,
+                    communication_congestion=max(
+                        neighbor.communication_load,
+                        neighbor.communication_congestion,
+                    ),
+                    communication_fault_status=neighbor.communication_fault_status,
                     leads_to_gateway=leads_to_gateway,
                     weights=self.weights,
                 )
@@ -73,9 +86,13 @@ class RoutingEngine:
 
         graph = self.build_graph(nodes)
         changes = 0
-        gateways = [n.node_id for n in nodes.values() if n.gateway_capable and n.gateway_online and n.active]
+        gateways = [
+            node.node_id
+            for node in nodes.values()
+            if node.gateway_capable and node.gateway_online and node.communication_available
+        ]
         for node in nodes.values():
-            if not node.active:
+            if not node.communication_available:
                 node.routing_table.clear()
                 node.gateway_distance = None
                 continue
