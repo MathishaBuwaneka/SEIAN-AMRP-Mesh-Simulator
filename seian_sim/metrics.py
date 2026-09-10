@@ -22,6 +22,13 @@ class Metrics:
     packets_dropped: int = 0
     duplicate_drops: int = 0
     route_changes: int = 0
+    route_advertisements_sent: int = 0
+    route_advertisements_accepted: int = 0
+    route_advertisements_rejected: int = 0
+    route_errors_sent: int = 0
+    route_errors_accepted: int = 0
+    route_errors_rejected: int = 0
+    route_control_bytes: int = 0
     collisions: int = 0
     channel_busy_events: int = 0
     emergency_sent: int = 0
@@ -34,6 +41,9 @@ class Metrics:
     drop_reasons: Counter[str] = field(default_factory=Counter)
     queue_drops_by_priority: Counter[int] = field(default_factory=Counter)
     throughput_by_time: Counter[int] = field(default_factory=Counter)
+    route_convergence_times_s: list[float] = field(default_factory=list)
+    route_advertisement_rejections: Counter[str] = field(default_factory=Counter)
+    route_error_rejections: Counter[str] = field(default_factory=Counter)
     _generated_packet_keys: set[tuple[str, int]] = field(default_factory=set, repr=False)
     _generated_unicast_keys: set[tuple[str, int]] = field(default_factory=set, repr=False)
     _delivered_unicast_keys: set[tuple[str, int]] = field(default_factory=set, repr=False)
@@ -115,6 +125,18 @@ class Metrics:
             "packets_dropped": self.packets_dropped,
             "duplicate_packets_suppressed": self.duplicate_drops,
             "route_changes": self.route_changes,
+            "route_advertisements_sent": self.route_advertisements_sent,
+            "route_advertisements_accepted": self.route_advertisements_accepted,
+            "route_advertisements_rejected": self.route_advertisements_rejected,
+            "route_errors_sent": self.route_errors_sent,
+            "route_errors_accepted": self.route_errors_accepted,
+            "route_errors_rejected": self.route_errors_rejected,
+            "route_control_bytes": self.route_control_bytes,
+            "average_route_convergence_s": (
+                sum(self.route_convergence_times_s) / len(self.route_convergence_times_s)
+                if self.route_convergence_times_s
+                else 0.0
+            ),
             "average_queue_delay_s": self.queue_delay_sum / attempts,
             "maximum_queue_delay_s": self.queue_delay_max,
             "channel_utilization_events": sum(self.throughput_by_time.values()),

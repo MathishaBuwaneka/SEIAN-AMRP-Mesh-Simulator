@@ -1,7 +1,7 @@
 # SEIAN Simulator Status and Remaining Work Report
 
 Date: 2026-09-10
-Current branch: `feature/timing-metrics-foundation`
+Current branch: `feature/decentralized-route-learning`
 
 ## 1. Project Objective
 
@@ -13,7 +13,7 @@ SEIAN is intended to evaluate a resilient LoRa mesh in which inverter health and
 4. Does priority handling improve urgent fault-message delivery?
 5. Does grid-aware routing outperform hop-count or link-only routing when a relay becomes electrically unhealthy, overloaded, faulted, congested, or communication-degraded?
 
-The current program is already useful for topology design, demonstrations, and controlled protocol experiments. It must not yet be described as a complete LoRa physical-layer model, decentralized routing implementation, electrical power-flow simulator, or protection simulator.
+The current program is useful for topology design, decentralized-routing demonstrations, and controlled protocol experiments. It must not yet be described as a complete LoRa physical-layer model, embedded-firmware-equivalent routing implementation, electrical power-flow simulator, or protection simulator.
 
 ## 2. Current Implemented Capabilities
 
@@ -28,6 +28,8 @@ The current program is already useful for topology design, demonstrations, and c
 ### Routing and resilience
 
 - Cross-plane route cost using hop count, link quality, communication health, congestion, communication fault state, bounded electrical health/load/fault penalties, and gateway preference.
+- Selectable decentralized packet-advertisement routing and NetworkX oracle baseline modes.
+- Destination sequences, split horizon, hysteresis, route ageing, route errors, and triggered updates.
 - Primary and backup next-hop selection.
 - Node failure, recovery, gateway loss, and gateway restoration controls.
 - Continued local mesh operation while gateway backhaul is offline.
@@ -118,68 +120,80 @@ A disconnected destination correctly produces `NO_ROUTE`, no radio attempt, no d
 - Original tests retained: 27.
 - New timing/metrics tests added: 5.
 - Cross-plane and electrical route-penalty tests added: 15.
-- Current total: 47 passing tests.
+- Route-control payload validation tests added: 11.
+- Decentralized route-engine and simulator integration tests added: 12.
+- Current total: 70 passing tests.
 - Streamlit application smoke test: no application exceptions.
 
-## 4. Current Branch Work Still to Finish
+## 4. Decentralized Route Learning Implemented
 
-Before beginning another major feature:
+The decentralized-routing branch now includes:
 
-1. Review the complete cross-plane routing diff for naming and compatibility.
-2. Run `git diff --check`.
-3. Run the complete 47-test suite once more.
-4. Manually verify healthy-alternate routing, only-path fallback, recovery, and one `NO_ROUTE` trace.
-5. Commit and push the cross-plane correction to the existing branch.
-6. Open or update the pull request and merge after review.
+- A documented `ROUTE_ADVERTISEMENT` payload contract.
+- A documented `ROUTE_ERROR` payload contract.
+- Strict validation for identifiers, sequences, hop counts, costs, lifetimes, booleans, electrical risk, and communication health.
+- Round-trip payload tests and malformed-field rejection tests.
+- Defined freshness, split-horizon, hysteresis, expiry, triggered-update, and route-error rules.
+- Packet-driven multi-hop learning without NetworkX route installation.
+- Primary and backup candidate selection with deterministic tie-breaking.
+- Periodic and triggered advertisements, route expiry, and propagated route errors.
+- Convergence-time and route-control-overhead metrics.
 
-Suggested commit message:
+The contract is documented in `docs/ROUTE_ADVERTISEMENT_SPEC.md`. NetworkX is retained as an explicit oracle/baseline mode and is not called to install routes in decentralized mode.
+
+Completed implementation sequence:
 
 ```text
-Add reliable timing metrics and grid-aware route penalties
+extend routing entries with sequence/learned-from state
+-> install direct routes after HELLO
+-> process received route advertisements
+-> add periodic and triggered updates
+-> add expiry and route-error propagation
+-> measure convergence and control overhead
 ```
 
 ## 5. Priority 1: Decentralized Route Learning
 
-### Current problem
+### Current status
 
-The protocol engine currently creates a complete NetworkX graph and immediately calculates globally optimal paths. This is valuable as a topology-analysis oracle, but real inverter nodes do not possess complete network knowledge.
+The decentralized mode gives each simulated node ownership of its routing state and changes routes only after packet reception, expiry, or local next-hop failure. The NetworkX mode remains valuable as a topology-analysis oracle.
 
-Immediate recalculation also prevents realistic measurement of route-advertisement propagation, stale routes, transient loops, and convergence time after failure.
+The simulator now measures advertisement propagation and convergence using its deterministic approximate transmission clock. More demanding repeated and partitioned experiments remain to be added.
 
-### Required implementation
+### Implemented
 
-- Keep NetworkX routing available only as an analysis baseline or oracle.
-- Give every node ownership of its own routing table.
-- Create actual `ROUTE_ADVERTISEMENT` packet payloads.
-- Advertise destination, cost, hop count, destination sequence/version, and route lifetime.
-- Process advertisements only when a node receives them.
-- Add periodic advertisements and triggered updates.
-- Add route ageing and expiry without global rebuilding.
-- Add split horizon, poison reverse, destination sequence numbers, or another explicit loop-prevention rule.
-- Generate and propagate `ROUTE_ERROR` when an active next hop fails.
-- Switch to a valid backup route when available.
-- Measure convergence from failure detection until a stable replacement route is learned.
+- NetworkX routing remains available only as an analysis baseline or oracle.
+- Every node owns its routing table and learned candidate routes.
+- `ROUTE_ADVERTISEMENT` packets carry destination, cost, hop count, sequence, lifetime, and bounded route-state inputs.
+- Nodes process advertisements only after packet reception.
+- Periodic and triggered advertisements refresh distributed state.
+- Route ageing and expiry operate without a global route rebuild.
+- Split horizon and destination-sequence freshness provide loop prevention.
+- `ROUTE_ERROR` propagates when an active next hop fails.
+- A valid learned backup becomes active when available.
+- Convergence duration is measured on the deterministic simulation clock.
 
-### Required tests
+### Implemented tests
 
 - Three-node line learns a two-hop route through advertisements.
 - Diamond topology learns primary and backup routes.
-- Route advertisements do not create loops.
-- Stale routes expire.
+- Stale sequence advertisements are rejected.
+- Stale routes expire in focused engine tests.
 - Relay failure creates a route error.
-- Alternate route becomes active after measurable convergence delay.
-- Partitioned nodes remain unreachable.
-- Grid-health changes trigger an advertisement and route change.
+- Alternate route becomes active after a relay failure.
 
-### Required metrics
+Still required: larger partition tests, grid-health-triggered route-change integration tests, and repeated convergence experiments.
+
+### Implemented metrics
 
 - Route convergence time.
-- Advertisement packets and bytes.
-- Route-error packets and bytes.
+- Advertisement sent, accepted, and rejected counts.
+- Route-error sent, accepted, and rejected counts.
 - Route changes per node.
-- Transient packet loss during convergence.
-- Loop detections.
-- Control overhead as a fraction of total traffic.
+- Route-control bytes.
+- Advertisement and route-error rejection reasons.
+
+Still required: transient packet loss during convergence, explicit loop-detection totals, and a dashboard control-overhead ratio.
 
 ## 6. Priority 2: Exact LoRa Airtime
 
@@ -396,7 +410,7 @@ Only after this alignment should the project claim that larger simulator experim
 - Add a traceability table containing research question, scenario, baseline, metric, and success threshold.
 - Define how route weights will be normalized and calibrated.
 - Define how simulator results will be compared with hardware measurements.
-- Avoid claiming decentralized route convergence until packet-driven route learning is implemented.
+- Describe decentralized convergence as simulator behavior until it is matched against embedded hardware.
 
 ## 16. Recommended Branch Sequence
 
@@ -413,18 +427,13 @@ Each branch should have focused tests and documentation and should be merged bef
 
 ## 17. Immediate Next Action
 
-Do not start decentralized routing until the current timing/metrics branch is finalized.
-
-The immediate sequence is:
+Finalize and review the decentralized-routing branch, then begin the exact LoRa airtime model. The immediate sequence is:
 
 ```text
-review cross-plane diff
--> run 47 tests
--> verify healthy-alternate, only-path, recovery, and NO_ROUTE traces
--> commit
--> push
--> pull-request review
--> begin decentralized route-learning design
+review decentralized route traces and metrics
+-> add any missing partition and electrical-risk integration tests
+-> commit and push the branch
+-> begin exact LoRa airtime and encoded-length work
 ```
 
-The first design task after this merge is to specify the exact `ROUTE_ADVERTISEMENT` payload, including the bounded electrical route-suitability fields, and per-node route-update rules on paper before implementing them.
+The decentralized route-control update is implemented in the simulator. The next major technical dependency is exact LoRa airtime and encoded packet length, while firmware route-advertisement support remains a separate alignment task.

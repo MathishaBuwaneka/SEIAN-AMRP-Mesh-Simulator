@@ -39,7 +39,7 @@ The CCP transports `GRID_STATE_UPDATE`, `FAULT_ALERT`, and `CONTROL_COORDINATION
 
 ## Route Cost
 
-The centralized topology oracle currently uses this cross-plane cost:
+Both the decentralized routing mode and centralized topology oracle use this cross-plane cost:
 
 ```text
 W1 * HopCount
@@ -55,7 +55,7 @@ W1 * HopCount
 
 Communication availability remains a hard routing condition. Electrical risk is a soft cost: it can make a healthier path preferable but cannot by itself remove a radio-capable node from the mesh.
 
-The routing engine remains centralized and NetworkX-based. Decentralized `ROUTE_ADVERTISEMENT` learning is intentionally deferred to a separate change.
+The decentralized engine exchanges normalized communication and electrical-risk inputs in `ROUTE_ADVERTISEMENT` packets. NetworkX remains available as an explicit topology oracle and comparison baseline; it is not used to install routes in decentralized mode.
 
 ## Fault Domains
 

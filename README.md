@@ -67,6 +67,7 @@ seian_sim/node.py              Node state and priority queue
 seian_sim/packets.py           Packet model and duplicate cache
 seian_sim/lora_channel.py      Approximate LoRa channel
 seian_sim/routing.py           Cross-plane topology routing
+seian_sim/route_messages.py    Validated route-control payload contracts
 seian_sim/topology.py          Connectivity and resilience analysis
 seian_sim/grid_model.py        Simplified grid measurements
 seian_sim/fault_model.py       Fault injection and boundary classification
@@ -182,11 +183,11 @@ python -m pytest -q -p no:cacheprovider
 Current result for this version:
 
 ```text
-47 passed
+70 passed
 ```
 
 ## Important modelling limitation
 
-The current routing engine uses a complete NetworkX graph to calculate routes. This makes it effective for **topology feasibility and resilience checking**, but it is not yet a fully decentralized packet-level implementation of ROUTE_ADVERTISEMENT learning. That is the next major protocol update.
+The dashboard now supports two routing modes: decentralized packet-level `ROUTE_ADVERTISEMENT` learning for protocol experiments and a complete NetworkX topology oracle for baseline comparison. The decentralized mode learns routes from received control packets, maintains backup candidates, expires stale routes, and propagates `ROUTE_ERROR` after next-hop failure.
 
 LoRa airtime is still approximate and batch transmissions are currently serialized by the deterministic simulation clock. Event-derived concurrent collisions and exact LoRa PHY timing remain future work.

@@ -53,6 +53,8 @@ class RoutingEntry:
     backup_next_hop: str | None
     supports_emergency: bool
     last_update_time: float
+    destination_sequence: int = 0
+    learned_from: str | None = None
 
 
 @dataclass(slots=True)

@@ -61,6 +61,7 @@ class SeianNode:
     fault_status: FaultStatus = FaultStatus.NORMAL
     neighbor_table: dict[str, NeighborEntry] = field(default_factory=dict)
     routing_table: dict[str, RoutingEntry] = field(default_factory=dict)
+    route_candidates: dict[str, dict[str, RoutingEntry]] = field(default_factory=dict)
     recent_packet_cache: DuplicateCache = field(default_factory=DuplicateCache)
     gateway_distance: int | None = None
     fault_classification: str = "NORMAL"
@@ -72,6 +73,7 @@ class SeianNode:
     _queue_limit_hint: int = 1
     _queue_counter: int = 0
     _sequence: int = 0
+    _route_sequence: int = 0
 
     @property
     def position(self) -> tuple[float, float]:
@@ -116,6 +118,12 @@ class SeianNode:
 
         self._sequence += 1
         return self._sequence
+
+    def bump_route_sequence(self) -> int:
+        """Advance the freshness sequence owned by this destination."""
+
+        self._route_sequence += 1
+        return self._route_sequence
 
     def enqueue_packet(self, packet: Packet, timestamp: float, queue_limit: int) -> bool:
         """Queue a packet, using higher packet priority first."""

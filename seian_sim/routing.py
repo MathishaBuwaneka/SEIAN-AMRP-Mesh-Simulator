@@ -25,26 +25,50 @@ def route_cost(
 ) -> float:
     """Compute cross-plane route cost without coupling subsystem availability."""
 
+    return advertised_route_cost(
+        hop_count=hop_count,
+        link_quality=link_quality,
+        communication_health=communication_health,
+        communication_congestion=communication_congestion,
+        communication_fault_status=communication_fault_status,
+        electrical_risk=electrical_risk_score(
+            power_health=power_health,
+            power_load_percent=power_load_percent,
+            power_fault_status=power_fault_status,
+            weights=weights,
+        ),
+        leads_to_gateway=leads_to_gateway,
+        weights=weights,
+    )
+
+
+def advertised_route_cost(
+    *,
+    hop_count: int,
+    link_quality: float,
+    communication_health: float,
+    communication_congestion: float,
+    communication_fault_status: CommunicationFaultStatus,
+    electrical_risk: float,
+    leads_to_gateway: bool,
+    weights: RoutingWeights,
+) -> float:
+    """Compute edge cost from bounded state carried by a neighbor advertisement."""
+
     communication_fault_penalty = {
         CommunicationFaultStatus.NORMAL: 0.0,
         CommunicationFaultStatus.WARNING: 0.4,
         CommunicationFaultStatus.FAULT: 1.0,
     }[communication_fault_status]
-
-    electrical_penalty = electrical_route_penalty(
-        power_health=power_health,
-        power_load_percent=power_load_percent,
-        power_fault_status=power_fault_status,
-        weights=weights,
-    )
-
+    normalized_electrical_risk = max(0.0, min(1.0, electrical_risk))
+    electrical_weight = weights.power_health + weights.power_load + weights.power_fault
     return (
         weights.hop_count * hop_count
         + weights.link_loss * (1.0 - link_quality)
         + weights.communication_health * (1.0 - communication_health)
         + weights.communication_congestion * communication_congestion
         + weights.communication_fault * communication_fault_penalty
-        + electrical_penalty
+        + weights.cross_plane_risk * electrical_weight * normalized_electrical_risk
         + weights.gateway_bonus * (1.0 if leads_to_gateway else 0.0)
     )
 
@@ -58,13 +82,35 @@ def electrical_route_penalty(
 ) -> float:
     """Return the bounded electrical contribution to route cost."""
 
+    total_weight = weights.power_health + weights.power_load + weights.power_fault
+    return weights.cross_plane_risk * total_weight * electrical_risk_score(
+        power_health=power_health,
+        power_load_percent=power_load_percent,
+        power_fault_status=power_fault_status,
+        weights=weights,
+    )
+
+
+def electrical_risk_score(
+    *,
+    power_health: float,
+    power_load_percent: float,
+    power_fault_status: FaultStatus,
+    weights: RoutingWeights,
+) -> float:
+    """Return the normalized electrical routing risk in the range 0..1."""
+
     normalized_health = max(0.0, min(1.0, power_health))
     normalized_load = max(0.0, min(1.0, power_load_percent / 100.0))
-    return weights.cross_plane_risk * (
+    total_weight = weights.power_health + weights.power_load + weights.power_fault
+    if total_weight <= 0:
+        return 0.0
+    weighted_risk = (
         weights.power_health * (1.0 - normalized_health)
         + weights.power_load * normalized_load
         + weights.power_fault * fault_penalty(power_fault_status)
     )
+    return max(0.0, min(1.0, weighted_risk / total_weight))
 
 
 class RoutingEngine:

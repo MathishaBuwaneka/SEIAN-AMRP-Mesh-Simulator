@@ -65,7 +65,11 @@ class SimulationConfig:
     heartbeat_min_s: float = 10.0
     heartbeat_max_s: float = 30.0
     neighbor_timeout_s: float = 60.0
+    routing_mode: str = "oracle"
     route_lifetime_s: float = 120.0
+    route_switch_hysteresis: float = 0.1
+    route_advertisement_interval_s: float = 30.0
+    route_convergence_round_limit: int = 64
     max_hops: int = 10
     queue_limit: int = 80
     whitelist_enabled: bool = False
@@ -85,6 +89,16 @@ class SimulationConfig:
             raise ValueError("LoRa range must be positive.")
         if self.neighbor_timeout_s <= 0:
             raise ValueError("Neighbor timeout must be positive.")
+        if self.routing_mode not in {"oracle", "decentralized"}:
+            raise ValueError("Routing mode must be 'oracle' or 'decentralized'.")
+        if self.route_lifetime_s <= 0:
+            raise ValueError("Route lifetime must be positive.")
+        if self.route_switch_hysteresis < 0:
+            raise ValueError("Route-switch hysteresis must be non-negative.")
+        if self.route_advertisement_interval_s <= 0:
+            raise ValueError("Route-advertisement interval must be positive.")
+        if self.route_convergence_round_limit <= 0:
+            raise ValueError("Route-convergence round limit must be positive.")
         if self.max_hops <= 0:
             raise ValueError("Maximum hop count must be positive.")
         nonnegative_routing_weights = (

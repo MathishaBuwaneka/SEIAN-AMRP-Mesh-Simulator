@@ -88,6 +88,7 @@ def make_config(
     path_loss: float,
     heartbeat_min: float,
     neighbor_timeout: float,
+    routing_mode: str,
 ) -> SimulationConfig:
     """Build validated simulation settings from sidebar controls."""
 
@@ -98,6 +99,7 @@ def make_config(
         area_height_m=float(area_height),
         heartbeat_min_s=float(heartbeat_min),
         neighbor_timeout_s=float(neighbor_timeout),
+        routing_mode=routing_mode,
     )
     config.lora.max_range_m = float(lora_range)
     config.lora.packet_loss_probability = float(packet_loss)
@@ -156,6 +158,10 @@ with st.sidebar:
     st.header("Network Setup")
     scenario_options = ["Create own network", "Random topology", *SCENARIO_NAMES]
     scenario = st.selectbox("Scenario", scenario_options, index=2)
+    routing_mode_label = st.selectbox(
+        "Routing engine",
+        ["Decentralized advertisements", "NetworkX oracle baseline"],
+    )
     node_count = st.slider("Random node count", 1, 60, max(5, len(st.session_state.sim.nodes)))
     gateway_count = st.slider("Random gateway count", 0, 4, 1)
     duration = st.slider("Simulation duration (s)", 10, 900, 120, step=10)
@@ -179,6 +185,11 @@ with st.sidebar:
         path_loss=float(path_loss),
         heartbeat_min=float(heartbeat_min),
         neighbor_timeout=float(neighbor_timeout),
+        routing_mode=(
+            "decentralized"
+            if routing_mode_label == "Decentralized advertisements"
+            else "oracle"
+        ),
     )
 
     if st.button("Create / Reset Network", type="primary", use_container_width=True):
@@ -313,6 +324,14 @@ with st.sidebar:
         st.rerun()
 
 sim: SeianMeshSimulator = st.session_state.sim
+st.caption(
+    "Routing engine: "
+    + (
+        "decentralized packet advertisements"
+        if sim.config.routing_mode == "decentralized"
+        else "NetworkX oracle baseline"
+    )
+)
 node_ids = sorted(sim.nodes)
 builder_selected = st.session_state.builder_selected_node
 if builder_selected not in sim.nodes:
