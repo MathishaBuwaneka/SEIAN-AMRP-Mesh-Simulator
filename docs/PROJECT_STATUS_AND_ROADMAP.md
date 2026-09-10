@@ -121,8 +121,8 @@ A disconnected destination correctly produces `NO_ROUTE`, no radio attempt, no d
 - New timing/metrics tests added: 5.
 - Cross-plane and electrical route-penalty tests added: 15.
 - Route-control payload validation tests added: 11.
-- Decentralized route-engine and simulator integration tests added: 12.
-- Current total: 70 passing tests.
+- Decentralized route-engine and simulator integration tests added: 14.
+- Current total: 72 passing tests.
 - Streamlit application smoke test: no application exceptions.
 
 ## 4. Decentralized Route Learning Implemented
@@ -181,8 +181,10 @@ The simulator now measures advertisement propagation and convergence using its d
 - Stale routes expire in focused engine tests.
 - Relay failure creates a route error.
 - Alternate route becomes active after a relay failure.
+- A five-node relay failure removes cross-partition routes while preserving routes inside each component.
+- An electrical-risk advertisement switches to the healthier relay without disabling the unhealthy relay's communication plane.
 
-Still required: larger partition tests, grid-health-triggered route-change integration tests, and repeated convergence experiments.
+Still required: repeated seeded convergence experiments and transient application-traffic measurements during recovery.
 
 ### Implemented metrics
 
@@ -431,8 +433,7 @@ Finalize and review the decentralized-routing branch, then begin the exact LoRa 
 
 ```text
 review decentralized route traces and metrics
--> add any missing partition and electrical-risk integration tests
--> commit and push the branch
+-> commit the partition and electrical-risk regression tests
 -> begin exact LoRa airtime and encoded-length work
 ```
 

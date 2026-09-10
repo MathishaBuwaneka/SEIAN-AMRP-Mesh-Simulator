@@ -98,3 +98,50 @@ def test_diamond_activates_learned_backup_after_relay_failure():
     assert backup is not None
     assert after.next_hop_id == backup
     assert after.next_hop_id != failed_next_hop
+
+
+def test_partition_removes_cross_component_routes_but_keeps_local_routes():
+    sim = build_line(5)
+    sim.discover_neighbors()
+    assert sim.nodes["N05"].routing_table["N01"].hop_count == 4
+
+    def reject_oracle(*args, **kwargs):
+        raise AssertionError("NetworkX route installer must not run in decentralized mode")
+
+    sim.routing.recalculate = reject_oracle
+    sim.fail_communication("N03")
+
+    assert "N01" not in sim.nodes["N04"].routing_table
+    assert "N01" not in sim.nodes["N05"].routing_table
+    assert "N05" not in sim.nodes["N01"].routing_table
+    assert "N05" not in sim.nodes["N02"].routing_table
+    assert sim.nodes["N05"].routing_table["N04"].next_hop_id == "N04"
+    assert sim.nodes["N01"].routing_table["N02"].next_hop_id == "N02"
+
+
+def test_electrical_risk_advertisement_switches_route_without_disabling_ccp():
+    config = decentralized_config()
+    config.lora.max_range_m = 150.0
+    sim = SeianMeshSimulator(config)
+    sim.add_node("N01", 0, 0, gateway_capable=True, gateway_online=True)
+    sim.add_node("N02", 100, 0)
+    sim.add_node("N03", 100, 100)
+    sim.add_node("N04", 200, 0)
+    sim.discover_neighbors()
+    before = sim.nodes["N04"].routing_table["N01"]
+    advertisements_before = sim.metrics.route_advertisements_sent
+    route_changes_before = sim.metrics.route_changes
+
+    def reject_oracle(*args, **kwargs):
+        raise AssertionError("NetworkX route installer must not run in decentralized mode")
+
+    sim.routing.recalculate = reject_oracle
+    sim.fail_power_stage("N02")
+
+    after = sim.nodes["N04"].routing_table["N01"]
+    assert before.next_hop_id == "N02"
+    assert before.backup_next_hop == "N03"
+    assert sim.nodes["N02"].communication_available
+    assert after.next_hop_id == "N03"
+    assert sim.metrics.route_advertisements_sent > advertisements_before
+    assert sim.metrics.route_changes > route_changes_before

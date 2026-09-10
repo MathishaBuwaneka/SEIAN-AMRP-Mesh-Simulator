@@ -85,7 +85,7 @@ The uploaded Python project was already a substantial simulator rather than an e
 
 The detailed contract is documented in `docs/TWO_PLANE_ARCHITECTURE.md`.
 
-Current automated result: **70 tests passed**.
+Current automated result: **72 tests passed**.
 
 ## 3. Important simulator limitations that still require updates
 

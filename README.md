@@ -183,7 +183,7 @@ python -m pytest -q -p no:cacheprovider
 Current result for this version:
 
 ```text
-70 passed
+72 passed
 ```
 
 ## Important modelling limitation
