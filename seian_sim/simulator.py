@@ -16,6 +16,7 @@ from seian_sim.enums import (
     CommunicationStatus,
     EventCategory,
     FaultDomain,
+    FaultStatus,
     FaultType,
     NodeRole,
     PacketType,
@@ -260,6 +261,9 @@ class SeianMeshSimulator:
             communication_fault_status=neighbor.communication_fault_status,
             communication_load=neighbor.communication_load,
             communication_congestion=neighbor.communication_congestion,
+            power_health=neighbor.power_health,
+            power_load_percent=neighbor.load_percent,
+            power_fault_status=neighbor.power_fault_status,
             gateway_distance=neighbor.gateway_distance,
             route_cost=0.0,
             trust_status=neighbor.trust_status,
@@ -291,6 +295,7 @@ class SeianMeshSimulator:
     def recalculate_routes(self, reason: str) -> None:
         """Rebuild routes and log transitions."""
 
+        self._refresh_neighbor_state()
         changed = self.routing.recalculate(self.nodes, self.now)
         self.metrics.route_changes += changed
         if changed:
@@ -306,6 +311,25 @@ class SeianMeshSimulator:
                     "route_cost": round(entry.route_cost, 4),
                     "backup_next_hop": entry.backup_next_hop,
                 })
+
+    def _refresh_neighbor_state(self) -> None:
+        """Refresh the state currently advertised by each direct neighbor."""
+
+        for node in self.nodes.values():
+            for neighbor_id, entry in node.neighbor_table.items():
+                neighbor = self.nodes.get(neighbor_id)
+                if neighbor is None:
+                    continue
+                entry.communication_status = neighbor.communication_status
+                entry.communication_health = neighbor.communication_health
+                entry.communication_fault_status = neighbor.communication_fault_status
+                entry.communication_load = neighbor.communication_load
+                entry.communication_congestion = neighbor.communication_congestion
+                entry.link_reliability = min(entry.link_quality, neighbor.link_reliability)
+                entry.power_health = neighbor.power_health
+                entry.power_load_percent = neighbor.load_percent
+                entry.power_fault_status = neighbor.power_fault_status
+                entry.gateway_distance = neighbor.gateway_distance
 
     def run(self, duration_s: float | None = None, step_s: float = 10.0) -> None:
         """Run a deterministic batch simulation in fixed steps."""
@@ -544,6 +568,8 @@ class SeianMeshSimulator:
         origin = self.nodes[origin_node_id]
         fault = create_fault(origin, fault_type, severity, self.now, duration, radius_m)
         apply_fault_to_nodes(fault, self.nodes)
+        if fault.fault_domain != FaultDomain.COMMUNICATION:
+            self.recalculate_routes("electrical risk change")
         classifications = classify_fault_boundary(fault, self.nodes)
         self.fault_events.append(fault)
         self.log(EventCategory.FAULT, f"Fault detected: {fault_type.value}.", node_id=origin.node_id, fault_id=fault.fault_id)
@@ -610,14 +636,23 @@ class SeianMeshSimulator:
     def fail_power_stage(self, node_id: str) -> None:
         """Fail only the electrical power stage; CCP remains available."""
 
-        self.nodes[node_id].power_stage_operational = False
+        node = self.nodes[node_id]
+        node.power_stage_operational = False
+        node.power_fault_status = FaultStatus.FAULT
+        node.power_health = min(node.power_health, 0.25)
         self.log(EventCategory.GRID, "Power stage failed; communication remains available.", node_id=node_id)
+        self.recalculate_routes("power-stage failure")
 
     def recover_power_stage(self, node_id: str) -> None:
         """Recover only the electrical power stage."""
 
-        self.nodes[node_id].power_stage_operational = True
+        node = self.nodes[node_id]
+        node.power_stage_operational = True
+        node.power_fault_status = FaultStatus.NORMAL
+        node.power_health = 1.0
+        node.load_percent = 40.0
         self.log(EventCategory.GRID, "Power stage recovered.", node_id=node_id)
+        self.recalculate_routes("power-stage recovery")
 
     def set_gateway(self, node_id: str, online: bool = True) -> None:
         """Change gateway state for a node."""

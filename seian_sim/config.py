@@ -7,15 +7,18 @@ from dataclasses import dataclass, field
 
 @dataclass(slots=True)
 class RoutingWeights:
-    """Weights for communication-plane route cost."""
+    """Weights for communication and electrical route suitability."""
 
     hop_count: float = 2.0
     link_loss: float = 1.5
     communication_health: float = 3.0
     communication_congestion: float = 1.0
     communication_fault: float = 10.0
+    power_health: float = 3.0
+    power_load: float = 1.0
+    power_fault: float = 10.0
     gateway_bonus: float = -1.0
-    cross_plane_risk: float = 0.0
+    cross_plane_risk: float = 1.0
 
 
 @dataclass(slots=True)
@@ -84,3 +87,16 @@ class SimulationConfig:
             raise ValueError("Neighbor timeout must be positive.")
         if self.max_hops <= 0:
             raise ValueError("Maximum hop count must be positive.")
+        nonnegative_routing_weights = (
+            self.routing_weights.hop_count,
+            self.routing_weights.link_loss,
+            self.routing_weights.communication_health,
+            self.routing_weights.communication_congestion,
+            self.routing_weights.communication_fault,
+            self.routing_weights.power_health,
+            self.routing_weights.power_load,
+            self.routing_weights.power_fault,
+            self.routing_weights.cross_plane_risk,
+        )
+        if any(weight < 0 for weight in nonnegative_routing_weights):
+            raise ValueError("Routing penalty weights must be non-negative.")

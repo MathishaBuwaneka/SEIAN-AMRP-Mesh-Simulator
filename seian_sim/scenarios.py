@@ -73,13 +73,9 @@ def _healthy_vs_short(sim: SeianMeshSimulator) -> None:
     sim.config.lora.max_range_m = 260
     sim.add_node("N01", 0, 0, gateway_capable=True, gateway_online=True)
     sim.add_node("N02", 170, 0, load_percent=99, health_score=0.35)
-    sim.add_node("N03", 125, 105, load_percent=35, health_score=1.0)
+    sim.add_node("N03", 130, 180, load_percent=35, health_score=1.0)
     sim.add_node("N04", 240, 105, load_percent=36, health_score=1.0)
     sim.nodes["N02"].fault_status = FaultStatus.WARNING
-    sim.nodes["N02"].communication_status = CommunicationStatus.DEGRADED
-    sim.nodes["N02"].communication_health = 0.1
-    sim.nodes["N02"].communication_congestion = 1.0
-    sim.nodes["N02"].communication_fault_status = CommunicationFaultStatus.FAULT
     sim.discover_neighbors()
 
 
@@ -156,6 +152,7 @@ def export_topology(sim: SeianMeshSimulator) -> dict:
                 "power_stage_operational": node.power_stage_operational,
                 "health_score": node.health_score,
                 "load_percent": node.load_percent,
+                "fault_status": node.fault_status.value,
             }
             for node in sim.nodes.values()
         ],
@@ -209,5 +206,6 @@ def build_from_topology(data: dict, config: SimulationConfig | None = None) -> S
             row.get("communication_fault_status", CommunicationFaultStatus.NORMAL.value)
         )
         node.power_stage_operational = bool(row.get("power_stage_operational", True))
+        node.fault_status = FaultStatus(row.get("fault_status", FaultStatus.NORMAL.value))
     sim.discover_neighbors()
     return sim

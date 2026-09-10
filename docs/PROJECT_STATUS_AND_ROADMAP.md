@@ -1,6 +1,6 @@
 # SEIAN Simulator Status and Remaining Work Report
 
-Date: 2026-09-03  
+Date: 2026-09-10
 Current branch: `feature/timing-metrics-foundation`
 
 ## 1. Project Objective
@@ -11,7 +11,7 @@ SEIAN is intended to evaluate a resilient LoRa mesh in which inverter health and
 2. Can the mesh continue local communication without an online gateway?
 3. How quickly does routing recover after a relay becomes unavailable?
 4. Does priority handling improve urgent fault-message delivery?
-5. Does communication-aware routing outperform hop-count or link-only routing when a relay becomes congested or communication-degraded?
+5. Does grid-aware routing outperform hop-count or link-only routing when a relay becomes electrically unhealthy, overloaded, faulted, congested, or communication-degraded?
 
 The current program is already useful for topology design, demonstrations, and controlled protocol experiments. It must not yet be described as a complete LoRa physical-layer model, decentralized routing implementation, electrical power-flow simulator, or protection simulator.
 
@@ -27,7 +27,7 @@ The current program is already useful for topology design, demonstrations, and c
 
 ### Routing and resilience
 
-- Communication-aware route cost using hop count, link quality, communication health, congestion, communication fault state, and gateway preference.
+- Cross-plane route cost using hop count, link quality, communication health, congestion, communication fault state, bounded electrical health/load/fault penalties, and gateway preference.
 - Primary and backup next-hop selection.
 - Node failure, recovery, gateway loss, and gateway restoration controls.
 - Continued local mesh operation while gateway backhaul is offline.
@@ -44,16 +44,17 @@ The current program is already useful for topology design, demonstrations, and c
 
 - Simplified voltage, frequency, phase, current, power, load, temperature, power factor, and THD values.
 - Simplified spatial fault injection and fault-boundary classification.
-- Grid-state and power-fault payload transport without direct electrical influence on route selection.
+- Grid-state and power-fault payload transport with an explicit electrical-risk boundary into route selection.
+- Electrical faults can penalize relay selection without disabling a healthy radio; communication failures remain independent.
 
 ### Dashboard and exports
 
 - Network Builder, Packet Simulation, Topology Check, Node Details, Protocol Metrics, Grid Charts, Event Log, and Export Results tabs.
 - JSON and CSV exports for topology, tables, measurements, packet events, routes, faults, and logs.
 
-## 3. Timing and Metrics Foundation Completed on This Branch
+## 3. Timing, Metrics, and Cross-Plane Routing Foundation
 
-The current branch corrects the first major measurement problem.
+The current branch corrects the first major measurement problem and restores the proposal's grid-aware routing principle without coupling electrical and communication availability.
 
 ### Packet timestamps
 
@@ -91,6 +92,15 @@ The dashboard now separates:
 
 This prevents simulator metadata from being mistaken for the future binary ESP32 packet header.
 
+### Cross-plane routing correction
+
+- Electrical and communication failures remain independent.
+- Electrical health, load, and fault state now contribute bounded, weighted route penalties.
+- A power-faulted node remains available as a relay when its communication subsystem is healthy.
+- A healthier alternate relay is preferred when the electrical penalty makes its total route cost lower.
+- `cross_plane_risk=0` provides a communication-only baseline for later experiments.
+- Neighbour observations and topology export/import preserve the electrical routing state.
+
 ### Verified examples
 
 For `N05 -> N03 -> N01`, the simulator produced:
@@ -107,24 +117,25 @@ A disconnected destination correctly produces `NO_ROUTE`, no radio attempt, no d
 
 - Original tests retained: 27.
 - New timing/metrics tests added: 5.
-- Current total: 32 passing tests.
+- Cross-plane and electrical route-penalty tests added: 15.
+- Current total: 47 passing tests.
 - Streamlit application smoke test: no application exceptions.
 
 ## 4. Current Branch Work Still to Finish
 
 Before beginning another major feature:
 
-1. Review the complete diff for naming and compatibility.
+1. Review the complete cross-plane routing diff for naming and compatibility.
 2. Run `git diff --check`.
-3. Run the complete 32-test suite once more.
-4. Manually verify one successful multi-hop trace and one `NO_ROUTE` trace.
-5. Commit the timing/metrics changes with a focused commit message.
-6. Push the branch and open a pull request for review.
+3. Run the complete 47-test suite once more.
+4. Manually verify healthy-alternate routing, only-path fallback, recovery, and one `NO_ROUTE` trace.
+5. Commit and push the cross-plane correction to the existing branch.
+6. Open or update the pull request and merge after review.
 
 Suggested commit message:
 
 ```text
-Add reliable packet timing and delivery metrics
+Add reliable timing metrics and grid-aware route penalties
 ```
 
 ## 5. Priority 1: Decentralized Route Learning
@@ -268,7 +279,7 @@ Security work should remain prototype-scoped and must not claim utility-grade ce
 
 ### Current problem
 
-Electrical values are synthetic and faults are applied mainly by geometric distance. Electrical propagation does not generally follow radio-space distance.
+Electrical values are synthetic and faults are applied mainly by geometric distance. A bounded health/load/fault signal now influences routing, but the signal derivation is still simplified and electrical propagation does not generally follow radio-space distance.
 
 ### Required improvements
 
@@ -407,13 +418,13 @@ Do not start decentralized routing until the current timing/metrics branch is fi
 The immediate sequence is:
 
 ```text
-review diff
--> run 32 tests
--> verify successful and NO_ROUTE traces
+review cross-plane diff
+-> run 47 tests
+-> verify healthy-alternate, only-path, recovery, and NO_ROUTE traces
 -> commit
 -> push
 -> pull-request review
 -> begin decentralized route-learning design
 ```
 
-The first design task after this merge is to specify the exact `ROUTE_ADVERTISEMENT` payload and per-node route-update rules on paper before implementing them.
+The first design task after this merge is to specify the exact `ROUTE_ADVERTISEMENT` payload, including the bounded electrical route-suitability fields, and per-node route-update rules on paper before implementing them.

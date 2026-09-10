@@ -5,8 +5,8 @@ from __future__ import annotations
 import networkx as nx
 
 from seian_sim.config import RoutingWeights
-from seian_sim.enums import CommunicationFaultStatus
-from seian_sim.models import RoutingEntry
+from seian_sim.enums import CommunicationFaultStatus, FaultStatus
+from seian_sim.models import RoutingEntry, fault_penalty
 from seian_sim.node import SeianNode
 
 
@@ -17,24 +17,53 @@ def route_cost(
     communication_health: float,
     communication_congestion: float,
     communication_fault_status: CommunicationFaultStatus,
+    power_health: float,
+    power_load_percent: float,
+    power_fault_status: FaultStatus,
     leads_to_gateway: bool,
     weights: RoutingWeights,
 ) -> float:
-    """Compute the communication-plane route cost; lower is better."""
+    """Compute cross-plane route cost without coupling subsystem availability."""
 
-    fault_penalty = {
+    communication_fault_penalty = {
         CommunicationFaultStatus.NORMAL: 0.0,
         CommunicationFaultStatus.WARNING: 0.4,
         CommunicationFaultStatus.FAULT: 1.0,
     }[communication_fault_status]
+
+    electrical_penalty = electrical_route_penalty(
+        power_health=power_health,
+        power_load_percent=power_load_percent,
+        power_fault_status=power_fault_status,
+        weights=weights,
+    )
 
     return (
         weights.hop_count * hop_count
         + weights.link_loss * (1.0 - link_quality)
         + weights.communication_health * (1.0 - communication_health)
         + weights.communication_congestion * communication_congestion
-        + weights.communication_fault * fault_penalty
+        + weights.communication_fault * communication_fault_penalty
+        + electrical_penalty
         + weights.gateway_bonus * (1.0 if leads_to_gateway else 0.0)
+    )
+
+
+def electrical_route_penalty(
+    *,
+    power_health: float,
+    power_load_percent: float,
+    power_fault_status: FaultStatus,
+    weights: RoutingWeights,
+) -> float:
+    """Return the bounded electrical contribution to route cost."""
+
+    normalized_health = max(0.0, min(1.0, power_health))
+    normalized_load = max(0.0, min(1.0, power_load_percent / 100.0))
+    return weights.cross_plane_risk * (
+        weights.power_health * (1.0 - normalized_health)
+        + weights.power_load * normalized_load
+        + weights.power_fault * fault_penalty(power_fault_status)
     )
 
 
@@ -46,10 +75,10 @@ class RoutingEngine:
         self.route_lifetime_s = route_lifetime_s
         self.max_hops = max_hops
 
-    def build_graph(self, nodes: dict[str, SeianNode]) -> nx.Graph:
-        """Create an undirected graph from active nodes and neighbor tables."""
+    def build_graph(self, nodes: dict[str, SeianNode]) -> nx.DiGraph:
+        """Create directed links so next-hop state determines each edge cost."""
 
-        graph = nx.Graph()
+        graph = nx.DiGraph()
         for node in nodes.values():
             if node.communication_available:
                 graph.add_node(node.node_id)
@@ -75,6 +104,9 @@ class RoutingEngine:
                         neighbor.communication_congestion,
                     ),
                     communication_fault_status=neighbor.communication_fault_status,
+                    power_health=entry.power_health,
+                    power_load_percent=entry.power_load_percent,
+                    power_fault_status=entry.power_fault_status,
                     leads_to_gateway=leads_to_gateway,
                     weights=self.weights,
                 )
@@ -130,7 +162,7 @@ class RoutingEngine:
                 changes += 1
         return changes
 
-    def _backup_next_hop(self, graph: nx.Graph, source: str, destination: str, primary: str) -> str | None:
+    def _backup_next_hop(self, graph: nx.DiGraph, source: str, destination: str, primary: str) -> str | None:
         graph_copy = graph.copy()
         if graph_copy.has_edge(source, primary):
             graph_copy.remove_edge(source, primary)

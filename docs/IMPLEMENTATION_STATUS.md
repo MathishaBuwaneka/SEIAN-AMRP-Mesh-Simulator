@@ -70,8 +70,11 @@ The uploaded Python project was already a substantial simulator rather than an e
 
 - Added explicit communication status, health, fault, load, congestion, and link-reliability state.
 - Retained electrical measurements and legacy fields as separate application/EP state.
-- Changed route cost to use only hop count, link quality, communication health, communication congestion, communication fault state, and gateway preference.
-- Removed voltage, frequency, inverter load, electrical health, and electrical fault state from route selection.
+- Changed route cost to combine communication factors with explicit, bounded electrical health, load, and fault penalties.
+- Added an explicit cross-plane routing boundary: normalized electrical health, load, and fault penalties influence route preference without controlling radio availability.
+- Added a configurable `cross_plane_risk` multiplier that can disable electrical influence for communication-only baseline experiments.
+- Added electrical state to neighbour observations and topology round-trip exports.
+- Added route recalculation after electrical fault, power-stage failure, and recovery actions.
 - Added `POWER`, `COMMUNICATION`, and `DEVICE` fault domains.
 - Kept power-faulted nodes available for packet origination and relay forwarding when their radios remain healthy.
 - Made communication failure and recovery independent from power-stage failure and recovery.
@@ -81,7 +84,7 @@ The uploaded Python project was already a substantial simulator rather than an e
 
 The detailed contract is documented in `docs/TWO_PLANE_ARCHITECTURE.md`.
 
-Current automated result: **39 tests passed**.
+Current automated result: **47 tests passed**.
 
 ## 3. Important simulator limitations that still require updates
 

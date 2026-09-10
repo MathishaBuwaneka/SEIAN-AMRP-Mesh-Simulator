@@ -11,6 +11,7 @@ from seian_sim.enums import (
 from seian_sim.fault_model import apply_fault_to_nodes, create_fault
 from seian_sim.manual_simulation import ManualPacketSession
 from seian_sim.packets import PRIORITY_FAULT, PRIORITY_TELEMETRY
+from seian_sim.scenarios import build_from_topology, export_topology
 from seian_sim.simulator import SeianMeshSimulator
 from tests.test_discovery import reliable_config
 
@@ -77,19 +78,67 @@ def test_communication_failure_removes_relay_and_routes_around_it():
     assert any(event.packet_type == PacketType.ROUTE_ERROR.value for event in sim.events)
 
 
-def test_electrical_fault_alone_does_not_add_route_penalty():
+def test_electrical_fault_penalizes_relay_without_disabling_communication():
     sim = build_diamond()
     sim.recalculate_routes("stabilize gateway preference")
     before = sim.nodes["N04"].routing_table["N01"]
 
     fault = create_fault(sim.nodes["N02"], FaultType.OVERLOAD, "severe", sim.now, 10, 1)
     apply_fault_to_nodes(fault, sim.nodes)
-    sim.recalculate_routes("verify electrical isolation")
+    sim.recalculate_routes("electrical risk changed")
     after = sim.nodes["N04"].routing_table["N01"]
 
     assert sim.nodes["N02"].fault_status == FaultStatus.FAULT
-    assert after.next_hop_id == before.next_hop_id == "N02"
-    assert after.route_cost == pytest.approx(before.route_cost)
+    assert sim.nodes["N02"].communication_available
+    assert before.next_hop_id == "N02"
+    assert after.next_hop_id == "N03"
+
+
+def test_power_stage_recovery_removes_electrical_route_penalty():
+    sim = build_diamond()
+    sim.fail_power_stage("N02")
+    assert sim.nodes["N04"].routing_table["N01"].next_hop_id == "N03"
+
+    sim.recover_power_stage("N02")
+
+    assert sim.nodes["N02"].communication_available
+    assert sim.nodes["N02"].fault_status == FaultStatus.NORMAL
+    assert sim.nodes["N04"].routing_table["N01"].next_hop_id == "N02"
+
+
+def test_neighbor_table_refreshes_electrical_routing_state():
+    sim = build_diamond()
+    sim.nodes["N02"].health_score = 0.2
+    sim.nodes["N02"].load_percent = 120.0
+    sim.nodes["N02"].fault_status = FaultStatus.WARNING
+
+    sim.recalculate_routes("neighbor electrical state changed")
+
+    advertised = sim.nodes["N04"].neighbor_table["N02"]
+    assert advertised.power_health == pytest.approx(0.2)
+    assert advertised.power_load_percent == pytest.approx(120.0)
+    assert advertised.power_fault_status == FaultStatus.WARNING
+
+
+def test_route_edges_apply_risk_to_the_next_hop_direction():
+    sim = build_diamond()
+    sim.nodes["N02"].health_score = 0.1
+    sim.nodes["N02"].fault_status = FaultStatus.FAULT
+    sim.recalculate_routes("directional electrical risk")
+
+    graph = sim.routing.build_graph(sim.nodes)
+
+    assert graph.is_directed()
+    assert graph["N04"]["N02"]["weight"] > graph["N02"]["N04"]["weight"]
+
+
+def test_communication_only_baseline_ignores_electrical_risk():
+    sim = build_diamond()
+    sim.config.routing_weights.cross_plane_risk = 0.0
+    sim.fail_power_stage("N02")
+
+    assert sim.nodes["N02"].communication_available
+    assert sim.nodes["N04"].routing_table["N01"].next_hop_id == "N02"
 
 
 def test_communication_degradation_changes_route_selection():
@@ -120,11 +169,6 @@ def test_fault_types_have_separate_domains():
 def test_grid_state_update_is_transport_only_for_routing():
     sim = build_diamond()
     route_before = sim.nodes["N04"].routing_table["N01"].next_hop_id
-    sim.nodes["N02"].voltage_rms = 170.0
-    sim.nodes["N02"].frequency_hz = 47.0
-    sim.nodes["N02"].load_percent = 125.0
-    sim.nodes["N02"].fault_status = FaultStatus.FAULT
-    sim.recalculate_routes("application payload changed")
 
     session = ManualPacketSession.create(
         sim,
@@ -140,6 +184,23 @@ def test_grid_state_update_is_transport_only_for_routing():
     assert sim.nodes["N04"].routing_table["N01"].next_hop_id == route_before == "N02"
     assert "N01" in session.delivered_nodes
     assert session.packet.payload["voltage"] == 170.0
+
+
+def test_topology_round_trip_preserves_electrical_routing_state():
+    sim = build_diamond()
+    node = sim.nodes["N02"]
+    node.health_score = 0.35
+    node.load_percent = 112.0
+    node.fault_status = FaultStatus.WARNING
+    node.power_stage_operational = False
+
+    restored = build_from_topology(export_topology(sim), sim.config)
+    restored_node = restored.nodes["N02"]
+
+    assert restored_node.health_score == pytest.approx(0.35)
+    assert restored_node.load_percent == pytest.approx(112.0)
+    assert restored_node.fault_status == FaultStatus.WARNING
+    assert not restored_node.power_stage_operational
 
 
 def test_power_fault_alert_propagates_from_failed_power_stage():

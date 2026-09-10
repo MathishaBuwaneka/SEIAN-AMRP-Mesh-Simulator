@@ -42,7 +42,7 @@ The **Topology Check** dashboard identifies:
 The project also models:
 
 - HELLO-style discovery and neighbor tables.
-- Communication-aware route selection and backup next hops.
+- Cross-plane route selection using radio quality, communication state, and bounded electrical health/load/fault penalties, with backup next hops.
 - Approximate LoRa RSSI, SNR, range, loss, collision, and channel-busy behaviour.
 - Grid-state telemetry and gateway forwarding.
 - Gateway outage and cached telemetry.
@@ -66,7 +66,7 @@ seian_sim/models.py            Neighbor, route, event, and fault records
 seian_sim/node.py              Node state and priority queue
 seian_sim/packets.py           Packet model and duplicate cache
 seian_sim/lora_channel.py      Approximate LoRa channel
-seian_sim/routing.py           Communication-aware topology routing
+seian_sim/routing.py           Cross-plane topology routing
 seian_sim/topology.py          Connectivity and resilience analysis
 seian_sim/grid_model.py        Simplified grid measurements
 seian_sim/fault_model.py       Fault injection and boundary classification
@@ -182,7 +182,7 @@ python -m pytest -q -p no:cacheprovider
 Current result for this version:
 
 ```text
-27 passed
+47 passed
 ```
 
 ## Important modelling limitation

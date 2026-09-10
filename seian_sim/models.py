@@ -33,6 +33,9 @@ class NeighborEntry:
     communication_fault_status: CommunicationFaultStatus
     communication_load: float
     communication_congestion: float
+    power_health: float
+    power_load_percent: float
+    power_fault_status: FaultStatus
     gateway_distance: int | None
     route_cost: float
     trust_status: TrustStatus

@@ -38,6 +38,7 @@ from seian_sim.scenarios import (
     export_topology,
 )
 from seian_sim.simulator import SeianMeshSimulator
+from seian_sim.routing import electrical_route_penalty
 from seian_sim.topology import analyze_topology, link_table, node_failure_impact, trace_route
 from seian_sim.visualization import (
     drop_reason_figure,
@@ -755,6 +756,15 @@ with tab_node:
                     "power_stage_operational": node.power_stage_operational,
                     "health_score": round(node.health_score, 3),
                     "fault_state": node.fault_status.value,
+                    "routing_penalty": round(
+                        electrical_route_penalty(
+                            power_health=node.power_health,
+                            power_load_percent=node.load_percent,
+                            power_fault_status=node.power_fault_status,
+                            weights=sim.config.routing_weights,
+                        ),
+                        3,
+                    ),
                 },
                 "gateway_capable": node.gateway_capable,
                 "gateway_online": node.gateway_online,
