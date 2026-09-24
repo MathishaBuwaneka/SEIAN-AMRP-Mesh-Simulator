@@ -126,13 +126,19 @@ limits still require the deployment band and jurisdiction to be confirmed.
 
 The present model uses configured probabilities for collision and channel busy events. A stronger model should track overlapping transmissions in time and frequency and apply capture-effect logic based on received power.
 
-### D. The packet format is abstract
+### D. Binary codec implemented; firmware application integration remains
 
-The Python packet payload is a dictionary. Firmware-alignment work should implement the same binary field sizes, scaling, endianness, header flags, CRC/MIC, and maximum packet size used on the embedded nodes.
+Selectable Binary v1 provides matching Python/C++ codecs, numeric addresses,
+typed compact payloads, real CRC-16, and a 255-byte frame limit. Host interoperability
+tests pass and the codec compiles for ESP32. The repository has no firmware
+application to integrate or flash; device behavior and real radio operation remain
+unvalidated. See [the shared binary contract](BINARY_PACKET_FORMAT.md).
 
 ### E. Security is only behaviourally simulated
 
-The simulator can reject wrong Network IDs, invalid CRCs, and invalid authentication flags, but it does not yet calculate a real packet authentication code or encrypt payloads.
+Binary mode calculates and verifies CRC-16; injected validity flags remain available
+for simulation. There is no real packet authentication code, encryption, or replay
+window. CRC detects corruption but does not authenticate senders.
 
 ### F. Grid behaviour is simplified
 

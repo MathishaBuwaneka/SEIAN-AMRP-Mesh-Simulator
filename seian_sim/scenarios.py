@@ -135,6 +135,9 @@ def export_topology(sim: SeianMeshSimulator) -> dict:
 
     return {
         "network_id": sim.config.network_id,
+        "packet_encoding": sim.config.packet_encoding,
+        "wire_network_id": sim.config.wire_network_id,
+        "wire_addresses": dict(sim.config.wire_addresses),
         "area_width_m": sim.config.area_width_m,
         "area_height_m": sim.config.area_height_m,
         "lora_range_m": sim.config.lora.max_range_m,
@@ -176,6 +179,9 @@ def build_from_topology(data: dict, config: SimulationConfig | None = None) -> S
     # config object must not pick up values from whatever topology was loaded.
     cfg = deepcopy(config) if config is not None else SimulationConfig()
     cfg.network_id = str(data.get("network_id", cfg.network_id))
+    cfg.packet_encoding = data.get("packet_encoding", cfg.packet_encoding)
+    cfg.wire_network_id = data.get("wire_network_id", cfg.wire_network_id)
+    cfg.wire_addresses = deepcopy(data.get("wire_addresses", cfg.wire_addresses))
     cfg.area_width_m = float(data.get("area_width_m", cfg.area_width_m))
     cfg.area_height_m = float(data.get("area_height_m", cfg.area_height_m))
     if "lora_config" in data:

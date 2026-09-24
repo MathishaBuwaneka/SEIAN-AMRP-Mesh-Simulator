@@ -55,11 +55,19 @@ class LoraChannel:
             return self.config.airtime_base_s + payload_length * 0.0015
         return calculate_airtime(payload_length + self.config.protocol_header_bytes, self.config).total_s
 
+    def frame_airtime_s(self, frame_length: int) -> float:
+        """A fully encoded frame already includes all protocol overhead."""
+        if self.config.airtime_mode == "approximate":
+            return self.config.airtime_base_s + frame_length * 0.0015
+        return calculate_airtime(frame_length, self.config).total_s
+
     def observe(
         self,
         tx_position: tuple[float, float],
         rx_position: tuple[float, float],
         payload_length: int | None = None,
+        *,
+        frame_length: int | None = None,
     ) -> LinkObservation:
         """Observe a frame, or probe a link without frame timing when length is None."""
 
@@ -76,7 +84,9 @@ class LoraChannel:
         loss_rate = self.config.packet_loss_probability
         link_quality = calculate_link_quality(rssi, snr, loss_rate)
         airtime = self.airtime_s(payload_length) if payload_length is not None else 0.0
-        delay = self.config.transmission_delay_s + airtime if payload_length is not None else 0.0
+        if frame_length is not None:
+            airtime = self.frame_airtime_s(frame_length)
+        delay = self.config.transmission_delay_s + airtime if payload_length is not None or frame_length is not None else 0.0
 
         if distance > self.config.max_range_m:
             return LinkObservation(False, rssi, snr, link_quality, delay, "outside_range", airtime)

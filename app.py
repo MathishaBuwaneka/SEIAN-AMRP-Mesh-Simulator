@@ -188,6 +188,7 @@ with st.sidebar:
     simulation_step = st.slider("Batch step size (s)", 1, 60, 10)
 
     with st.expander("LoRa airtime settings"):
+        packet_encoding = st.selectbox("Packet encoding", ["JSON (legacy)", "Binary v1"])
         airtime_mode = st.selectbox("Timing model", ["Approximate (existing experiments)", "LoRa time-on-air"])
         frequency_mhz = st.number_input("Carrier frequency (MHz)", min_value=137.0, max_value=1020.0, value=868.0)
         spreading_factor = st.selectbox("Spreading factor", [7, 8, 9, 10, 11, 12, 6])
@@ -199,7 +200,7 @@ with st.sidebar:
         ldro = st.selectbox("Low-data-rate optimization", ["Automatic", "Enabled", "Disabled"])
         header_bytes = st.number_input("Assumed protocol header (bytes)", min_value=0, max_value=254, value=24)
         processing_delay = st.number_input("Additional link delay (s)", min_value=0.0, value=0.25, step=0.01)
-        st.caption("Settings apply when creating or loading a network. Exact mode uses UTF-8 JSON bytes plus the assumed protocol header. Frames over 255 bytes are rejected; current route advertisements may exceed this limit. Firmware encoding and fragmentation are not implemented.")
+        st.caption("Settings apply when creating or loading a network. Binary v1 uses the complete encoded frame and ignores the assumed header budget. JSON uses UTF-8 bytes plus that budget. Frames over 255 bytes are rejected in binary mode or exact timing mode. Fragmentation is not implemented.")
 
     config = make_config(
         seed=int(seed),
@@ -219,6 +220,7 @@ with st.sidebar:
     )
 
     config.lora.airtime_mode = "lora" if airtime_mode == "LoRa time-on-air" else "approximate"
+    config.packet_encoding = "binary" if packet_encoding == "Binary v1" else "json"
     config.lora.frequency_hz = frequency_mhz * 1_000_000
     config.lora.spreading_factor = spreading_factor
     config.lora.bandwidth_hz = bandwidth_khz * 1000
@@ -648,8 +650,22 @@ with tab_packet:
             packet = trace.packet
             encoded_length = packet.payload_length
             radio = sim.config.lora
-            st.caption(f"Active timing model: {radio.airtime_mode} | Encoded payload: {encoded_length} bytes")
-            if radio.airtime_mode == "lora":
+            st.caption(f"Active timing model: {radio.airtime_mode} | Packet encoding: {sim.config.packet_encoding}")
+            if sim.config.packet_encoding == "binary":
+                from seian_sim.wire import WireError
+
+                try:
+                    frame = sim.encode_wire_packet(packet, packet.source_id, packet.source_id)
+                    st.caption(f"Binary v1 preview: {len(frame)} frame bytes | Airtime: {sim.channel.frame_airtime_s(len(frame)) * 1000:.3f} ms")
+                    st.caption("Preview uses the source as next hop; the actual link receiver is encoded when forwarding.")
+                    with st.expander("Binary frame preview (hex)"):
+                        st.code(frame.hex(), language="text")
+                    if trace.last_wire_frame_hex:
+                        with st.expander("Last transmitted binary frame (hex)"):
+                            st.code(trace.last_wire_frame_hex, language="text")
+                except WireError as exc:
+                    st.warning(f"Packet cannot be encoded: {exc}")
+            elif radio.airtime_mode == "lora":
                 st.caption(f"SF{radio.spreading_factor}, {radio.bandwidth_hz / 1000:g} kHz, CR 4/{radio.coding_rate_denominator} | PHY payload: {encoded_length + radio.protocol_header_bytes} bytes")
                 if sim.channel.supports_payload(encoded_length):
                     st.caption(f"Frame airtime: {sim.channel.airtime_s(encoded_length) * 1000:.3f} ms | Additional link delay: {radio.transmission_delay_s:.3f} s")

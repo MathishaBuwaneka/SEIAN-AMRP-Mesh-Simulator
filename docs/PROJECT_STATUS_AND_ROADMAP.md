@@ -1,7 +1,21 @@
 # SEIAN Simulator Status and Remaining Work Report
 
 Date: 2026-09-24
-Work branch: `feature/lora-airtime-model` (based on integrated `main`)
+Work branch: `feature/binary-packet-format` (based on `feature/lora-airtime-model`)
+
+## Binary packet branch update
+
+This branch adds a shared v1 wire contract, Python and portable C++ codecs, real
+CRC-16, numeric addresses, separate next-hop/final-destination fields, compact
+typed payloads, and cross-language hexadecimal vectors. Binary mode plus exact
+airtime now supports decentralized route-learning and recovery tests within the
+255-byte frame limit. Topology exports retain provisioned addresses. See
+[the binary packet specification](BINARY_PACKET_FORMAT.md).
+
+The feature is a separate branch stacked on the airtime branch; neither feature
+is merged into `main`. The codec compiles for ESP32, but the repository has no
+firmware application to integrate or flash. Authentication, fragmentation,
+event-based collision scheduling, and hardware validation remain outstanding.
 
 ## Airtime branch update
 
@@ -11,8 +25,8 @@ protocol-header budget, frame-size rejection, and an estimated sensitivity model
 Both manual and batch forwarding use it; topology exports preserve radio settings.
 Approximate mode remains the default because verbose JSON route advertisements
 can exceed a physical frame. See [model assumptions](LORA_AIRTIME_MODEL.md).
-The shared binary format, fragmentation, regulatory scheduling, and event-based
-collisions remain outstanding. Historical baseline results below predate this work.
+The binary branch adds the shared format. Fragmentation, regulatory scheduling,
+and event-based collisions remain outstanding. Historical baseline results below predate this work.
 
 ## Integration update
 
@@ -280,9 +294,12 @@ Batch transmissions currently consume time serially. Collision and channel-busy 
 
 ### Current problem
 
-The simulator uses Python dictionaries and JSON length as a convenient abstract packet representation. The embedded implementation requires a compact binary packet with exact field sizes.
+Binary v1 is implemented as an alternative to JSON with exact header widths,
+typed compact payloads, CRC, and matching Python/C++ codecs. See
+[the wire specification](BINARY_PACKET_FORMAT.md) for the frozen field IDs,
+byte vectors, address provisioning, and firmware integration boundary.
 
-### Required design decisions
+### V1 design decisions documented in the shared specification
 
 - Numeric node-address size.
 - Network identifier representation.
@@ -297,19 +314,26 @@ The simulator uses Python dictionaries and JSON length as a convenient abstract 
 - CRC responsibility versus message authentication responsibility.
 - Key identifier, nonce, and MIC fields.
 
-### Required implementation
+### Implemented
 
-- Python encoder and decoder.
-- Matching C++ encoder and decoder.
-- Shared packet-format document.
+- Python encoder and decoder integrated into manual and batch forwarding.
+- Matching portable C++ encoder and decoder, compiled for host and ESP32.
+- Shared packet-format document with byte order, widths, units and limits.
 - Cross-language test vectors represented as hexadecimal byte sequences.
 - Rejection tests for truncated, oversized, malformed, and unsupported-version packets.
+- Persisted numeric address map and separate next-hop receiver field.
+
+Remaining: integrate into an actual ESP32 application and validate on hardware.
+V1 uses lossless float64/int64 rather than quantized fixed-point measurements.
+MIC/nonce/replay-window work belongs to the security stage.
 
 ## 9. Priority 5: Security Behaviour
 
 ### Current problem
 
-CRC and authentication are represented by validity flags rather than real calculations. CRC detects corruption but does not prove packet origin.
+Binary v1 calculates and checks a real CRC-16. Authentication remains behavioral,
+and CRC does not prove packet origin. Existing validity flags still support fault
+injection in the simulator; no MIC or replay window is implemented.
 
 ### Required implementation
 
@@ -460,15 +484,15 @@ Each branch should have focused tests and documentation and should be merged bef
 
 ## 17. Immediate Next Action
 
-Review the airtime feature branch through a PR before merging. The next sequence is:
+Review the stacked airtime and binary-packet branches through PRs before merging.
+The next implementation stage is the event-based shared radio channel:
 
 ```text
-review airtime assumptions and test results
--> merge the reviewed airtime PR
--> define compact packets for exact-mode decentralized experiments
+review airtime and binary-packet contracts and test results
+-> merge the reviewed airtime branch, then binary-packet branch
 -> implement the event-based shared radio channel
 ```
 
 Decentralized route control and selectable frame airtime are implemented in the
-simulator. Compact binary packets and firmware route-advertisement support remain
-alignment tasks; exact-mode frame rejection makes oversized JSON messages explicit.
+simulator. Compact binary packets are implemented on this branch; firmware
+application integration and hardware alignment remain separate tasks.

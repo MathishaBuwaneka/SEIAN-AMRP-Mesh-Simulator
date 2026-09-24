@@ -1,5 +1,11 @@
 # LoRa airtime model
 
+**Binary branch update:** select **Packet encoding → Binary v1** to use the full
+encoded frame length without the assumed header budget described below. Compact
+route advertisements now fit and decentralized exact-mode regression tests pass.
+See [the shared binary contract](BINARY_PACKET_FORMAT.md). The JSON limitations
+below still apply when JSON encoding is selected.
+
 The simulator offers `approximate` (default) and `lora` timing modes. Select
 **LoRa airtime settings → Timing model → LoRa time-on-air**, set the radio
 parameters, and press **Create / Reset Network**. For a multi-hop airtime

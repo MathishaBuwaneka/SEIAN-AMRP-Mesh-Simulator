@@ -108,6 +108,9 @@ class SimulationConfig:
     """Top-level simulation configuration."""
 
     network_id: str = "SEIAN-LAB"
+    packet_encoding: str = "json"
+    wire_network_id: int = 1
+    wire_addresses: dict[str, int] = field(default_factory=dict)
     random_seed: int = 42
     duration_s: float = 300.0
     area_width_m: float = 600.0
@@ -132,6 +135,17 @@ class SimulationConfig:
         """Raise ValueError for invalid user-controlled settings."""
 
         self.lora.validate()
+        if self.packet_encoding not in {"json", "binary"}:
+            raise ValueError("Packet encoding must be 'json' or 'binary'.")
+        if type(self.wire_network_id) is not int or not 1 <= self.wire_network_id <= 65534:
+            raise ValueError("Wire network ID must be an integer in 1..65534.")
+        if not isinstance(self.wire_addresses, dict) or any(
+            not isinstance(key, str) or not key or type(value) is not int or not 1 <= value <= 65534
+            for key, value in self.wire_addresses.items()
+        ):
+            raise ValueError("Wire addresses must map node names to integers in 1..65534.")
+        if len(set(self.wire_addresses.values())) != len(self.wire_addresses):
+            raise ValueError("Wire addresses must be unique.")
 
         if self.duration_s <= 0:
             raise ValueError("Simulation duration must be positive.")

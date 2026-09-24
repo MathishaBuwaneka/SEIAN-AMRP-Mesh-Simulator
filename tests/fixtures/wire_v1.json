@@ -1,0 +1,74 @@
+[
+  {
+    "name": "telemetry",
+    "packet": {
+      "packet_type": "GRID_STATE_UPDATE",
+      "network": 1,
+      "source": 2,
+      "origin": 2,
+      "next_hop": 3,
+      "destination": 1,
+      "sequence": 42,
+      "priority": 1,
+      "hops": 0,
+      "ttl": 6,
+      "payload": {
+        "voltage": 230.0,
+        "frequency": 50.0,
+        "fault_status": "normal"
+      }
+    },
+    "hex": "53410104000100020002000300010000002a01000600001f0e0308406cc000000000000f030840490000000000001304066e6f726d616c9134"
+  },
+  {
+    "name": "scalars",
+    "packet": {
+      "packet_type": "GRID_STATE_UPDATE",
+      "network": 1,
+      "source": 2,
+      "origin": 2,
+      "next_hop": 3,
+      "destination": 1,
+      "sequence": 42,
+      "priority": 1,
+      "hops": 0,
+      "ttl": 6,
+      "payload": {
+        "advertised_next_hop": null,
+        "gateway_path": true,
+        "temperature": -12,
+        "fault_id": "\u00e9"
+      }
+    },
+    "hex": "53410104000100020002000300010000002a01000600001706000007010101120208fffffffffffffff4140402c3a9629f"
+  },
+  {
+    "name": "route",
+    "packet": {
+      "packet_type": "ROUTE_ADVERTISEMENT",
+      "network": 1,
+      "source": 2,
+      "origin": 2,
+      "next_hop": 3,
+      "destination": 1,
+      "sequence": 42,
+      "priority": 1,
+      "hops": 0,
+      "ttl": 6,
+      "payload": {
+        "destination_id": 1,
+        "destination_sequence": 8,
+        "hop_count": 2,
+        "route_cost": 4.25,
+        "lifetime_s": 120.0,
+        "advertised_next_hop": 2,
+        "gateway_path": true,
+        "electrical_risk": 0.125,
+        "communication_health": 1.0,
+        "communication_congestion": 0.0,
+        "communication_fault_status": "normal"
+      }
+    },
+    "hex": "53410105000100020002000300010000002a0100060000700102080000000000000001020208000000000000000803020800000000000000020403084011000000000000050308405e0000000000000602080000000000000002070101010803083fc00000000000000903083ff00000000000000a030800000000000000000b04066e6f726d616ccff4"
+  }
+]

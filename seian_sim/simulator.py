@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import random
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict, is_dataclass, replace
 from typing import Any
 
 import pandas as pd
@@ -32,6 +32,7 @@ from seian_sim.packets import Packet, PRIORITY_CONTROL, PRIORITY_EMERGENCY, PRIO
 from seian_sim.packets import encode_payload
 from seian_sim.route_messages import RouteAdvertisement, RouteErrorMessage
 from seian_sim.routing import RoutingEngine
+from seian_sim.wire import BROADCAST, HEADER_BYTES, CRC_BYTES, WireError, WirePacket, encode_frame, decode_frame, encode_binary_payload
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +105,12 @@ class SeianMeshSimulator:
     ) -> SeianNode:
         """Add one inverter node to the simulation."""
 
-        local_address = len(self.nodes) + 1
+        if node_id not in self.config.wire_addresses:
+            address = max(self.config.wire_addresses.values(), default=0) + 1
+            if address >= BROADCAST:
+                raise ValueError("Wire address space exhausted.")
+            self.config.wire_addresses[node_id] = address
+        local_address = self.config.wire_addresses[node_id]
         node = SeianNode(
             node_id=node_id,
             local_address=local_address,
@@ -222,6 +228,64 @@ class SeianMeshSimulator:
         )
         self.metrics.record_packet_generated(packet.duplicate_key, packet.destination_id)
         return packet
+
+    def _wire_payload(self, payload: dict) -> dict:
+        if not isinstance(payload, dict):
+            raise WireError("Binary payload must be a dictionary.")
+        result = dict(payload)
+        for name in ("destination_id", "advertised_next_hop", "failed_next_hop"):
+            if name in result and result[name] is not None:
+                if result[name] not in self.config.wire_addresses:
+                    raise WireError(f"Unknown address in payload field {name}.")
+                result[name] = self.config.wire_addresses[result[name]]
+        return result
+
+    def encode_wire_packet(self, packet: Packet, sender_id: str, receiver_id: str) -> bytes:
+        """Encode a full link frame using the persisted deployment address map."""
+        addresses = self.config.wire_addresses
+        if packet.network_id != self.config.network_id or packet.flags:
+            raise WireError("Unknown network or unsupported packet flags.")
+        try:
+            return encode_frame(WirePacket(
+                packet.packet_type, self.config.wire_network_id, addresses[sender_id],
+                addresses[packet.origin_id],
+                BROADCAST if packet.destination_id is None else addresses[receiver_id],
+                BROADCAST if packet.destination_id is None else addresses[packet.destination_id],
+                packet.sequence_number, packet.priority, packet.hop_count, packet.ttl,
+                self._wire_payload(packet.payload), version=packet.version,
+            ))
+        except (KeyError, TypeError) as exc:
+            raise WireError("Unknown address or unsupported payload.") from exc
+
+    def decode_wire_packet(self, frame: bytes, metadata: Packet, receiver_id: str) -> Packet:
+        """Use decoded wire fields while retaining simulator-only timing/path state."""
+        addresses = self.config.wire_addresses
+        wire = decode_frame(frame, expected_network=self.config.wire_network_id,
+                            receiver=addresses[receiver_id])
+        names = {value: key for key, value in addresses.items()}
+        payload = dict(wire.payload)
+        try:
+            for name in ("destination_id", "advertised_next_hop", "failed_next_hop"):
+                if name in payload and payload[name] is not None:
+                    if type(payload[name]) is not int:
+                        raise WireError("Payload address must be an integer.")
+                    payload[name] = names[payload[name]]
+            return replace(metadata, version=wire.version, packet_type=wire.packet_type,
+                           source_id=names[wire.source], origin_id=names[wire.origin],
+                           destination_id=None if wire.destination == BROADCAST else names[wire.destination],
+                           sequence_number=wire.sequence, priority=wire.priority,
+                           hop_count=wire.hops, ttl=wire.ttl, payload=payload,
+                           payload_length=len(frame) - HEADER_BYTES - CRC_BYTES)
+        except KeyError as exc:
+            raise WireError("Unprovisioned wire address.") from exc
+
+    def _control_payload_size(self, packet: Packet) -> int:
+        if self.config.packet_encoding == "binary":
+            try:
+                return len(encode_binary_payload(self._wire_payload(packet.payload)))
+            except WireError:
+                return 0
+        return packet.payload_length
 
     def discover_neighbors(self) -> None:
         """Perform startup discovery and route-advertisement behavior."""
@@ -466,7 +530,7 @@ class SeianMeshSimulator:
                 payload=payload,
             )
             self.metrics.route_advertisements_sent += 1
-            self.metrics.route_control_bytes += packet.payload_length
+            self.metrics.route_control_bytes += self._control_payload_size(packet)
             self.log(
                 EventCategory.ROUTING,
                 f"Advertised route to {advertisement.destination_id}.",
@@ -491,7 +555,7 @@ class SeianMeshSimulator:
             payload=message.to_payload(),
         )
         self.metrics.route_errors_sent += 1
-        self.metrics.route_control_bytes += packet.payload_length
+        self.metrics.route_control_bytes += self._control_payload_size(packet)
         self.log(
             EventCategory.ROUTING,
             f"Advertised route error for {message.destination_id}.",
@@ -663,12 +727,24 @@ class SeianMeshSimulator:
         if receiver is None or not receiver.communication_available:
             self._drop(source, "receiver_inactive", packet.packet_type)
             return False
-        packet.payload_length = len(encode_payload(packet.payload))
-        if not self.channel.supports_payload(packet.payload_length):
-            self._drop(source, "frame_too_large", packet.packet_type)
-            return False
+        frame = None
+        if self.config.packet_encoding == "binary":
+            try:
+                frame = self.encode_wire_packet(packet, source_id, receiver_id)
+                packet = self.decode_wire_packet(frame, packet, receiver_id)
+            except WireError as exc:
+                self.log(EventCategory.PACKET, str(exc), node_id=source_id)
+                self._drop(source, "wire_encode_error", packet.packet_type)
+                return False
+        else:
+            packet.payload_length = len(encode_payload(packet.payload))
+            if not self.channel.supports_payload(packet.payload_length):
+                self._drop(source, "frame_too_large", packet.packet_type)
+                return False
         self.metrics.record_transmission_attempt()
-        obs = self.channel.observe(source.position, receiver.position, packet.payload_length)
+        obs = self.channel.observe(source.position, receiver.position,
+                                   None if frame is not None else packet.payload_length,
+                                   frame_length=len(frame) if frame is not None else None)
         self.env.run(until=self.now + max(0.001, obs.delay_s))
         if obs.delivered:
             self.metrics.record_link_success()
@@ -718,6 +794,8 @@ class SeianMeshSimulator:
             "receiver_y": receiver.position_y,
             "delivered": queued,
             "airtime_s": obs.airtime_s,
+            "wire_frame_hex": frame.hex() if frame is not None else None,
+            "wire_frame_bytes": len(frame) if frame is not None else None,
             "link_delay_s": obs.delay_s,
             "drop_reason": None if queued else "queue_overflow",
             "path": "->".join(packet.path),

@@ -15,6 +15,7 @@ from typing import Any, Deque
 from seian_sim.enums import PacketType, TrustStatus
 from seian_sim.packets import Packet, PRIORITY_CONTROL, encode_payload
 from seian_sim.simulator import SeianMeshSimulator
+from seian_sim.wire import WireError
 
 
 FLOODED_PACKET_TYPES = {
@@ -78,6 +79,7 @@ class ManualPacketSession:
     last_forwarded_at: float
     generate_fault_acks: bool = True
     last_transmitted_packet: Packet | None = None
+    last_wire_frame_hex: str | None = None
     pending: Deque[PendingTransmission] = field(default_factory=deque)
     history: list[ManualStepRecord] = field(default_factory=list)
     seen_by_node: set[tuple[str, str, int]] = field(default_factory=set)
@@ -177,6 +179,7 @@ class ManualPacketSession:
         receiver = sim.nodes.get(item.receiver_id)
         packet = item.packet
         self.last_transmitted_packet = packet
+        self.last_wire_frame_hex = None
         step_number = len(self.history) + 1
 
         if sender is None or receiver is None:
@@ -200,11 +203,23 @@ class ManualPacketSession:
                 f"{receiver.node_id} is not a current one-hop neighbor of {sender.node_id}.",
             )
 
-        packet.payload_length = len(encode_payload(packet.payload))
-        if not sim.channel.supports_payload(packet.payload_length):
-            return self._record_drop(sim, item, step_number, "frame_too_large", "Encoded payload and protocol header exceed the 255-byte LoRa frame limit.")
+        frame = None
+        if sim.config.packet_encoding == "binary":
+            try:
+                frame = sim.encode_wire_packet(packet, sender.node_id, receiver.node_id)
+                packet = sim.decode_wire_packet(frame, packet, receiver.node_id)
+                self.last_transmitted_packet = packet
+                self.last_wire_frame_hex = frame.hex()
+            except WireError as exc:
+                return self._record_drop(sim, item, step_number, "wire_encode_error", str(exc))
+        else:
+            packet.payload_length = len(encode_payload(packet.payload))
+            if not sim.channel.supports_payload(packet.payload_length):
+                return self._record_drop(sim, item, step_number, "frame_too_large", "Encoded payload and protocol header exceed the 255-byte LoRa frame limit.")
         sim.metrics.record_transmission_attempt()
-        observation = sim.channel.observe(sender.position, receiver.position, packet.payload_length)
+        observation = sim.channel.observe(sender.position, receiver.position,
+                                          None if frame is not None else packet.payload_length,
+                                          frame_length=len(frame) if frame is not None else None)
         sim.env.run(until=sim.now + max(0.001, observation.delay_s))
         if observation.delivered:
             sim.metrics.record_link_success()
@@ -273,6 +288,8 @@ class ManualPacketSession:
                 "type": packet.packet_type.value,
                 "priority": packet.priority,
                 "manual": True,
+                "wire_frame_hex": self.last_wire_frame_hex,
+                "wire_frame_bytes": len(self.last_wire_frame_hex) // 2 if self.last_wire_frame_hex else None,
             }
         )
 

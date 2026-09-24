@@ -187,6 +187,15 @@ The command prints the connectivity summary and writes the complete link and sin
 
 ## Automated tests
 
+For Python/C++ interoperability checks, build the host codec first:
+
+```bash
+python scripts/build_wire_codec.py
+```
+
+This uses g++/clang++ or the optional `ziglang==0.14.1` package. Cross-language
+tests explicitly skip if no compiled utility is available.
+
 ```bash
 python -m pytest -q -p no:cacheprovider
 ```
@@ -194,11 +203,19 @@ python -m pytest -q -p no:cacheprovider
 Current result for this version:
 
 ```text
-212 passed
+282 passed (including compiled C++ interoperability checks)
 ```
 
 ## Important modelling limitation
 
 The dashboard now supports two routing modes: decentralized packet-level `ROUTE_ADVERTISEMENT` learning for protocol experiments and a complete NetworkX topology oracle for baseline comparison. The decentralized mode learns routes from received control packets, maintains backup candidates, expires stale routes, and propagates `ROUTE_ERROR` after next-hop failure.
 
-Exact LoRa frame airtime is available as an opt-in mode. Payloads still use UTF-8 JSON plus an assumed protocol-header budget; oversized frames are rejected. The shared binary packet format and fragmentation remain future work. Batch transmissions are serialized, and collisions remain probabilistic. See [LoRa airtime assumptions](docs/LORA_AIRTIME_MODEL.md).
+Exact LoRa frame airtime and **Binary v1** packet encoding are selectable in
+**LoRa airtime settings**. Binary mode uses a shared Python/C++ format with numeric
+addresses, compact typed payloads, and CRC-16; complete frame bytes drive airtime.
+See [the binary specification](docs/BINARY_PACKET_FORMAT.md) and
+[LoRa assumptions](docs/LORA_AIRTIME_MODEL.md). JSON mode retains the assumed
+header budget. Both modes reject oversized frames under exact timing; binary
+frames always obey the 255-byte limit. Firmware application integration, real
+authentication, and fragmentation remain future work. Transmissions are serialized
+and collisions remain probabilistic.
