@@ -1,7 +1,18 @@
 # SEIAN Simulator Status and Remaining Work Report
 
 Date: 2026-09-24
-Current branch: `main`
+Work branch: `feature/lora-airtime-model` (based on integrated `main`)
+
+## Airtime branch update
+
+This branch adds selectable SX1276 frame airtime with reference-vector tests,
+validated radio settings, automatic LDRO, UTF-8 byte counting, an explicit
+protocol-header budget, frame-size rejection, and an estimated sensitivity model.
+Both manual and batch forwarding use it; topology exports preserve radio settings.
+Approximate mode remains the default because verbose JSON route advertisements
+can exceed a physical frame. See [model assumptions](LORA_AIRTIME_MODEL.md).
+The shared binary format, fragmentation, regulatory scheduling, and event-based
+collisions remain outstanding. Historical baseline results below predate this work.
 
 ## Integration update
 
@@ -218,15 +229,18 @@ Still required: transient packet loss during convergence, explicit loop-detectio
 
 ### Current problem
 
-Airtime is currently a base delay plus a value proportional to JSON payload length. This is useful for demonstrations but is not a LoRa PHY calculation.
+Approximate mode retains the base-plus-length formula. Selectable `lora` mode
+now calculates frame airtime from the SX1276 formula. Encoded application bytes
+use compact UTF-8 JSON plus an assumed header budget, not the final firmware format.
 
-### Required implementation
+### Implemented and remaining
 
-- Add frequency, spreading factor, bandwidth, coding rate, preamble length, header mode, CRC mode, and low-data-rate optimisation settings.
-- Calculate symbol duration, preamble duration, payload symbols, and total time-on-air.
-- Use encoded packet length rather than JSON string length.
-- Add receiver sensitivity appropriate to configured radio parameters.
-- Add jurisdiction-specific duty-cycle or dwell-time rules after the deployment band is confirmed.
+- Implemented: frequency, SF, bandwidth, coding rate, preamble, header, CRC and LDRO settings.
+- Implemented: symbol, preamble, payload, and total airtime calculations.
+- Implemented: UTF-8 payload byte lengths plus a configurable header budget.
+- Implemented: SF/bandwidth sensitivity estimate with an explicit override.
+- Remaining: compact shared firmware encoding and any agreed fragmentation behavior.
+- Remaining: jurisdiction-specific duty-cycle or dwell-time rules after the deployment band is confirmed.
 
 ### Required tests
 
@@ -446,13 +460,15 @@ Each branch should have focused tests and documentation and should be merged bef
 
 ## 17. Immediate Next Action
 
-The existing branches are integrated. Begin the exact LoRa airtime model, while
-retaining both mesh and power-plane regression suites. The immediate sequence is:
+Review the airtime feature branch through a PR before merging. The next sequence is:
 
 ```text
-define airtime reference vectors and encoded-length assumptions
--> implement exact LoRa airtime and encoded-length work
--> validate both mesh and power-plane regression suites
+review airtime assumptions and test results
+-> merge the reviewed airtime PR
+-> define compact packets for exact-mode decentralized experiments
+-> implement the event-based shared radio channel
 ```
 
-The decentralized route-control update is implemented in the simulator. The next major technical dependency is exact LoRa airtime and encoded packet length, while firmware route-advertisement support remains a separate alignment task.
+Decentralized route control and selectable frame airtime are implemented in the
+simulator. Compact binary packets and firmware route-advertisement support remain
+alignment tasks; exact-mode frame rejection makes oversized JSON messages explicit.

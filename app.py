@@ -187,6 +187,20 @@ with st.sidebar:
     neighbor_timeout = st.number_input("Neighbor timeout (s)", value=60.0, min_value=5.0)
     simulation_step = st.slider("Batch step size (s)", 1, 60, 10)
 
+    with st.expander("LoRa airtime settings"):
+        airtime_mode = st.selectbox("Timing model", ["Approximate (existing experiments)", "LoRa time-on-air"])
+        frequency_mhz = st.number_input("Carrier frequency (MHz)", min_value=137.0, max_value=1020.0, value=868.0)
+        spreading_factor = st.selectbox("Spreading factor", [7, 8, 9, 10, 11, 12, 6])
+        bandwidth_khz = st.selectbox("Bandwidth (kHz)", [125, 250, 500])
+        coding_rate = st.selectbox("Coding rate", [5, 6, 7, 8], format_func=lambda value: f"4/{value}")
+        preamble_symbols = st.number_input("Preamble symbols", min_value=6, max_value=65535, value=8)
+        implicit_header = st.checkbox("Implicit PHY header", value=spreading_factor == 6)
+        crc_enabled = st.checkbox("PHY payload CRC", value=True)
+        ldro = st.selectbox("Low-data-rate optimization", ["Automatic", "Enabled", "Disabled"])
+        header_bytes = st.number_input("Assumed protocol header (bytes)", min_value=0, max_value=254, value=24)
+        processing_delay = st.number_input("Additional link delay (s)", min_value=0.0, value=0.25, step=0.01)
+        st.caption("Settings apply when creating or loading a network. Exact mode uses UTF-8 JSON bytes plus the assumed protocol header. Frames over 255 bytes are rejected; current route advertisements may exceed this limit. Firmware encoding and fragmentation are not implemented.")
+
     config = make_config(
         seed=int(seed),
         duration=float(duration),
@@ -203,6 +217,23 @@ with st.sidebar:
             else "oracle"
         ),
     )
+
+    config.lora.airtime_mode = "lora" if airtime_mode == "LoRa time-on-air" else "approximate"
+    config.lora.frequency_hz = frequency_mhz * 1_000_000
+    config.lora.spreading_factor = spreading_factor
+    config.lora.bandwidth_hz = bandwidth_khz * 1000
+    config.lora.coding_rate_denominator = coding_rate
+    config.lora.preamble_symbols = int(preamble_symbols)
+    config.lora.implicit_header = implicit_header
+    config.lora.crc_enabled = crc_enabled
+    config.lora.low_data_rate_optimization = {"Automatic": None, "Enabled": True, "Disabled": False}[ldro]
+    config.lora.protocol_header_bytes = int(header_bytes)
+    config.lora.transmission_delay_s = processing_delay
+    try:
+        config.validate()
+    except ValueError as exc:
+        st.error(str(exc))
+        st.stop()
 
     if st.button("Create / Reset Network", type="primary", width="stretch"):
         if scenario == "Create own network":
@@ -615,6 +646,15 @@ with tab_packet:
             st.info("Configure a packet and press Create Packet. Nothing will move until Forward is pressed.")
         else:
             packet = trace.packet
+            encoded_length = packet.payload_length
+            radio = sim.config.lora
+            st.caption(f"Active timing model: {radio.airtime_mode} | Encoded payload: {encoded_length} bytes")
+            if radio.airtime_mode == "lora":
+                st.caption(f"SF{radio.spreading_factor}, {radio.bandwidth_hz / 1000:g} kHz, CR 4/{radio.coding_rate_denominator} | PHY payload: {encoded_length + radio.protocol_header_bytes} bytes")
+                if sim.channel.supports_payload(encoded_length):
+                    st.caption(f"Frame airtime: {sim.channel.airtime_s(encoded_length) * 1000:.3f} ms | Additional link delay: {radio.transmission_delay_s:.3f} s")
+                else:
+                    st.warning("This packet exceeds the 255-byte frame limit and will be rejected before transmission.")
             trace_last_forwarded_at = getattr(
                 trace,
                 "last_forwarded_at",

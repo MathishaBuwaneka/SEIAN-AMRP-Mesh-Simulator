@@ -13,7 +13,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Deque
 
 from seian_sim.enums import PacketType, TrustStatus
-from seian_sim.packets import Packet, PRIORITY_CONTROL
+from seian_sim.packets import Packet, PRIORITY_CONTROL, encode_payload
 from seian_sim.simulator import SeianMeshSimulator
 
 
@@ -200,6 +200,9 @@ class ManualPacketSession:
                 f"{receiver.node_id} is not a current one-hop neighbor of {sender.node_id}.",
             )
 
+        packet.payload_length = len(encode_payload(packet.payload))
+        if not sim.channel.supports_payload(packet.payload_length):
+            return self._record_drop(sim, item, step_number, "frame_too_large", "Encoded payload and protocol header exceed the 255-byte LoRa frame limit.")
         sim.metrics.record_transmission_attempt()
         observation = sim.channel.observe(sender.position, receiver.position, packet.payload_length)
         sim.env.run(until=sim.now + max(0.001, observation.delay_s))

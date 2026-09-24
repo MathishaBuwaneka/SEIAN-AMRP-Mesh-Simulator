@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
 
 
 @dataclass(slots=True)
@@ -23,7 +24,19 @@ class RoutingWeights:
 
 @dataclass(slots=True)
 class LoraConfig:
-    """Approximate LoRa channel model settings."""
+    """LoRa timing settings and approximate propagation/loss settings."""
+
+    airtime_mode: str = "approximate"
+    frequency_hz: float = 868_000_000.0
+    spreading_factor: int = 7
+    bandwidth_hz: int = 125_000
+    coding_rate_denominator: int = 5
+    preamble_symbols: int = 8
+    implicit_header: bool = False
+    crc_enabled: bool = True
+    low_data_rate_optimization: bool | None = None
+    protocol_header_bytes: int = 24
+    receiver_noise_figure_db: float = 6.0
 
     max_range_m: float = 260.0
     path_loss_exponent: float = 2.1
@@ -31,13 +44,50 @@ class LoraConfig:
     reference_distance_m: float = 1.0
     shadow_fading_std_db: float = 2.0
     noise_floor_dbm: float = -120.0
-    sensitivity_dbm: float = -118.0
+    sensitivity_dbm: float | None = None
     packet_loss_probability: float = 0.03
     channel_busy_probability: float = 0.02
     collision_probability: float = 0.02
     transmission_delay_s: float = 0.25
     airtime_base_s: float = 0.18
     interference_probability: float = 0.0
+
+    def validate(self) -> None:
+        """Validate the supported SX1276 profile before calculating timing."""
+        if self.airtime_mode not in {"approximate", "lora"}:
+            raise ValueError("Airtime mode must be 'approximate' or 'lora'.")
+        for name, low, high in (
+            ("spreading_factor", 6, 12),
+            ("coding_rate_denominator", 5, 8),
+            ("preamble_symbols", 6, 65535),
+            ("protocol_header_bytes", 0, 254),
+        ):
+            value = getattr(self, name)
+            if type(value) is not int or not low <= value <= high:
+                raise ValueError(f"{name} must be an integer in {low}..{high}.")
+        if type(self.bandwidth_hz) is not int or self.bandwidth_hz not in {125_000, 250_000, 500_000}:
+            raise ValueError("Bandwidth must be 125000, 250000, or 500000 Hz.")
+        for name in ("implicit_header", "crc_enabled"):
+            if type(getattr(self, name)) is not bool:
+                raise ValueError(f"{name} must be boolean.")
+        if self.low_data_rate_optimization is not None and type(self.low_data_rate_optimization) is not bool:
+            raise ValueError("Low-data-rate optimization must be boolean or None (automatic).")
+        if self.spreading_factor == 6 and not self.implicit_header:
+            raise ValueError("SF6 requires implicit header mode.")
+        if 2 ** self.spreading_factor / self.bandwidth_hz > 0.016 and self.low_data_rate_optimization is False:
+            raise ValueError("Low-data-rate optimization is required for symbols longer than 16 ms.")
+        for name in ("frequency_hz", "receiver_noise_figure_db", "transmission_delay_s", "airtime_base_s"):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+                raise ValueError(f"{name} must be finite and non-negative.")
+        if not 137_000_000 <= self.frequency_hz <= 1_020_000_000:
+            raise ValueError("Frequency must be within the SX1276 range, 137..1020 MHz.")
+        if self.sensitivity_dbm is not None and (
+            isinstance(self.sensitivity_dbm, bool)
+            or not isinstance(self.sensitivity_dbm, (int, float))
+            or not math.isfinite(self.sensitivity_dbm)
+        ):
+            raise ValueError("Sensitivity override must be finite or None.")
 
 
 @dataclass(slots=True)
@@ -80,6 +130,8 @@ class SimulationConfig:
 
     def validate(self) -> None:
         """Raise ValueError for invalid user-controlled settings."""
+
+        self.lora.validate()
 
         if self.duration_s <= 0:
             raise ValueError("Simulation duration must be positive.")

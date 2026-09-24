@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import asdict, fields
 
-from seian_sim.config import SimulationConfig
+from seian_sim.config import LoraConfig, SimulationConfig
 from seian_sim.enums import CommunicationFaultStatus, CommunicationStatus, FaultStatus, FaultType
 from seian_sim.simulator import SeianMeshSimulator
 
@@ -137,6 +138,7 @@ def export_topology(sim: SeianMeshSimulator) -> dict:
         "area_width_m": sim.config.area_width_m,
         "area_height_m": sim.config.area_height_m,
         "lora_range_m": sim.config.lora.max_range_m,
+        "lora_config": asdict(sim.config.lora),
         "nodes": [
             {
                 "node_id": node.node_id,
@@ -176,6 +178,13 @@ def build_from_topology(data: dict, config: SimulationConfig | None = None) -> S
     cfg.network_id = str(data.get("network_id", cfg.network_id))
     cfg.area_width_m = float(data.get("area_width_m", cfg.area_width_m))
     cfg.area_height_m = float(data.get("area_height_m", cfg.area_height_m))
+    if "lora_config" in data:
+        radio = data["lora_config"]
+        allowed = {item.name for item in fields(LoraConfig)}
+        if not isinstance(radio, dict) or set(radio) - allowed:
+            raise ValueError("lora_config must be an object containing recognized LoRa settings.")
+        for name, value in radio.items():
+            setattr(cfg.lora, name, value)
     cfg.lora.max_range_m = float(data.get("lora_range_m", cfg.lora.max_range_m))
     cfg.validate()
     sim = SeianMeshSimulator(cfg)

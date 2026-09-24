@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import random
 from dataclasses import asdict, is_dataclass
@@ -30,6 +29,7 @@ from seian_sim.metrics import Metrics
 from seian_sim.models import EventRecord, FaultEvent, NeighborEntry, NodeSnapshot
 from seian_sim.node import SeianNode
 from seian_sim.packets import Packet, PRIORITY_CONTROL, PRIORITY_EMERGENCY, PRIORITY_FAULT, PRIORITY_TELEMETRY
+from seian_sim.packets import encode_payload
 from seian_sim.route_messages import RouteAdvertisement, RouteErrorMessage
 from seian_sim.routing import RoutingEngine
 
@@ -212,7 +212,7 @@ class SeianMeshSimulator:
             ttl=ttl,
             timestamp=self.now,
             last_forwarded_at=self.now,
-            payload_length=len(json.dumps(data, sort_keys=True)),
+            payload_length=len(encode_payload(data)),
             payload=data,
             crc_valid=crc_valid,
             authentication_valid=authentication_valid,
@@ -663,6 +663,10 @@ class SeianMeshSimulator:
         if receiver is None or not receiver.communication_available:
             self._drop(source, "receiver_inactive", packet.packet_type)
             return False
+        packet.payload_length = len(encode_payload(packet.payload))
+        if not self.channel.supports_payload(packet.payload_length):
+            self._drop(source, "frame_too_large", packet.packet_type)
+            return False
         self.metrics.record_transmission_attempt()
         obs = self.channel.observe(source.position, receiver.position, packet.payload_length)
         self.env.run(until=self.now + max(0.001, obs.delay_s))
@@ -713,6 +717,8 @@ class SeianMeshSimulator:
             "receiver_x": receiver.position_x,
             "receiver_y": receiver.position_y,
             "delivered": queued,
+            "airtime_s": obs.airtime_s,
+            "link_delay_s": obs.delay_s,
             "drop_reason": None if queued else "queue_overflow",
             "path": "->".join(packet.path),
         }

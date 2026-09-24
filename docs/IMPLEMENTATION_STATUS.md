@@ -85,7 +85,8 @@ The uploaded Python project was already a substantial simulator rather than an e
 
 The detailed contract is documented in `docs/TWO_PLANE_ARCHITECTURE.md`.
 
-Current automated result: **72 tests passed**.
+Historical routing-branch result: **72 tests passed**. The integrated airtime
+branch includes both mesh and power-plane tests; see the root README for the total.
 
 ## 3. Important simulator limitations that still require updates
 
@@ -102,9 +103,9 @@ Further protocol-level validation should add:
 - Poison reverse comparison against the implemented split-horizon rule.
 - Repeated seeded experiments for control overhead and convergence time.
 
-### B. LoRa timing remains approximate
+### B. Exact frame timing is selectable; packet encoding remains provisional
 
-The radio model should eventually calculate airtime from actual LoRa parameters:
+The optional exact mode now calculates frame airtime from these LoRa parameters:
 
 - Frequency.
 - Spreading factor.
@@ -116,7 +117,10 @@ The radio model should eventually calculate airtime from actual LoRa parameters:
 - CRC mode.
 - Low-data-rate optimization.
 
-Also add regional duty-cycle or dwell-time limits when required by the selected band and jurisdiction.
+See [the airtime model](LORA_AIRTIME_MODEL.md) for reference vectors, UTF-8 encoding,
+the assumed protocol-header budget, and oversize rejection. Approximate mode remains
+the default for current JSON routing experiments. Regional duty-cycle or dwell-time
+limits still require the deployment band and jurisdiction to be confirmed.
 
 ### C. Collisions are probabilistic rather than event-derived
 
@@ -170,7 +174,7 @@ The uploaded ESP32/LoRa MVP is useful as a starting point, but the following ite
 2. Compare decentralized advertisements against the NetworkX oracle baseline.
 3. Define one binary packet specification shared by Python and C++.
 4. Correct the embedded forwarding and destination-filtering rules.
-5. Add exact LoRa airtime and event-based collision modelling.
+5. Review the exact-airtime branch and add event-based collision modelling.
 6. Compare simulator logs with three to five physical LoRa nodes.
 7. Calibrate path loss and packet loss using measured RSSI, SNR, and delivery data.
 8. Scale to the hotel and microgrid scenarios only after the small hardware topology matches the simulator.

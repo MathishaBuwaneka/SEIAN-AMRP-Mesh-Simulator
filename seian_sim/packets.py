@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+import json
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -14,6 +15,11 @@ PRIORITY_TELEMETRY = 1
 PRIORITY_CONTROL = 2
 PRIORITY_FAULT = 3
 PRIORITY_EMERGENCY = 4
+
+
+def encode_payload(payload: dict[str, Any]) -> bytes:
+    """Deterministic simulator encoding; not the future ESP32 wire format."""
+    return json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 
 
 @dataclass(slots=True)

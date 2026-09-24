@@ -62,7 +62,7 @@ The project also models:
 - Fault-boundary classification.
 - Packet, route, fault, grid, and event metrics.
 
-Packet timing and delivery metrics distinguish generated unicasts, physical transmission attempts, successful radio links, accepted relay receptions, and final destination deliveries. Manual and batch packet forwarding both consume the approximate per-link delay, and end-to-end latency preserves the original packet creation time across relays.
+Packet timing and delivery metrics distinguish generated unicasts, physical transmission attempts, successful radio links, accepted relay receptions, and final destination deliveries. Manual and batch forwarding use the selected timing model, preserving packet creation time across relays. **LoRa airtime settings** offers exact SX1276 frame time-on-air alongside the default approximate mode. See [the airtime model and its limits](docs/LORA_AIRTIME_MODEL.md).
 
 See [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) for a precise list of what was already present, what was updated, and what still needs to be implemented.
 See [docs/TWO_PLANE_ARCHITECTURE.md](docs/TWO_PLANE_ARCHITECTURE.md) for the CCP/EP state model, route-cost inputs, fault domains, and packet semantics.
@@ -194,11 +194,11 @@ python -m pytest -q -p no:cacheprovider
 Current result for this version:
 
 ```text
-72 passed
+212 passed
 ```
 
 ## Important modelling limitation
 
 The dashboard now supports two routing modes: decentralized packet-level `ROUTE_ADVERTISEMENT` learning for protocol experiments and a complete NetworkX topology oracle for baseline comparison. The decentralized mode learns routes from received control packets, maintains backup candidates, expires stale routes, and propagates `ROUTE_ERROR` after next-hop failure.
 
-LoRa airtime is still approximate and batch transmissions are currently serialized by the deterministic simulation clock. Event-derived concurrent collisions and exact LoRa PHY timing remain future work.
+Exact LoRa frame airtime is available as an opt-in mode. Payloads still use UTF-8 JSON plus an assumed protocol-header budget; oversized frames are rejected. The shared binary packet format and fragmentation remain future work. Batch transmissions are serialized, and collisions remain probabilistic. See [LoRa airtime assumptions](docs/LORA_AIRTIME_MODEL.md).
