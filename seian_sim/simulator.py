@@ -11,7 +11,18 @@ from typing import Any
 import pandas as pd
 
 from seian_sim.config import SimulationConfig
-from seian_sim.enums import EventCategory, FaultStatus, FaultType, NodeRole, PacketType, TrustStatus
+from seian_sim.decentralized_routing import DecentralizedRoutingEngine
+from seian_sim.enums import (
+    CommunicationFaultStatus,
+    CommunicationStatus,
+    EventCategory,
+    FaultDomain,
+    FaultStatus,
+    FaultType,
+    NodeRole,
+    PacketType,
+    TrustStatus,
+)
 from seian_sim.fault_model import SEVERITY_TTL, apply_fault_to_nodes, classify_fault_boundary, create_fault
 from seian_sim.grid_model import GridModel
 from seian_sim.lora_channel import LoraChannel
@@ -19,6 +30,7 @@ from seian_sim.metrics import Metrics
 from seian_sim.models import EventRecord, FaultEvent, NeighborEntry, NodeSnapshot
 from seian_sim.node import SeianNode
 from seian_sim.packets import Packet, PRIORITY_CONTROL, PRIORITY_EMERGENCY, PRIORITY_FAULT, PRIORITY_TELEMETRY
+from seian_sim.route_messages import RouteAdvertisement, RouteErrorMessage
 from seian_sim.routing import RoutingEngine
 
 logger = logging.getLogger(__name__)
@@ -49,6 +61,12 @@ class SeianMeshSimulator:
         self.routing = RoutingEngine(
             self.config.routing_weights, self.config.route_lifetime_s, self.config.max_hops
         )
+        self.decentralized_routing = DecentralizedRoutingEngine(
+            self.config.routing_weights,
+            self.config.route_lifetime_s,
+            self.config.max_hops,
+            self.config.route_switch_hysteresis,
+        )
         self.nodes: dict[str, SeianNode] = {}
         self.metrics = Metrics()
         self.events: list[EventRecord] = []
@@ -57,6 +75,10 @@ class SeianMeshSimulator:
         self.route_history: list[dict[str, Any]] = []
         self.fault_events: list[FaultEvent] = []
         self.whitelist: set[str] = set()
+        self._pending_route_advertisers: set[str] = set()
+        self._pending_route_errors: list[tuple[str, RouteErrorMessage]] = []
+        self._route_control_active = False
+        self._last_route_advertisement_time = 0.0
 
     @property
     def now(self) -> float:
@@ -76,6 +98,9 @@ class SeianMeshSimulator:
         role: NodeRole | None = None,
         load_percent: float | None = None,
         health_score: float = 1.0,
+        communication_health: float = 1.0,
+        communication_load: float = 0.0,
+        communication_congestion: float = 0.0,
     ) -> SeianNode:
         """Add one inverter node to the simulation."""
 
@@ -91,6 +116,9 @@ class SeianMeshSimulator:
             gateway_online=gateway_online,
             load_percent=load_percent if load_percent is not None else self.rng.uniform(25.0, 70.0),
             health_score=health_score,
+            communication_health=communication_health,
+            communication_load=communication_load,
+            communication_congestion=communication_congestion,
         )
         self.nodes[node_id] = node
         self.whitelist.add(node_id)
@@ -172,7 +200,7 @@ class SeianMeshSimulator:
         """Create a protocol packet from node state."""
 
         data = payload or {}
-        return Packet(
+        packet = Packet(
             version=1,
             packet_type=packet_type,
             source_id=source.node_id,
@@ -183,6 +211,7 @@ class SeianMeshSimulator:
             hop_count=0,
             ttl=ttl,
             timestamp=self.now,
+            last_forwarded_at=self.now,
             payload_length=len(json.dumps(data, sort_keys=True)),
             payload=data,
             crc_valid=crc_valid,
@@ -191,6 +220,8 @@ class SeianMeshSimulator:
             key_id=self.config.key_id,
             path=[source.node_id],
         )
+        self.metrics.record_packet_generated(packet.duplicate_key, packet.destination_id)
+        return packet
 
     def discover_neighbors(self) -> None:
         """Perform startup discovery and route-advertisement behavior."""
@@ -200,14 +231,14 @@ class SeianMeshSimulator:
             node.routing_table.clear()
             self.log(EventCategory.DISCOVERY, "Initialized radio, neighbor table, and routing table.", node_id=node.node_id)
         for sender in self.nodes.values():
-            if not sender.active:
+            if not sender.communication_available:
                 continue
             self.log(EventCategory.DISCOVERY, "Broadcast HELLO.", node_id=sender.node_id, packet_type=PacketType.HELLO)
             for receiver in self.nodes.values():
                 if sender.node_id == receiver.node_id:
                     continue
                 obs = self.channel.observe(sender.position, receiver.position)
-                if not receiver.active:
+                if not receiver.communication_available:
                     self._drop(receiver, "receiver_inactive", PacketType.HELLO)
                     continue
                 if sender.network_id != receiver.network_id:
@@ -224,9 +255,19 @@ class SeianMeshSimulator:
                     node_id=sender.node_id,
                     packet_type=PacketType.HELLO_REPLY,
                 )
-        self.recalculate_routes("initial discovery")
-        for node in self.nodes.values():
-            self.log(EventCategory.ROUTING, "Broadcast ROUTE_ADVERTISEMENT.", node_id=node.node_id, packet_type=PacketType.ROUTE_ADVERTISEMENT)
+        if self.config.routing_mode == "decentralized":
+            self.decentralized_routing.reset(self.nodes)
+            for node in self.nodes.values():
+                node.bump_route_sequence()
+            self._run_route_control(set(self.nodes), "initial discovery")
+        else:
+            self.recalculate_routes("initial discovery")
+            for node in self.nodes.values():
+                self.log(
+                    EventCategory.ROUTING,
+                    "Oracle route table calculated.",
+                    node_id=node.node_id,
+                )
 
     def _add_neighbor(self, node: SeianNode, neighbor: SeianNode, rssi: float, snr: float, quality: float) -> None:
         entry = NeighborEntry(
@@ -236,12 +277,15 @@ class SeianMeshSimulator:
             last_seen=self.now,
             hop_count=1,
             link_quality=quality,
-            neighbor_health_score=neighbor.health_score,
-            neighbor_fault_status=neighbor.fault_status,
-            neighbor_voltage=neighbor.voltage_rms,
-            neighbor_frequency=neighbor.frequency_hz,
-            neighbor_phase_angle=neighbor.phase_angle_deg,
-            neighbor_load_percent=neighbor.load_percent,
+            link_reliability=min(quality, neighbor.link_reliability),
+            communication_status=neighbor.communication_status,
+            communication_health=neighbor.communication_health,
+            communication_fault_status=neighbor.communication_fault_status,
+            communication_load=neighbor.communication_load,
+            communication_congestion=neighbor.communication_congestion,
+            power_health=neighbor.power_health,
+            power_load_percent=neighbor.load_percent,
+            power_fault_status=neighbor.power_fault_status,
             gateway_distance=neighbor.gateway_distance,
             route_cost=0.0,
             trust_status=neighbor.trust_status,
@@ -254,25 +298,90 @@ class SeianMeshSimulator:
     def expire_neighbors(self) -> None:
         """Expire neighbor and route entries based on configured lifetimes."""
 
+        changed_advertisers: set[str] = set()
         for node in self.nodes.values():
             expired = [
                 nid for nid, entry in node.neighbor_table.items()
                 if self.now - entry.last_seen > self.config.neighbor_timeout_s
             ]
             for nid in expired:
+                affected_sequences = {
+                    destination_id: route.destination_sequence + 1
+                    for destination_id, route in node.routing_table.items()
+                    if route.next_hop_id == nid
+                }
                 del node.neighbor_table[nid]
                 self.log(EventCategory.DISCOVERY, f"Neighbor {nid} expired.", node_id=node.node_id)
+                if self.config.routing_mode == "decentralized":
+                    changed_destinations = self.decentralized_routing.invalidate_next_hop(
+                        node,
+                        nid,
+                        self.now,
+                    )
+                    for destination_id in changed_destinations:
+                        if destination_id in node.routing_table:
+                            changed_advertisers.add(node.node_id)
+                        else:
+                            self._pending_route_errors.append(
+                                (
+                                    node.node_id,
+                                    RouteErrorMessage(
+                                        destination_id=destination_id,
+                                        destination_sequence=affected_sequences.get(
+                                            destination_id,
+                                            1,
+                                        ),
+                                        failed_next_hop=nid,
+                                        reason="neighbor_timeout",
+                                    ),
+                                )
+                            )
+                        self.metrics.route_changes += 1
+            if self.config.routing_mode == "decentralized":
+                changed_destinations = self.decentralized_routing.expire_routes(node, self.now)
+                if changed_destinations:
+                    changed_advertisers.add(node.node_id)
+                    self.metrics.route_changes += len(changed_destinations)
+                continue
             expired_routes = [
                 dest for dest, entry in node.routing_table.items() if self.now > entry.route_lifetime
             ]
             for dest in expired_routes:
                 del node.routing_table[dest]
                 self.log(EventCategory.ROUTING, f"Route to {dest} expired.", node_id=node.node_id)
-        self.recalculate_routes("expiration")
+        if self.config.routing_mode == "decentralized":
+            periodic_due = (
+                self.now - self._last_route_advertisement_time
+                >= self.config.route_advertisement_interval_s
+            )
+            if periodic_due:
+                changed_advertisers.update(
+                    node.node_id
+                    for node in self.nodes.values()
+                    if node.communication_available
+                )
+            if changed_advertisers or self._pending_route_errors:
+                self._run_route_control(changed_advertisers, "expiry or periodic refresh")
+        else:
+            self.recalculate_routes("expiration")
 
     def recalculate_routes(self, reason: str) -> None:
         """Rebuild routes and log transitions."""
 
+        self._refresh_neighbor_state()
+        if self.config.routing_mode == "decentralized":
+            for node in self.nodes.values():
+                if node.communication_available:
+                    node.bump_route_sequence()
+            self._run_route_control(
+                {
+                    node.node_id
+                    for node in self.nodes.values()
+                    if node.communication_available
+                },
+                reason,
+            )
+            return
         changed = self.routing.recalculate(self.nodes, self.now)
         self.metrics.route_changes += changed
         if changed:
@@ -289,6 +398,173 @@ class SeianMeshSimulator:
                     "backup_next_hop": entry.backup_next_hop,
                 })
 
+    def _run_route_control(self, advertisers: set[str], reason: str) -> None:
+        """Exchange triggered advertisements until node-local routes stabilize."""
+
+        if self._route_control_active:
+            self._pending_route_advertisers.update(advertisers)
+            return
+        self._route_control_active = True
+        start_time = self.now
+        pending = set(advertisers)
+        pending_errors = list(self._pending_route_errors)
+        self._pending_route_errors.clear()
+        rounds = 0
+        try:
+            while (pending or pending_errors) and rounds < self.config.route_convergence_round_limit:
+                rounds += 1
+                current = sorted(pending)
+                current_errors = list(pending_errors)
+                pending.clear()
+                pending_errors.clear()
+                self._pending_route_advertisers.clear()
+                self._pending_route_errors.clear()
+                for node_id, message in current_errors:
+                    node = self.nodes.get(node_id)
+                    if node is None or not node.communication_available:
+                        continue
+                    self._broadcast_route_error(node, message)
+                for node_id in current:
+                    node = self.nodes.get(node_id)
+                    if node is None or not node.communication_available:
+                        continue
+                    self._broadcast_route_table(node)
+                self._drain_packet_queues()
+                pending.update(self._pending_route_advertisers)
+                pending_errors.extend(self._pending_route_errors)
+            if pending or pending_errors:
+                self.log(
+                    EventCategory.ROUTING,
+                    "Route convergence stopped at the configured round limit.",
+                    details={"reason": reason, "rounds": rounds},
+                )
+            self._update_gateway_distances()
+            self.metrics.route_convergence_times_s.append(self.now - start_time)
+            self._last_route_advertisement_time = self.now
+            self.log(
+                EventCategory.ROUTING,
+                "Decentralized route update completed.",
+                details={
+                    "reason": reason,
+                    "rounds": rounds,
+                    "duration_s": self.now - start_time,
+                },
+            )
+        finally:
+            self._route_control_active = False
+
+    def _broadcast_route_table(self, node: SeianNode) -> None:
+        """Transmit one validated control packet for each selected route."""
+
+        for advertisement in self.decentralized_routing.advertisements_for(node, self.nodes):
+            payload = advertisement.to_payload()
+            packet = self.create_packet(
+                node,
+                PacketType.ROUTE_ADVERTISEMENT,
+                priority=PRIORITY_CONTROL,
+                ttl=1,
+                payload=payload,
+            )
+            self.metrics.route_advertisements_sent += 1
+            self.metrics.route_control_bytes += packet.payload_length
+            self.log(
+                EventCategory.ROUTING,
+                f"Advertised route to {advertisement.destination_id}.",
+                node_id=node.node_id,
+                packet_type=PacketType.ROUTE_ADVERTISEMENT,
+                priority=PRIORITY_CONTROL,
+            )
+            self.broadcast(node.node_id, packet)
+
+    def _broadcast_route_error(
+        self,
+        node: SeianNode,
+        message: RouteErrorMessage,
+    ) -> None:
+        """Transmit one route invalidation to direct neighbors."""
+
+        packet = self.create_packet(
+            node,
+            PacketType.ROUTE_ERROR,
+            priority=PRIORITY_CONTROL,
+            ttl=1,
+            payload=message.to_payload(),
+        )
+        self.metrics.route_errors_sent += 1
+        self.metrics.route_control_bytes += packet.payload_length
+        self.log(
+            EventCategory.ROUTING,
+            f"Advertised route error for {message.destination_id}.",
+            node_id=node.node_id,
+            packet_type=PacketType.ROUTE_ERROR,
+            priority=PRIORITY_CONTROL,
+        )
+        self.broadcast(node.node_id, packet)
+
+    def _drain_packet_queues(self) -> None:
+        """Process all packets produced by one route-control round."""
+
+        passes = 0
+        while any(node.packet_queue for node in self.nodes.values()):
+            self.process_queues()
+            passes += 1
+            if passes > self.config.route_convergence_round_limit * max(1, len(self.nodes)):
+                raise RuntimeError("Route-control packet queues did not drain.")
+
+    def _update_gateway_distances(self) -> None:
+        gateways = {
+            node.node_id
+            for node in self.nodes.values()
+            if node.gateway_capable and node.gateway_online and node.communication_available
+        }
+        for node in self.nodes.values():
+            if node.node_id in gateways:
+                node.gateway_distance = 0
+                continue
+            gateway_routes = [
+                route.hop_count
+                for destination_id, route in node.routing_table.items()
+                if destination_id in gateways
+            ]
+            node.gateway_distance = min(gateway_routes) if gateway_routes else None
+
+    def _record_selected_route(self, node: SeianNode, destination_id: str) -> None:
+        route = node.routing_table.get(destination_id)
+        if route is None:
+            return
+        self.route_history.append(
+            {
+                "timestamp": self.now,
+                "node_id": node.node_id,
+                "destination_id": route.destination_id,
+                "next_hop_id": route.next_hop_id,
+                "hop_count": route.hop_count,
+                "route_cost": round(route.route_cost, 4),
+                "backup_next_hop": route.backup_next_hop,
+                "destination_sequence": route.destination_sequence,
+                "learned_from": route.learned_from,
+            }
+        )
+
+    def _refresh_neighbor_state(self) -> None:
+        """Refresh the state currently advertised by each direct neighbor."""
+
+        for node in self.nodes.values():
+            for neighbor_id, entry in node.neighbor_table.items():
+                neighbor = self.nodes.get(neighbor_id)
+                if neighbor is None:
+                    continue
+                entry.communication_status = neighbor.communication_status
+                entry.communication_health = neighbor.communication_health
+                entry.communication_fault_status = neighbor.communication_fault_status
+                entry.communication_load = neighbor.communication_load
+                entry.communication_congestion = neighbor.communication_congestion
+                entry.link_reliability = min(entry.link_quality, neighbor.link_reliability)
+                entry.power_health = neighbor.power_health
+                entry.power_load_percent = neighbor.load_percent
+                entry.power_fault_status = neighbor.power_fault_status
+                entry.gateway_distance = neighbor.gateway_distance
+
     def run(self, duration_s: float | None = None, step_s: float = 10.0) -> None:
         """Run a deterministic batch simulation in fixed steps."""
 
@@ -301,14 +577,14 @@ class SeianMeshSimulator:
 
     def _step(self) -> None:
         for node in self.nodes.values():
-            if not node.active:
-                continue
-            self.grid.update_node(node, self.now)
+            if node.power_stage_operational:
+                self.grid.update_node(node, self.now)
             self.measurements.append(NodeSnapshot(self.now, node.node_id, node.voltage_rms, node.frequency_hz, node.phase_angle_deg, node.current_a, node.active_power_kw, node.reactive_power_kvar, node.load_percent, node.power_factor, node.thd_percent, node.temperature_c, node.fault_status))
+            if not node.communication_available:
+                continue
             self._send_heartbeat(node)
             self._send_telemetry(node)
         self.expire_neighbors()
-        self.recalculate_routes("grid-state update")
         self.process_queues()
         self._sample_gateway_reachability()
 
@@ -317,7 +593,13 @@ class SeianMeshSimulator:
         self.broadcast(node.node_id, packet)
 
     def _send_telemetry(self, node: SeianNode) -> None:
-        gateways = [n.node_id for n in self.nodes.values() if n.gateway_capable and n.gateway_online and n.active]
+        gateways = [
+            candidate.node_id
+            for candidate in self.nodes.values()
+            if candidate.gateway_capable
+            and candidate.gateway_online
+            and candidate.communication_available
+        ]
         payload = self._measurement_payload(node)
         if not gateways:
             node.cached_gateway_telemetry.append({"timestamp": self.now, **payload})
@@ -341,6 +623,9 @@ class SeianMeshSimulator:
         """Deliver a packet to all current neighbors."""
 
         source = self.nodes[source_id]
+        if not source.communication_available:
+            self._drop(source, "sender_inactive", packet.packet_type)
+            return False
         delivered_any = False
         for neighbor_id in list(source.neighbor_table):
             if exclude and neighbor_id in exclude:
@@ -352,6 +637,9 @@ class SeianMeshSimulator:
         """Route a unicast packet, falling back to local broadcast for alerts."""
 
         source = self.nodes[source_id]
+        if not source.communication_available:
+            self._drop(source, "sender_inactive", packet.packet_type)
+            return False
         if packet.destination_id is None:
             return self.broadcast(source_id, packet)
         if packet.destination_id == source_id:
@@ -372,10 +660,14 @@ class SeianMeshSimulator:
     def _deliver(self, source_id: str, receiver_id: str, packet: Packet) -> bool:
         source = self.nodes[source_id]
         receiver = self.nodes.get(receiver_id)
-        if receiver is None or not receiver.active:
+        if receiver is None or not receiver.communication_available:
             self._drop(source, "receiver_inactive", packet.packet_type)
             return False
+        self.metrics.record_transmission_attempt()
         obs = self.channel.observe(source.position, receiver.position, packet.payload_length)
+        self.env.run(until=self.now + max(0.001, obs.delay_s))
+        if obs.delivered:
+            self.metrics.record_link_success()
         if packet.network_id != receiver.network_id:
             self._drop(receiver, "wrong_network_id", packet.packet_type)
             return False
@@ -399,7 +691,6 @@ class SeianMeshSimulator:
                 self.metrics.channel_busy_events += 1
             self._drop(receiver, obs.drop_reason or "radio_drop", packet.packet_type)
             return False
-        self.metrics.packets_transmitted += 1
         self.metrics.throughput_by_time[int(self.now)] += 1
 
         self._add_neighbor(receiver, source, obs.rssi, obs.snr, obs.link_quality)
@@ -461,14 +752,22 @@ class SeianMeshSimulator:
                 return False
         receiver.recent_received_packets.append({"timestamp": self.now, "from": packet.source_id, "type": packet.packet_type.value, "priority": packet.priority})
         self.metrics.packets_delivered += 1
-        self.metrics.record_latency(packet.priority, max(0.0, self.now - packet.timestamp))
         if packet.priority >= PRIORITY_FAULT:
             self.metrics.emergency_delivered += 1
         # Physical delivery attempts are recorded once in _deliver().  The
         # receiver keeps its own recent_received_packets list, so adding a
         # second packet_events row here would double-count each transmission.
 
+        if packet.packet_type == PacketType.ROUTE_ADVERTISEMENT:
+            return self._handle_route_advertisement(receiver, packet)
+        if packet.packet_type == PacketType.ROUTE_ERROR:
+            return self._handle_route_error(receiver, packet)
         if packet.destination_id == receiver_id:
+            self.metrics.record_final_delivery(
+                packet.duplicate_key,
+                packet.priority,
+                max(0.0, self.now - packet.timestamp),
+            )
             return True
         if packet.packet_type == PacketType.FAULT_ALERT:
             self._handle_fault_alert(receiver, packet)
@@ -485,10 +784,114 @@ class SeianMeshSimulator:
             self._drop(receiver, "ttl_expired", packet.packet_type)
         return True
 
+    def _handle_route_advertisement(self, receiver: SeianNode, packet: Packet) -> bool:
+        """Apply one received route advertisement to node-local routing state."""
+
+        sender = self.nodes.get(packet.source_id)
+        try:
+            advertisement = RouteAdvertisement.from_payload(
+                packet.payload,
+                max_hops=self.config.max_hops,
+            )
+        except ValueError as exc:
+            self.metrics.route_advertisements_rejected += 1
+            self.metrics.route_advertisement_rejections["invalid_payload"] += 1
+            self.log(
+                EventCategory.ROUTING,
+                f"Rejected route advertisement: {exc}",
+                node_id=receiver.node_id,
+                packet_type=PacketType.ROUTE_ADVERTISEMENT,
+            )
+            return False
+        if sender is None:
+            self.metrics.route_advertisements_rejected += 1
+            self.metrics.route_advertisement_rejections["unknown_sender"] += 1
+            return False
+        result = self.decentralized_routing.process_advertisement(
+            receiver,
+            sender,
+            advertisement,
+            self.now,
+        )
+        if not result.accepted:
+            self.metrics.route_advertisements_rejected += 1
+            self.metrics.route_advertisement_rejections[result.reason] += 1
+            return False
+        self.metrics.route_advertisements_accepted += 1
+        if result.route_changed:
+            self.metrics.route_changes += 1
+            self._pending_route_advertisers.add(receiver.node_id)
+            self._record_selected_route(receiver, advertisement.destination_id)
+            self.log(
+                EventCategory.ROUTING,
+                f"Learned route to {advertisement.destination_id} via {sender.node_id}.",
+                node_id=receiver.node_id,
+                packet_type=PacketType.ROUTE_ADVERTISEMENT,
+                details={"reason": result.reason},
+            )
+        return True
+
+    def _handle_route_error(self, receiver: SeianNode, packet: Packet) -> bool:
+        """Invalidate a route learned through the neighbor reporting an error."""
+
+        try:
+            message = RouteErrorMessage.from_payload(packet.payload)
+        except ValueError:
+            self.metrics.route_errors_rejected += 1
+            self.metrics.route_error_rejections["invalid_payload"] += 1
+            return False
+        sender = self.nodes.get(packet.source_id)
+        if sender is None or sender.node_id not in receiver.neighbor_table:
+            self.metrics.route_errors_rejected += 1
+            self.metrics.route_error_rejections["sender_not_neighbor"] += 1
+            return False
+        current = receiver.routing_table.get(message.destination_id)
+        if current is None or current.next_hop_id != sender.node_id:
+            self.metrics.route_errors_rejected += 1
+            self.metrics.route_error_rejections["not_selected_next_hop"] += 1
+            return False
+        changed = self.decentralized_routing.invalidate_destination_from_next_hop(
+            receiver,
+            message.destination_id,
+            sender.node_id,
+            self.now,
+        )
+        if not changed:
+            self.metrics.route_errors_rejected += 1
+            self.metrics.route_error_rejections["candidate_not_found"] += 1
+            return False
+        self.metrics.route_errors_accepted += 1
+        self.metrics.route_changes += 1
+        replacement = receiver.routing_table.get(message.destination_id)
+        if replacement is None:
+            self._pending_route_errors.append(
+                (
+                    receiver.node_id,
+                    RouteErrorMessage(
+                        destination_id=message.destination_id,
+                        destination_sequence=max(
+                            message.destination_sequence,
+                            current.destination_sequence + 1,
+                        ),
+                        failed_next_hop=sender.node_id,
+                        reason=message.reason,
+                    ),
+                )
+            )
+        else:
+            self._pending_route_advertisers.add(receiver.node_id)
+            self._record_selected_route(receiver, message.destination_id)
+        return True
+
     def _handle_fault_alert(self, receiver: SeianNode, packet: Packet) -> None:
         fault_id = str(packet.payload.get("fault_id", "unknown"))
-        self.log(EventCategory.FAULT, "Fault alert received and acknowledged.", node_id=receiver.node_id, packet_type=packet.packet_type, priority=packet.priority, fault_id=fault_id)
-        ack = self.create_packet(receiver, PacketType.FAULT_ACK, destination_id=packet.origin_id, priority=PRIORITY_CONTROL, ttl=self.config.max_hops, payload={"fault_id": fault_id})
+        fault_domain = str(packet.payload.get("fault_domain", FaultDomain.DEVICE.value))
+        self.log(EventCategory.FAULT, "Fault alert received; receipt acknowledged.", node_id=receiver.node_id, packet_type=packet.packet_type, priority=packet.priority, fault_id=fault_id)
+        ack = self.create_packet(receiver, PacketType.FAULT_ACK, destination_id=packet.origin_id, priority=PRIORITY_CONTROL, ttl=self.config.max_hops, payload={
+            "fault_id": fault_id,
+            "fault_domain": fault_domain,
+            "acknowledges": "alert_receipt",
+        })
         self.log(EventCategory.FAULT, "Fault acknowledgement generated.", node_id=receiver.node_id, packet_type=PacketType.FAULT_ACK, priority=PRIORITY_CONTROL, fault_id=fault_id)
         self.route_packet(receiver.node_id, ack)
 
@@ -506,6 +909,8 @@ class SeianMeshSimulator:
         origin = self.nodes[origin_node_id]
         fault = create_fault(origin, fault_type, severity, self.now, duration, radius_m)
         apply_fault_to_nodes(fault, self.nodes)
+        if fault.fault_domain != FaultDomain.COMMUNICATION:
+            self.recalculate_routes("electrical risk change")
         classifications = classify_fault_boundary(fault, self.nodes)
         self.fault_events.append(fault)
         self.log(EventCategory.FAULT, f"Fault detected: {fault_type.value}.", node_id=origin.node_id, fault_id=fault.fault_id)
@@ -518,40 +923,114 @@ class SeianMeshSimulator:
         packet = self.create_packet(origin, PacketType.FAULT_ALERT, priority=priority, ttl=ttl, payload={
             "fault_id": fault.fault_id,
             "fault_type": fault.fault_type.value,
+            "fault_domain": fault.fault_domain.value,
             "severity": severity,
             "recommended_action": fault.recommended_action,
         })
         self.broadcast(origin.node_id, packet)
-        coord = self.create_packet(origin, PacketType.CONTROL_COORDINATION, priority=PRIORITY_CONTROL, ttl=ttl, payload={
-            "fault_id": fault.fault_id,
-            "recommendation": fault.recommended_action,
-            "safety_note": "Simulated recommendation only; local protection overrides network coordination.",
-        })
-        self.broadcast(origin.node_id, coord)
-        self.recalculate_routes("fault state change")
+        if fault.fault_domain != FaultDomain.COMMUNICATION:
+            coord = self.create_packet(origin, PacketType.CONTROL_COORDINATION, priority=PRIORITY_CONTROL, ttl=ttl, payload={
+                "fault_id": fault.fault_id,
+                "fault_domain": fault.fault_domain.value,
+                "recommendation": fault.recommended_action,
+                "safety_note": "Transported recommendation only; local protection overrides network coordination.",
+            })
+            self.broadcast(origin.node_id, coord)
+        if fault.fault_domain == FaultDomain.COMMUNICATION:
+            self.fail_communication(origin.node_id)
         return fault
 
     def fail_node(self, node_id: str) -> None:
-        """Deactivate a node and trigger rerouting."""
+        """Backward-compatible alias for a communication-plane failure."""
+
+        self.fail_communication(node_id)
+
+    def fail_communication(self, node_id: str) -> None:
+        """Fail only the node's CCP radio and trigger route recovery."""
 
         node = self.nodes[node_id]
         node.active = False
-        node.health_score = 0.0
-        node.fault_status = FaultStatus.FAULT
+        node.communication_status = CommunicationStatus.FAILED
+        node.communication_health = 0.0
+        node.communication_fault_status = CommunicationFaultStatus.FAULT
+        changed_advertisers: set[str] = set()
         for other in self.nodes.values():
+            if node_id not in other.neighbor_table:
+                continue
+            affected_sequences = {
+                destination_id: route.destination_sequence + 1
+                for destination_id, route in other.routing_table.items()
+                if route.next_hop_id == node_id
+            }
             other.neighbor_table.pop(node_id, None)
-        self.log(EventCategory.ROUTING, "Node failed; ROUTE_ERROR generated where needed.", node_id=node_id, packet_type=PacketType.ROUTE_ERROR)
-        self.recalculate_routes("node failure")
+            if self.config.routing_mode != "decentralized":
+                continue
+            changed_destinations = self.decentralized_routing.invalidate_next_hop(
+                other,
+                node_id,
+                self.now,
+            )
+            for destination_id in changed_destinations:
+                if destination_id in other.routing_table:
+                    changed_advertisers.add(other.node_id)
+                    self._record_selected_route(other, destination_id)
+                else:
+                    self._pending_route_errors.append(
+                        (
+                            other.node_id,
+                            RouteErrorMessage(
+                                destination_id=destination_id,
+                                destination_sequence=affected_sequences.get(destination_id, 1),
+                                failed_next_hop=node_id,
+                                reason="communication_failure",
+                            ),
+                        )
+                    )
+                self.metrics.route_changes += 1
+        node.routing_table.clear()
+        node.route_candidates.clear()
+        self.log(EventCategory.ROUTING, "Communication failed; ROUTE_ERROR generated where needed.", node_id=node_id, packet_type=PacketType.ROUTE_ERROR)
+        if self.config.routing_mode == "decentralized":
+            self._run_route_control(changed_advertisers, "communication failure")
+        else:
+            self.recalculate_routes("communication failure")
 
     def recover_node(self, node_id: str) -> None:
-        """Reactivate a node and rediscover links."""
+        """Backward-compatible alias for communication recovery."""
+
+        self.recover_communication(node_id)
+
+    def recover_communication(self, node_id: str) -> None:
+        """Recover only the node's CCP radio and rediscover links."""
 
         node = self.nodes[node_id]
         node.active = True
-        node.health_score = max(0.75, node.health_score)
-        node.fault_status = FaultStatus.NORMAL
-        self.log(EventCategory.ROUTING, "Node recovered.", node_id=node_id)
+        node.communication_status = CommunicationStatus.OPERATIONAL
+        node.communication_health = max(0.75, node.communication_health)
+        node.communication_fault_status = CommunicationFaultStatus.NORMAL
+        self.log(EventCategory.ROUTING, "Communication recovered.", node_id=node_id)
         self.discover_neighbors()
+
+    def fail_power_stage(self, node_id: str) -> None:
+        """Fail only the electrical power stage; CCP remains available."""
+
+        node = self.nodes[node_id]
+        node.power_stage_operational = False
+        node.power_fault_status = FaultStatus.FAULT
+        node.power_health = min(node.power_health, 0.25)
+        self.log(EventCategory.GRID, "Power stage failed; communication remains available.", node_id=node_id)
+        self.recalculate_routes("power-stage failure")
+
+    def recover_power_stage(self, node_id: str) -> None:
+        """Recover only the electrical power stage."""
+
+        node = self.nodes[node_id]
+        node.power_stage_operational = True
+        node.power_fault_status = FaultStatus.NORMAL
+        node.power_health = 1.0
+        node.load_percent = 40.0
+        self.log(EventCategory.GRID, "Power stage recovered.", node_id=node_id)
+        self.recalculate_routes("power-stage recovery")
 
     def set_gateway(self, node_id: str, online: bool = True) -> None:
         """Change gateway state for a node."""
@@ -627,9 +1106,13 @@ class SeianMeshSimulator:
         self._count_drop(node, reason, packet_type)
 
     def _sample_gateway_reachability(self) -> None:
-        gateways = [n.node_id for n in self.nodes.values() if n.gateway_capable and n.gateway_online and n.active]
+        gateways = [
+            node.node_id
+            for node in self.nodes.values()
+            if node.gateway_capable and node.gateway_online and node.communication_available
+        ]
         for node in self.nodes.values():
-            if not node.active:
+            if not node.communication_available:
                 continue
             self.metrics.gateway_total_samples += 1
             if node.node_id in gateways or any(gid in node.routing_table for gid in gateways):

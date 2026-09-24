@@ -36,6 +36,6 @@ class GridModel:
         elif node.temperature_c > 64.0 or node.load_percent > 92.0:
             node.fault_status = FaultStatus.WARNING
             node.health_score = max(0.45, node.health_score - 0.015)
-        elif node.active:
+        elif node.power_stage_operational:
             node.fault_status = FaultStatus.NORMAL
             node.health_score = min(1.0, node.health_score + 0.005)

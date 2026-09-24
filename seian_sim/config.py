@@ -7,14 +7,18 @@ from dataclasses import dataclass, field
 
 @dataclass(slots=True)
 class RoutingWeights:
-    """Weights for grid-aware route cost."""
+    """Weights for communication and electrical route suitability."""
 
     hop_count: float = 2.0
     link_loss: float = 1.5
-    node_health: float = 3.0
-    load: float = 1.0
-    fault: float = 10.0
+    communication_health: float = 3.0
+    communication_congestion: float = 1.0
+    communication_fault: float = 10.0
+    power_health: float = 3.0
+    power_load: float = 1.0
+    power_fault: float = 10.0
     gateway_bonus: float = -1.0
+    cross_plane_risk: float = 1.0
 
 
 @dataclass(slots=True)
@@ -61,7 +65,11 @@ class SimulationConfig:
     heartbeat_min_s: float = 10.0
     heartbeat_max_s: float = 30.0
     neighbor_timeout_s: float = 60.0
+    routing_mode: str = "oracle"
     route_lifetime_s: float = 120.0
+    route_switch_hysteresis: float = 0.1
+    route_advertisement_interval_s: float = 30.0
+    route_convergence_round_limit: int = 64
     max_hops: int = 10
     queue_limit: int = 80
     whitelist_enabled: bool = False
@@ -81,5 +89,28 @@ class SimulationConfig:
             raise ValueError("LoRa range must be positive.")
         if self.neighbor_timeout_s <= 0:
             raise ValueError("Neighbor timeout must be positive.")
+        if self.routing_mode not in {"oracle", "decentralized"}:
+            raise ValueError("Routing mode must be 'oracle' or 'decentralized'.")
+        if self.route_lifetime_s <= 0:
+            raise ValueError("Route lifetime must be positive.")
+        if self.route_switch_hysteresis < 0:
+            raise ValueError("Route-switch hysteresis must be non-negative.")
+        if self.route_advertisement_interval_s <= 0:
+            raise ValueError("Route-advertisement interval must be positive.")
+        if self.route_convergence_round_limit <= 0:
+            raise ValueError("Route-convergence round limit must be positive.")
         if self.max_hops <= 0:
             raise ValueError("Maximum hop count must be positive.")
+        nonnegative_routing_weights = (
+            self.routing_weights.hop_count,
+            self.routing_weights.link_loss,
+            self.routing_weights.communication_health,
+            self.routing_weights.communication_congestion,
+            self.routing_weights.communication_fault,
+            self.routing_weights.power_health,
+            self.routing_weights.power_load,
+            self.routing_weights.power_fault,
+            self.routing_weights.cross_plane_risk,
+        )
+        if any(weight < 0 for weight in nonnegative_routing_weights):
+            raise ValueError("Routing penalty weights must be non-negative.")

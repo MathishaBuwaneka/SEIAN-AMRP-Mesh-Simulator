@@ -5,12 +5,22 @@ from __future__ import annotations
 import math
 import uuid
 
-from seian_sim.enums import FaultStatus, FaultType
+from seian_sim.enums import FaultDomain, FaultStatus, FaultType
 from seian_sim.models import FaultEvent
 from seian_sim.node import SeianNode
 
 
 SEVERITY_TTL = {"minor": 2, "moderate": 4, "severe": 8, "emergency": 20}
+
+
+def domain_for_fault(fault_type: FaultType) -> FaultDomain:
+    """Classify a fault without implying failure in another subsystem."""
+
+    if fault_type == FaultType.COMMUNICATION_LOSS:
+        return FaultDomain.COMMUNICATION
+    if fault_type == FaultType.INVERTER_OVERHEAT:
+        return FaultDomain.DEVICE
+    return FaultDomain.POWER
 
 
 def recommendation_for_fault(fault_type: FaultType) -> str:
@@ -56,6 +66,7 @@ def create_fault(
         fault_id=f"F-{uuid.uuid4().hex[:8]}",
         origin_node=origin.node_id,
         fault_type=fault_type,
+        fault_domain=domain_for_fault(fault_type),
         severity=severity,
         start_time=timestamp,
         duration=duration,
@@ -70,9 +81,12 @@ def create_fault(
 
 
 def apply_fault_to_nodes(fault: FaultEvent, nodes: dict[str, SeianNode]) -> None:
-    """Apply simplified fault impacts to nodes inside the affected radius."""
+    """Apply EP/device impacts without changing communication availability."""
 
     origin = nodes[fault.origin_node]
+    if fault.fault_domain == FaultDomain.COMMUNICATION:
+        fault.affected_nodes.add(origin.node_id)
+        return
     for node in nodes.values():
         distance = math.dist(origin.position, node.position)
         if distance <= fault.affected_radius_m:
@@ -83,6 +97,8 @@ def apply_fault_to_nodes(fault: FaultEvent, nodes: dict[str, SeianNode]) -> None
             node.load_percent = max(0.0, min(130.0, node.load_percent + fault.load_impact * factor))
             node.fault_status = FaultStatus.FAULT if fault.severity in {"severe", "emergency"} else FaultStatus.WARNING
             node.health_score = max(0.15, node.health_score - 0.25 * factor)
+            if fault.severity in {"severe", "emergency"}:
+                node.power_stage_operational = False
             fault.affected_nodes.add(node.node_id)
 
 
@@ -96,7 +112,7 @@ def classify_fault_boundary(fault: FaultEvent, nodes: dict[str, SeianNode]) -> d
             label = "FAULT_PROPAGATED"
         elif any(neighbor_id in affected for neighbor_id in node.neighbor_table):
             label = "BOUNDARY_NODE"
-        elif node.active:
+        elif node.communication_available:
             label = "UNCONFIRMED"
         else:
             label = "NORMAL"

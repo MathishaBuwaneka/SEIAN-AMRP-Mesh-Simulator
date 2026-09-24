@@ -260,7 +260,7 @@ def network_builder_figure(
     if show_radio_range:
         radius = float(sim.config.lora.max_range_m)
         for node in nodes:
-            if not node.active:
+            if not node.communication_available:
                 continue
             fig.add_shape(
                 type="circle",
@@ -333,7 +333,7 @@ def drop_reason_figure(sim: SeianMeshSimulator) -> go.Figure:
 
 
 def _color_for_node(node) -> str:
-    if not node.active:
+    if not node.communication_available:
         return "#6b7280"
     if node.gateway_online:
         return "#2563eb"

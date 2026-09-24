@@ -51,6 +51,15 @@ def test_unicast_moves_only_when_forward_is_pressed() -> None:
     second = session.forward_one(sim)
     assert second is not None
     assert second.receiver_id == "N03"
+    assert second.sender_id == "N02"
+    assert second.origin_id == "N01"
+    assert second.hop_count == 1
+    assert second.ttl == 5
+    assert session.last_transmitted_packet is not None
+    assert session.last_transmitted_packet.source_id == "N02"
+    assert session.last_transmitted_packet.origin_id == "N01"
+    assert session.last_transmitted_packet.hop_count == 1
+    assert session.last_transmitted_packet.ttl == 5
     assert session.complete
     assert "N03" in session.delivered_nodes
 

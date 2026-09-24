@@ -5,7 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 
 from seian_sim.config import SimulationConfig
-from seian_sim.enums import FaultStatus, FaultType
+from seian_sim.enums import CommunicationFaultStatus, CommunicationStatus, FaultStatus, FaultType
 from seian_sim.simulator import SeianMeshSimulator
 
 
@@ -75,7 +75,7 @@ def _healthy_vs_short(sim: SeianMeshSimulator) -> None:
     sim.config.lora.max_range_m = 260
     sim.add_node("N01", 0, 0, gateway_capable=True, gateway_online=True)
     sim.add_node("N02", 170, 0, load_percent=99, health_score=0.35)
-    sim.add_node("N03", 125, 105, load_percent=35, health_score=1.0)
+    sim.add_node("N03", 130, 180, load_percent=35, health_score=1.0)
     sim.add_node("N04", 240, 105, load_percent=36, health_score=1.0)
     sim.nodes["N02"].fault_status = FaultStatus.WARNING
     sim.discover_neighbors()
@@ -146,8 +146,15 @@ def export_topology(sim: SeianMeshSimulator) -> dict:
                 "gateway_capable": node.gateway_capable,
                 "gateway_online": node.gateway_online,
                 "active": node.active,
+                "communication_status": node.communication_status.value,
+                "communication_health": node.communication_health,
+                "communication_load": node.communication_load,
+                "communication_congestion": node.communication_congestion,
+                "communication_fault_status": node.communication_fault_status.value,
+                "power_stage_operational": node.power_stage_operational,
                 "health_score": node.health_score,
                 "load_percent": node.load_percent,
+                "fault_status": node.fault_status.value,
             }
             for node in sim.nodes.values()
         ],
@@ -188,7 +195,21 @@ def build_from_topology(data: dict, config: SimulationConfig | None = None) -> S
             gateway_online=bool(row.get("gateway_online", False)),
             load_percent=float(row.get("load_percent", 40.0)),
             health_score=float(row.get("health_score", 1.0)),
+            communication_health=float(row.get("communication_health", 1.0)),
+            communication_load=float(row.get("communication_load", 0.0)),
+            communication_congestion=float(row.get("communication_congestion", 0.0)),
         )
         node.active = bool(row.get("active", True))
+        node.communication_status = CommunicationStatus(
+            row.get(
+                "communication_status",
+                CommunicationStatus.OPERATIONAL.value if node.active else CommunicationStatus.FAILED.value,
+            )
+        )
+        node.communication_fault_status = CommunicationFaultStatus(
+            row.get("communication_fault_status", CommunicationFaultStatus.NORMAL.value)
+        )
+        node.power_stage_operational = bool(row.get("power_stage_operational", True))
+        node.fault_status = FaultStatus(row.get("fault_status", FaultStatus.NORMAL.value))
     sim.discover_neighbors()
     return sim

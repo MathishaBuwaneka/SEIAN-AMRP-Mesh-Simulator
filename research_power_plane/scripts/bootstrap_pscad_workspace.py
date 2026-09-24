@@ -12,9 +12,6 @@ import traceback
 from pathlib import Path
 from typing import Any
 
-import mhi.pscad
-
-
 ROOT = Path(__file__).resolve().parents[2]
 WORKSPACE_DIR = ROOT / "research_power_plane" / "pscad_workspace"
 WORKSPACE_FILE = WORKSPACE_DIR / "SEIAN_PSCAD_Workspace.pswx"
@@ -132,6 +129,9 @@ def bootstrap_workspace() -> dict[str, Any]:
 
 
 def _connect_visible_pscad() -> Any:
+    # Offline dashboard replay does not require the PSCAD automation package.
+    import mhi.pscad
+
     try:
         return mhi.pscad.application()
     except Exception:

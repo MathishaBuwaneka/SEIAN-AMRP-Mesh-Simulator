@@ -75,7 +75,9 @@ class ManualPacketSession:
     destination_id: str | None
     packet_type: PacketType
     packet: Packet
+    last_forwarded_at: float
     generate_fault_acks: bool = True
+    last_transmitted_packet: Packet | None = None
     pending: Deque[PendingTransmission] = field(default_factory=deque)
     history: list[ManualStepRecord] = field(default_factory=list)
     seen_by_node: set[tuple[str, str, int]] = field(default_factory=set)
@@ -105,7 +107,7 @@ class ManualPacketSession:
             raise ValueError(f"Unknown destination node: {destination_id}")
         if ttl < 1:
             raise ValueError("TTL must be at least 1.")
-        if not sim.nodes[source_id].active:
+        if not sim.nodes[source_id].communication_available:
             raise ValueError("The source node is inactive.")
         if len(sim.nodes) > 1 and not any(node.neighbor_table for node in sim.nodes.values()):
             sim.discover_neighbors()
@@ -124,6 +126,7 @@ class ManualPacketSession:
             destination_id=destination_id,
             packet_type=packet_type,
             packet=packet,
+            last_forwarded_at=packet.last_forwarded_at,
             generate_fault_acks=generate_fault_acks,
         )
         session.seen_by_node.add((source_id, packet.origin_id, packet.sequence_number))
@@ -173,6 +176,7 @@ class ManualPacketSession:
         sender = sim.nodes.get(item.sender_id)
         receiver = sim.nodes.get(item.receiver_id)
         packet = item.packet
+        self.last_transmitted_packet = packet
         step_number = len(self.history) + 1
 
         if sender is None or receiver is None:
@@ -183,9 +187,9 @@ class ManualPacketSession:
                 "missing_node",
                 "The sender or receiver no longer exists in the topology.",
             )
-        if not sender.active:
+        if not sender.communication_available:
             return self._record_drop(sim, item, step_number, "sender_inactive", f"{sender.node_id} is inactive.")
-        if not receiver.active:
+        if not receiver.communication_available:
             return self._record_drop(sim, item, step_number, "receiver_inactive", f"{receiver.node_id} is inactive.")
         if receiver.node_id not in sender.neighbor_table:
             return self._record_drop(
@@ -196,8 +200,11 @@ class ManualPacketSession:
                 f"{receiver.node_id} is not a current one-hop neighbor of {sender.node_id}.",
             )
 
+        sim.metrics.record_transmission_attempt()
         observation = sim.channel.observe(sender.position, receiver.position, packet.payload_length)
         sim.env.run(until=sim.now + max(0.001, observation.delay_s))
+        if observation.delivered:
+            sim.metrics.record_link_success()
 
         validation_error = self._validation_error(sim, receiver.node_id, packet)
         if validation_error:
@@ -254,10 +261,8 @@ class ManualPacketSession:
 
         self.seen_by_node.add(duplicate_key)
         self.delivered_nodes.add(receiver.node_id)
-        sim.metrics.packets_transmitted += 1
         sim.metrics.packets_delivered += 1
         sim.metrics.throughput_by_time[int(sim.now)] += 1
-        sim.metrics.record_latency(packet.priority, max(0.0, sim.now - packet.timestamp))
         receiver.recent_received_packets.append(
             {
                 "timestamp": sim.now,
@@ -269,6 +274,12 @@ class ManualPacketSession:
         )
 
         destination_reached = packet.destination_id == receiver.node_id
+        if destination_reached:
+            sim.metrics.record_final_delivery(
+                packet.duplicate_key,
+                packet.priority,
+                max(0.0, sim.now - packet.timestamp),
+            )
         path = [*packet.path, receiver.node_id]
         if destination_reached:
             status = "DELIVERED"
@@ -335,6 +346,7 @@ class ManualPacketSession:
                 )
             else:
                 forwarded = packet.forwarded(receiver.node_id, sim.now)
+                self.last_forwarded_at = forwarded.last_forwarded_at
                 scheduled = self._schedule_from(
                     sim,
                     receiver.node_id,
@@ -360,7 +372,7 @@ class ManualPacketSession:
         """Schedule the next physical transmission(s), without executing them."""
 
         sender = sim.nodes.get(sender_id)
-        if sender is None or not sender.active:
+        if sender is None or not sender.communication_available:
             return 0
 
         if packet.destination_id == sender_id:

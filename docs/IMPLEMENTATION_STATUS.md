@@ -60,22 +60,47 @@ The uploaded Python project was already a substantial simulator rather than an e
 - Corrected queue overflow logic so emergency traffic can evict low-priority telemetry instead of accidentally removing the highest-priority packet.
 - Removed duplicate packet-event recording that counted one physical delivery twice.
 - Added automated tests for topology analysis, route tracing, gateway outage classification, and priority queue eviction.
+- Preserved the original packet creation timestamp across forwarding hops.
+- Applied the approximate LoRa link delay in both manual and batch packet forwarding.
+- Separated generated unicasts, physical transmission attempts, successful radio transmissions, accepted receptions, and final destination deliveries.
+- Defined PDR from unique final unicast deliveries divided by unique generated unicasts.
+- Restricted latency metrics to end-to-end final unicast deliveries.
 
-Current automated result: **27 tests passed**.
+### Communication/electrical plane separation
+
+- Added explicit communication status, health, fault, load, congestion, and link-reliability state.
+- Retained electrical measurements and legacy fields as separate application/EP state.
+- Changed route cost to combine communication factors with explicit, bounded electrical health, load, and fault penalties.
+- Added an explicit cross-plane routing boundary: normalized electrical health, load, and fault penalties influence route preference without controlling radio availability.
+- Added a configurable `cross_plane_risk` multiplier that can disable electrical influence for communication-only baseline experiments.
+- Added electrical state to neighbour observations and topology round-trip exports.
+- Added route recalculation after electrical fault, power-stage failure, and recovery actions.
+- Defined and validated abstract `ROUTE_ADVERTISEMENT` and `ROUTE_ERROR` payload contracts for the decentralized-routing update.
+- Added `POWER`, `COMMUNICATION`, and `DEVICE` fault domains.
+- Kept power-faulted nodes available for packet origination and relay forwarding when their radios remain healthy.
+- Made communication failure and recovery independent from power-stage failure and recovery.
+- Defined `FAULT_ACK` as acknowledgement of alert receipt, not confirmation that a fault was corrected.
+- Added explicit `fault_domain` fields to fault-alert and control-coordination payloads.
+- Added regression tests for independent CCP/EP state and transport-only grid data.
+
+The detailed contract is documented in `docs/TWO_PLANE_ARCHITECTURE.md`.
+
+Current automated result: **72 tests passed**.
 
 ## 3. Important simulator limitations that still require updates
 
-### A. The routing engine is centralized
+### A. Decentralized routing is simulator-only
 
-The dashboard currently rebuilds the complete topology graph and uses NetworkX shortest paths. This is useful for checking whether the proposed topology can support routes, but it is not a packet-by-packet decentralized implementation of ROUTE_ADVERTISEMENT learning.
+The dashboard supports decentralized packet-driven routing and a separate NetworkX oracle baseline. In decentralized mode, nodes learn routes only from received `ROUTE_ADVERTISEMENT` packets, retain alternate candidates, apply sequence freshness and split horizon, expire stale entries, and propagate `ROUTE_ERROR` after active-next-hop failure.
 
-For protocol-level validation, add:
+The route-control payload schema and update rules are specified in `docs/ROUTE_ADVERTISEMENT_SPEC.md`. The remaining alignment work is to implement the same behavior and binary representation in the embedded firmware.
 
-- Per-node route advertisements.
-- Route update propagation delays.
-- Split horizon, sequence numbers, or another loop-prevention rule for route advertisements.
-- Route expiry based on received advertisements.
-- Route-error propagation when a next hop fails.
+Further protocol-level validation should add:
+
+- Larger convergence and partition scenarios.
+- Transient packet-loss measurements during convergence.
+- Poison reverse comparison against the implemented split-horizon rule.
+- Repeated seeded experiments for control overhead and convergence time.
 
 ### B. LoRa timing remains approximate
 
@@ -142,7 +167,7 @@ The uploaded ESP32/LoRa MVP is useful as a starting point, but the following ite
 ## 5. Recommended development order
 
 1. Use this dashboard to design node placement and identify disconnected, isolated, and critical-relay locations.
-2. Implement decentralized route advertisements in the simulator.
+2. Compare decentralized advertisements against the NetworkX oracle baseline.
 3. Define one binary packet specification shared by Python and C++.
 4. Correct the embedded forwarding and destination-filtering rules.
 5. Add exact LoRa airtime and event-based collision modelling.

@@ -5,5 +5,5 @@ description = "SEIAN Adaptive LoRa Mesh Simulator"
 requires-python = ">=3.10"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "research_power_plane/tests"]
 pythonpath = ["."]

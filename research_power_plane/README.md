@@ -5,8 +5,8 @@ network-controller decisions into safety-checked LV switching schedules, runs
 those schedules as physical breaker events in PSCAD, and returns measured EMT
 traces to a Streamlit dashboard.
 
-The colleagues' simulator remains unchanged at the repository root. All new
-work is contained here in `research_power_plane/`.
+The mesh simulator at the repository root and this research layer are integrated
+on `main`. They retain separate dashboards and share the simulator core.
 
 ## Quick Start
 

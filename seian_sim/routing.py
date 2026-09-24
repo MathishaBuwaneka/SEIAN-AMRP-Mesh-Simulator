@@ -5,7 +5,7 @@ from __future__ import annotations
 import networkx as nx
 
 from seian_sim.config import RoutingWeights
-from seian_sim.enums import FaultStatus
+from seian_sim.enums import CommunicationFaultStatus, FaultStatus
 from seian_sim.models import RoutingEntry, fault_penalty
 from seian_sim.node import SeianNode
 
@@ -14,22 +14,103 @@ def route_cost(
     *,
     hop_count: int,
     link_quality: float,
-    health_score: float,
-    load_percent: float,
-    fault_status: FaultStatus,
+    communication_health: float,
+    communication_congestion: float,
+    communication_fault_status: CommunicationFaultStatus,
+    power_health: float,
+    power_load_percent: float,
+    power_fault_status: FaultStatus,
     leads_to_gateway: bool,
     weights: RoutingWeights,
 ) -> float:
-    """Compute SEIAN-AMRP grid-aware route cost; lower is better."""
+    """Compute cross-plane route cost without coupling subsystem availability."""
 
+    return advertised_route_cost(
+        hop_count=hop_count,
+        link_quality=link_quality,
+        communication_health=communication_health,
+        communication_congestion=communication_congestion,
+        communication_fault_status=communication_fault_status,
+        electrical_risk=electrical_risk_score(
+            power_health=power_health,
+            power_load_percent=power_load_percent,
+            power_fault_status=power_fault_status,
+            weights=weights,
+        ),
+        leads_to_gateway=leads_to_gateway,
+        weights=weights,
+    )
+
+
+def advertised_route_cost(
+    *,
+    hop_count: int,
+    link_quality: float,
+    communication_health: float,
+    communication_congestion: float,
+    communication_fault_status: CommunicationFaultStatus,
+    electrical_risk: float,
+    leads_to_gateway: bool,
+    weights: RoutingWeights,
+) -> float:
+    """Compute edge cost from bounded state carried by a neighbor advertisement."""
+
+    communication_fault_penalty = {
+        CommunicationFaultStatus.NORMAL: 0.0,
+        CommunicationFaultStatus.WARNING: 0.4,
+        CommunicationFaultStatus.FAULT: 1.0,
+    }[communication_fault_status]
+    normalized_electrical_risk = max(0.0, min(1.0, electrical_risk))
+    electrical_weight = weights.power_health + weights.power_load + weights.power_fault
     return (
         weights.hop_count * hop_count
         + weights.link_loss * (1.0 - link_quality)
-        + weights.node_health * (1.0 - health_score)
-        + weights.load * (load_percent / 100.0)
-        + weights.fault * fault_penalty(fault_status)
+        + weights.communication_health * (1.0 - communication_health)
+        + weights.communication_congestion * communication_congestion
+        + weights.communication_fault * communication_fault_penalty
+        + weights.cross_plane_risk * electrical_weight * normalized_electrical_risk
         + weights.gateway_bonus * (1.0 if leads_to_gateway else 0.0)
     )
+
+
+def electrical_route_penalty(
+    *,
+    power_health: float,
+    power_load_percent: float,
+    power_fault_status: FaultStatus,
+    weights: RoutingWeights,
+) -> float:
+    """Return the bounded electrical contribution to route cost."""
+
+    total_weight = weights.power_health + weights.power_load + weights.power_fault
+    return weights.cross_plane_risk * total_weight * electrical_risk_score(
+        power_health=power_health,
+        power_load_percent=power_load_percent,
+        power_fault_status=power_fault_status,
+        weights=weights,
+    )
+
+
+def electrical_risk_score(
+    *,
+    power_health: float,
+    power_load_percent: float,
+    power_fault_status: FaultStatus,
+    weights: RoutingWeights,
+) -> float:
+    """Return the normalized electrical routing risk in the range 0..1."""
+
+    normalized_health = max(0.0, min(1.0, power_health))
+    normalized_load = max(0.0, min(1.0, power_load_percent / 100.0))
+    total_weight = weights.power_health + weights.power_load + weights.power_fault
+    if total_weight <= 0:
+        return 0.0
+    weighted_risk = (
+        weights.power_health * (1.0 - normalized_health)
+        + weights.power_load * normalized_load
+        + weights.power_fault * fault_penalty(power_fault_status)
+    )
+    return max(0.0, min(1.0, weighted_risk / total_weight))
 
 
 class RoutingEngine:
@@ -40,28 +121,38 @@ class RoutingEngine:
         self.route_lifetime_s = route_lifetime_s
         self.max_hops = max_hops
 
-    def build_graph(self, nodes: dict[str, SeianNode]) -> nx.Graph:
-        """Create an undirected graph from active nodes and neighbor tables."""
+    def build_graph(self, nodes: dict[str, SeianNode]) -> nx.DiGraph:
+        """Create directed links so next-hop state determines each edge cost."""
 
-        graph = nx.Graph()
+        graph = nx.DiGraph()
         for node in nodes.values():
-            if node.active:
+            if node.communication_available:
                 graph.add_node(node.node_id)
-        online_gateways = {n.node_id for n in nodes.values() if n.gateway_capable and n.gateway_online and n.active}
+        online_gateways = {
+            node.node_id
+            for node in nodes.values()
+            if node.gateway_capable and node.gateway_online and node.communication_available
+        }
         for node in nodes.values():
-            if not node.active:
+            if not node.communication_available:
                 continue
             for neighbor_id, entry in node.neighbor_table.items():
                 neighbor = nodes.get(neighbor_id)
-                if not neighbor or not neighbor.active:
+                if not neighbor or not neighbor.communication_available:
                     continue
                 leads_to_gateway = neighbor_id in online_gateways or neighbor.gateway_distance is not None
                 cost = route_cost(
                     hop_count=1,
-                    link_quality=entry.link_quality,
-                    health_score=neighbor.health_score,
-                    load_percent=neighbor.load_percent,
-                    fault_status=neighbor.fault_status,
+                    link_quality=min(entry.link_quality, entry.link_reliability),
+                    communication_health=neighbor.communication_health,
+                    communication_congestion=max(
+                        neighbor.communication_load,
+                        neighbor.communication_congestion,
+                    ),
+                    communication_fault_status=neighbor.communication_fault_status,
+                    power_health=entry.power_health,
+                    power_load_percent=entry.power_load_percent,
+                    power_fault_status=entry.power_fault_status,
                     leads_to_gateway=leads_to_gateway,
                     weights=self.weights,
                 )
@@ -73,9 +164,13 @@ class RoutingEngine:
 
         graph = self.build_graph(nodes)
         changes = 0
-        gateways = [n.node_id for n in nodes.values() if n.gateway_capable and n.gateway_online and n.active]
+        gateways = [
+            node.node_id
+            for node in nodes.values()
+            if node.gateway_capable and node.gateway_online and node.communication_available
+        ]
         for node in nodes.values():
-            if not node.active:
+            if not node.communication_available:
                 node.routing_table.clear()
                 node.gateway_distance = None
                 continue
@@ -113,7 +208,7 @@ class RoutingEngine:
                 changes += 1
         return changes
 
-    def _backup_next_hop(self, graph: nx.Graph, source: str, destination: str, primary: str) -> str | None:
+    def _backup_next_hop(self, graph: nx.DiGraph, source: str, destination: str, primary: str) -> str | None:
         graph_copy = graph.copy()
         if graph_copy.has_edge(source, primary):
             graph_copy.remove_edge(source, primary)
