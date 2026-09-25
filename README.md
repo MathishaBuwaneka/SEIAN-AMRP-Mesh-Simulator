@@ -8,13 +8,16 @@ The simulator is intended for topology design, protocol research, demonstrations
 ## Integrated project
 
 The `main` branch combines the timing/metrics foundation, decentralized route
-learning, and PSCAD integration. The separate [PSCAD dashboard](research_power_plane/README.md)
+learning, PSCAD integration, exact LoRa airtime, binary packet codecs, and the
+event-based shared radio channel. The separate [PSCAD dashboard](research_power_plane/README.md)
 and [research paper](research_paper/README.md) are included alongside the mesh simulator.
 Live PSCAD execution requires its automation dependencies and a licensed installation;
 offline dashboard replay does not require the PSCAD automation package.
 
 Run both test suites with `.venv/Scripts/python.exe -m pytest -q -p no:cacheprovider`.
 See [project status and remaining work](docs/PROJECT_STATUS_AND_ROADMAP.md).
+See [features by branch and test cases](docs/FEATURES_AND_TEST_GUIDE.md) for
+automated commands, dashboard checks, and expected results.
 
 ## Packet Tracer-style manual mode
 

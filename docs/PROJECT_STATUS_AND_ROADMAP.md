@@ -1,7 +1,10 @@
 # SEIAN Simulator Status and Remaining Work Report
 
 Date: 2026-09-25
-Work branch: `feature/event-radio-channel` (based on integrated `main`)
+Integration branch: `main` (includes `feature/event-radio-channel` at `f8c9935`)
+
+See [branch features and complete test checklist](FEATURES_AND_TEST_GUIDE.md)
+for automated commands, manual dashboard cases and expected outcomes.
 
 ## Event-radio update
 
@@ -10,10 +13,11 @@ and integrated into `main` at `731dacc`. No open PRs were present; GitHub's
 connector rejected PR creation with 403, so the explicitly requested integration
 used Git fast-forward merges and a push.
 
-The separate event-radio branch implements shared start/end events, physical
+The integrated event-radio feature implements shared start/end events, physical
 broadcast accounting, receiver-specific overlap/capture, half duplex, hidden
 nodes, carrier sensing, bounded retries/backoff, duty-cycle spacing, a dashboard
-timeline, and CSV/JSON exports. The combined result is 314 passing tests.
+timeline, and CSV/JSON exports. The integration rerun passed all 314 tests with
+no skips, including compiled host C++ interoperability checks.
 See [event-radio model and limits](EVENT_RADIO_CHANNEL.md). On-air ACKs and
 hardware-calibrated interference remain outstanding; retries use ideal feedback.
 
@@ -29,7 +33,7 @@ airtime now supports decentralized route-learning and recovery tests within the
 The airtime and binary-packet features are now merged into `main`.
 The codec compiles for ESP32, but the repository has no
 firmware application to integrate or flash. Authentication, fragmentation,
-event-based collision scheduling, and hardware validation remain outstanding.
+and hardware validation remain outstanding. Event-based scheduling is now integrated.
 
 ## Airtime branch update
 
@@ -39,8 +43,9 @@ protocol-header budget, frame-size rejection, and an estimated sensitivity model
 Both manual and batch forwarding use it; topology exports preserve radio settings.
 Approximate mode remains the default because verbose JSON route advertisements
 can exceed a physical frame. See [model assumptions](LORA_AIRTIME_MODEL.md).
-The binary branch adds the shared format. Fragmentation, regulatory scheduling,
-and event-based collisions remain outstanding. Historical baseline results below predate this work.
+The binary branch adds the shared format. Fragmentation and regional regulatory
+scheduling remain outstanding; event-based collisions and experimental duty
+spacing are integrated. Historical baseline results below predate this work.
 
 ## Integration update
 
@@ -477,7 +482,7 @@ Only after this alignment should the project claim that larger simulator experim
 
 - Separate topology feasibility, protocol simulation, electrical-state injection, and hardware validation into distinct stages.
 - State that current grid values are simplified inputs and not power-flow or protection results.
-- State that current LoRa timing remains approximate until exact airtime and collision work is complete.
+- Describe selectable exact frame airtime and event-based collisions, alongside the retained approximate mode and the radio model's documented limits.
 - Add a traceability table containing research question, scenario, baseline, metric, and success threshold.
 - Define how route weights will be normalized and calibrated.
 - Define how simulator results will be compared with hardware measurements.
@@ -488,7 +493,7 @@ Only after this alignment should the project claim that larger simulator experim
 1. `feature/timing-metrics-foundation` - integrated into `main`.
 2. `feature/decentralized-route-learning` - integrated into `main`, including advertisements, expiry, route errors, loop prevention, and convergence metrics.
 3. `feature/lora-airtime-model` - integrated into `main`.
-4. `feature/event-radio-channel` - overlapping transmissions, collisions, capture, backoff, and retries.
+4. `feature/event-radio-channel` - integrated into `main`: overlapping transmissions, collisions, capture, backoff, and retries.
 5. `feature/binary-packet-format` - integrated into `main`.
 6. `feature/prototype-security` - MIC and replay-window behaviour.
 7. `feature/experiment-runner` - baselines, repeated seeds, confidence reporting, and exports.
@@ -498,17 +503,18 @@ Each branch should have focused tests and documentation and should be merged bef
 
 ## 17. Immediate Next Action
 
-Review the event-radio branch before merging. The next implementation stage is
-prototype message authentication and replay protection, followed by repeatable
-experiment automation:
+The event-radio branch is integrated. Run the acceptance checklist and begin
+repeatable experiments for the implemented simulation scope. Prototype message
+authentication and replay protection remain a separate extension if required
+by the research scope:
 
 ```text
-review event-radio assumptions and tests
--> integrate the reviewed event-radio feature
--> prototype authentication and replay protection
--> run repeated-seed comparisons and hardware calibration
+run the integrated acceptance checklist
+-> run repeated-seed baseline comparisons and document uncertainty
+-> extend security/ACK behavior if required by the research scope
+-> calibrate against hardware before claiming deployment accuracy
 ```
 
 Decentralized route control and selectable frame airtime are implemented in the
-simulator. Compact binary packets are implemented on this branch; firmware
+simulator. Compact binary packets are integrated into main; firmware
 application integration and hardware alignment remain separate tasks.
