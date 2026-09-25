@@ -1,7 +1,21 @@
 # SEIAN Simulator Status and Remaining Work Report
 
-Date: 2026-09-24
-Work branch: `feature/binary-packet-format` (based on `feature/lora-airtime-model`)
+Date: 2026-09-25
+Work branch: `feature/event-radio-channel` (based on integrated `main`)
+
+## Event-radio update
+
+The airtime and binary-packet branches were reviewed together (282 passing tests)
+and integrated into `main` at `731dacc`. No open PRs were present; GitHub's
+connector rejected PR creation with 403, so the explicitly requested integration
+used Git fast-forward merges and a push.
+
+The separate event-radio branch implements shared start/end events, physical
+broadcast accounting, receiver-specific overlap/capture, half duplex, hidden
+nodes, carrier sensing, bounded retries/backoff, duty-cycle spacing, a dashboard
+timeline, and CSV/JSON exports. The combined result is 314 passing tests.
+See [event-radio model and limits](EVENT_RADIO_CHANNEL.md). On-air ACKs and
+hardware-calibrated interference remain outstanding; retries use ideal feedback.
 
 ## Binary packet branch update
 
@@ -12,8 +26,8 @@ airtime now supports decentralized route-learning and recovery tests within the
 255-byte frame limit. Topology exports retain provisioned addresses. See
 [the binary packet specification](BINARY_PACKET_FORMAT.md).
 
-The feature is a separate branch stacked on the airtime branch; neither feature
-is merged into `main`. The codec compiles for ESP32, but the repository has no
+The airtime and binary-packet features are now merged into `main`.
+The codec compiles for ESP32, but the repository has no
 firmware application to integrate or flash. Authentication, fragmentation,
 event-based collision scheduling, and hardware validation remain outstanding.
 
@@ -253,7 +267,7 @@ use compact UTF-8 JSON plus an assumed header budget, not the final firmware for
 - Implemented: symbol, preamble, payload, and total airtime calculations.
 - Implemented: UTF-8 payload byte lengths plus a configurable header budget.
 - Implemented: SF/bandwidth sensitivity estimate with an explicit override.
-- Remaining: compact shared firmware encoding and any agreed fragmentation behavior.
+- Implemented: shared binary encoding; fragmentation remains outstanding.
 - Remaining: jurisdiction-specific duty-cycle or dwell-time rules after the deployment band is confirmed.
 
 ### Required tests
@@ -268,18 +282,18 @@ use compact UTF-8 JSON plus an assumed header budget, not the final firmware for
 
 ### Current problem
 
-Batch transmissions currently consume time serially. Collision and channel-busy outcomes are selected from configured probabilities rather than produced by overlapping transmissions.
+Serialized mode remains available. Selectable event mode now schedules concurrent
+batch transmissions, uses exact frame airtime, and derives busy/collision outcomes
+from active emissions. Receiver processing delay is separate from channel occupancy.
 
-### Required implementation
+### Implemented and remaining
 
-- Schedule transmission start and end events.
-- Track channel, frequency, bandwidth, spreading factor, transmitter, receiver, and received power.
-- Detect time overlap between transmissions.
-- Model co-channel and cross-spreading-factor interference using an explicitly documented approximation.
-- Add hidden-node cases.
-- Add near-far capture using received-power differences.
-- Add channel sensing, backoff, retransmission, acknowledgement timeout, and retry limits where required by SEIAN-AMRP.
-- Enforce duty-cycle availability before scheduling transmission.
+- Shared start/end/completion events and physical broadcast accounting.
+- Frequency/bandwidth/SF overlap, aggregate receiver interference, and configurable capture.
+- Hidden nodes, half duplex, carrier sensing, initial jitter, and bounded backoff.
+- Bounded unicast retries using ideal reception feedback; no on-air ACK frames yet.
+- Configurable per-transmitter duty-cycle spacing, with no regional compliance claim.
+- Remaining: real ACK protocol, measured interference/demodulator behavior, and band-specific rules.
 
 ### Required tests
 
@@ -473,9 +487,9 @@ Only after this alignment should the project claim that larger simulator experim
 
 1. `feature/timing-metrics-foundation` - integrated into `main`.
 2. `feature/decentralized-route-learning` - integrated into `main`, including advertisements, expiry, route errors, loop prevention, and convergence metrics.
-3. `feature/lora-airtime-model` - exact time-on-air and encoded payload length.
+3. `feature/lora-airtime-model` - integrated into `main`.
 4. `feature/event-radio-channel` - overlapping transmissions, collisions, capture, backoff, and retries.
-5. `feature/binary-packet-format` - shared Python/C++ encoding and test vectors.
+5. `feature/binary-packet-format` - integrated into `main`.
 6. `feature/prototype-security` - MIC and replay-window behaviour.
 7. `feature/experiment-runner` - baselines, repeated seeds, confidence reporting, and exports.
 8. `feature/hardware-calibration` - measurement import and calibrated channel parameters.
@@ -484,13 +498,15 @@ Each branch should have focused tests and documentation and should be merged bef
 
 ## 17. Immediate Next Action
 
-Review the stacked airtime and binary-packet branches through PRs before merging.
-The next implementation stage is the event-based shared radio channel:
+Review the event-radio branch before merging. The next implementation stage is
+prototype message authentication and replay protection, followed by repeatable
+experiment automation:
 
 ```text
-review airtime and binary-packet contracts and test results
--> merge the reviewed airtime branch, then binary-packet branch
--> implement the event-based shared radio channel
+review event-radio assumptions and tests
+-> integrate the reviewed event-radio feature
+-> prototype authentication and replay protection
+-> run repeated-seed comparisons and hardware calibration
 ```
 
 Decentralized route control and selectable frame airtime are implemented in the

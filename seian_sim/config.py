@@ -91,6 +91,41 @@ class LoraConfig:
 
 
 @dataclass(slots=True)
+class RadioConfig:
+    """Explicit assumptions for the event-based shared channel."""
+
+    mode: str = "serialized"
+    carrier_sense: bool = True
+    carrier_sense_threshold_dbm: float = -110.0
+    capture_threshold_db: float = 6.0
+    cross_sf_interference: bool = False
+    backoff_slot_s: float = 0.02
+    max_backoffs: int = 8
+    max_retries: int = 2
+    initial_backoff_slots: int = 16
+    retry_delay_s: float = 0.05
+    duty_cycle: float = 1.0
+
+    def validate(self) -> None:
+        if self.mode not in {"serialized", "event"}:
+            raise ValueError("Radio mode must be serialized or event.")
+        for name in ("carrier_sense", "cross_sf_interference"):
+            if type(getattr(self, name)) is not bool:
+                raise ValueError(f"{name} must be boolean.")
+        for name in ("carrier_sense_threshold_dbm", "capture_threshold_db", "backoff_slot_s", "retry_delay_s", "duty_cycle"):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                raise ValueError(f"{name} must be finite.")
+        if self.capture_threshold_db < 0 or self.backoff_slot_s <= 0 or self.retry_delay_s < 0:
+            raise ValueError("Capture/retry delay must be nonnegative and backoff slot positive.")
+        if not 0 < self.duty_cycle <= 1:
+            raise ValueError("Duty cycle must be in (0, 1].")
+        for name in ("max_backoffs", "max_retries", "initial_backoff_slots"):
+            if type(getattr(self, name)) is not int or not 0 <= getattr(self, name) <= 100:
+                raise ValueError(f"{name} must be an integer in 0..100.")
+
+
+@dataclass(slots=True)
 class GridConfig:
     """Nominal grid and inverter measurement values."""
 
@@ -128,6 +163,7 @@ class SimulationConfig:
     whitelist_enabled: bool = False
     key_id: str = "demo-key"
     lora: LoraConfig = field(default_factory=LoraConfig)
+    radio: RadioConfig = field(default_factory=RadioConfig)
     grid: GridConfig = field(default_factory=GridConfig)
     routing_weights: RoutingWeights = field(default_factory=RoutingWeights)
 
@@ -135,6 +171,9 @@ class SimulationConfig:
         """Raise ValueError for invalid user-controlled settings."""
 
         self.lora.validate()
+        self.radio.validate()
+        if self.radio.mode == "event" and self.lora.airtime_mode != "lora":
+            raise ValueError("Event radio requires LoRa time-on-air timing.")
         if self.packet_encoding not in {"json", "binary"}:
             raise ValueError("Packet encoding must be 'json' or 'binary'.")
         if type(self.wire_network_id) is not int or not 1 <= self.wire_network_id <= 65534:

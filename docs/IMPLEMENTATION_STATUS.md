@@ -122,9 +122,13 @@ the assumed protocol-header budget, and oversize rejection. Approximate mode rem
 the default for current JSON routing experiments. Regional duty-cycle or dwell-time
 limits still require the deployment band and jurisdiction to be confirmed.
 
-### C. Collisions are probabilistic rather than event-derived
+### C. Shared radio events are selectable; PHY details remain approximate
 
-The present model uses configured probabilities for collision and channel busy events. A stronger model should track overlapping transmissions in time and frequency and apply capture-effect logic based on received power.
+Event mode derives collisions and carrier sensing from active transmissions and
+received power, with half duplex, bounded backoff/retries, and duty-cycle spacing.
+Serialized mode retains probability-based outcomes. Capture and inter-SF behavior
+are documented approximations; retries use ideal outcome feedback, not on-air
+ACKs. See [the event-radio model](EVENT_RADIO_CHANNEL.md).
 
 ### D. Binary codec implemented; firmware application integration remains
 

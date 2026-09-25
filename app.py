@@ -202,6 +202,17 @@ with st.sidebar:
         processing_delay = st.number_input("Additional link delay (s)", min_value=0.0, value=0.25, step=0.01)
         st.caption("Settings apply when creating or loading a network. Binary v1 uses the complete encoded frame and ignores the assumed header budget. JSON uses UTF-8 bytes plus that budget. Frames over 255 bytes are rejected in binary mode or exact timing mode. Fragmentation is not implemented.")
 
+    with st.expander("Shared radio channel"):
+        radio_mode = st.selectbox("Radio scheduling", ["Serialized (manual tracing)", "Event-based shared channel"])
+        carrier_sense = st.checkbox("Sense channel before transmitting", value=True)
+        capture_db = st.number_input("Capture threshold (dB)", min_value=0.0, value=6.0)
+        cross_sf = st.checkbox("Treat different spreading factors as interfering", value=False)
+        max_retries = st.number_input("Maximum unicast retries", min_value=0, max_value=100, value=2)
+        max_backoffs = st.number_input("Maximum busy-channel backoffs", min_value=0, max_value=100, value=8)
+        initial_slots = st.number_input("Initial random backoff slots", min_value=0, max_value=100, value=16)
+        duty_cycle = st.number_input("Transmitter duty cycle (%)", min_value=0.1, max_value=100.0, value=100.0)
+        st.caption("Event mode requires LoRa time-on-air and runs through Run Batch. Manual one-link tracing uses serialized mode. Duty cycle is an experiment assumption, not a regional compliance check. Retries use ideal outcome feedback, without on-air ACK frames.")
+
     config = make_config(
         seed=int(seed),
         duration=float(duration),
@@ -231,6 +242,14 @@ with st.sidebar:
     config.lora.low_data_rate_optimization = {"Automatic": None, "Enabled": True, "Disabled": False}[ldro]
     config.lora.protocol_header_bytes = int(header_bytes)
     config.lora.transmission_delay_s = processing_delay
+    config.radio.mode = "event" if radio_mode == "Event-based shared channel" else "serialized"
+    config.radio.carrier_sense = carrier_sense
+    config.radio.capture_threshold_db = capture_db
+    config.radio.cross_sf_interference = cross_sf
+    config.radio.max_retries = int(max_retries)
+    config.radio.max_backoffs = int(max_backoffs)
+    config.radio.initial_backoff_slots = int(initial_slots)
+    config.radio.duty_cycle = duty_cycle / 100
     try:
         config.validate()
     except ValueError as exc:
@@ -896,6 +915,11 @@ with tab_node:
 
 with tab_metrics:
     st.json(summary)
+    if sim.config.radio.mode == "event":
+        st.write("Shared radio metrics")
+        st.json(dict(sim.event_radio.stats))
+        st.write("Radio timeline")
+        st.dataframe(pd.DataFrame(sim.event_radio.records).tail(500), width="stretch", hide_index=True)
 
 with tab_charts:
     frames = sim.export_dataframes()
@@ -928,6 +952,11 @@ with tab_events:
     st.dataframe(events_df.tail(500), width="stretch", hide_index=True)
 
 with tab_exports:
+    if sim.config.radio.mode == "event":
+        st.download_button("Radio timeline CSV", pd.DataFrame(sim.event_radio.records).to_csv(index=False),
+                           "radio_events.csv", mime="text/csv")
+        st.download_button("Radio metrics JSON", json.dumps(dict(sim.event_radio.stats), indent=2),
+                           "radio_metrics.json", mime="application/json")
     frames = sim.export_dataframes()
     tables = sim.export_tables_json()
     st.download_button(

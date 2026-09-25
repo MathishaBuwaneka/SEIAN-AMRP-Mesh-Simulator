@@ -203,7 +203,7 @@ python -m pytest -q -p no:cacheprovider
 Current result for this version:
 
 ```text
-282 passed (including compiled C++ interoperability checks)
+314 passed (including compiled C++ interoperability checks)
 ```
 
 ## Important modelling limitation
@@ -217,5 +217,11 @@ See [the binary specification](docs/BINARY_PACKET_FORMAT.md) and
 [LoRa assumptions](docs/LORA_AIRTIME_MODEL.md). JSON mode retains the assumed
 header budget. Both modes reject oversized frames under exact timing; binary
 frames always obey the 255-byte limit. Firmware application integration, real
-authentication, and fragmentation remain future work. Transmissions are serialized
-and collisions remain probabilistic.
+authentication, and fragmentation remain future work.
+
+**Shared radio channel → Event-based shared channel** enables concurrent batch
+transmissions, overlap/capture collisions, hidden nodes, half duplex, bounded
+backoff/retries, and configurable duty-cycle spacing. Select exact airtime first.
+The manual tracer uses serialized mode. Radio events and metrics are available in
+the dashboard and exports. Retries use ideal outcome feedback; real on-air ACKs
+and hardware calibration remain future work. See [event-radio assumptions](docs/EVENT_RADIO_CHANNEL.md).

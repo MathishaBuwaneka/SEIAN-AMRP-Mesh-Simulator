@@ -25,6 +25,7 @@ from seian_sim.enums import (
 from seian_sim.fault_model import SEVERITY_TTL, apply_fault_to_nodes, classify_fault_boundary, create_fault
 from seian_sim.grid_model import GridModel
 from seian_sim.lora_channel import LoraChannel
+from seian_sim.event_radio import EventRadio
 from seian_sim.metrics import Metrics
 from seian_sim.models import EventRecord, FaultEvent, NeighborEntry, NodeSnapshot
 from seian_sim.node import SeianNode
@@ -57,7 +58,10 @@ class SeianMeshSimulator:
         self.config.validate()
         self.rng = random.Random(self.config.random_seed)
         self.env = SimulationClock()
-        self.channel = LoraChannel(self.config.lora, self.rng)
+        channel_config = self.config.lora
+        if self.config.radio.mode == "event":
+            channel_config = replace(channel_config, channel_busy_probability=0.0, collision_probability=0.0)
+        self.channel = LoraChannel(channel_config, self.rng)
         self.grid = GridModel(self.config.grid, self.rng)
         self.routing = RoutingEngine(
             self.config.routing_weights, self.config.route_lifetime_s, self.config.max_hops
@@ -80,6 +84,13 @@ class SeianMeshSimulator:
         self._pending_route_errors: list[tuple[str, RouteErrorMessage]] = []
         self._route_control_active = False
         self._last_route_advertisement_time = 0.0
+        self._processing_radio = False
+        self.event_radio = self._new_event_radio()
+
+    def _new_event_radio(self) -> EventRadio:
+        return EventRadio(self.config.radio, self.rng,
+                          lambda node_id: self.nodes[node_id].position,
+                          lambda node_id: node_id in self.nodes and self.nodes[node_id].communication_available)
 
     @property
     def now(self) -> float:
@@ -162,6 +173,8 @@ class SeianMeshSimulator:
         self.route_history.clear()
         self.fault_events.clear()
         self.metrics = Metrics()
+
+        self.event_radio = self._new_event_radio()
 
     def log(
         self,
@@ -569,7 +582,7 @@ class SeianMeshSimulator:
         """Process all packets produced by one route-control round."""
 
         passes = 0
-        while any(node.packet_queue for node in self.nodes.values()):
+        while any(node.packet_queue for node in self.nodes.values()) or self.event_radio.pending:
             self.process_queues()
             passes += 1
             if passes > self.config.route_convergence_round_limit * max(1, len(self.nodes)):
@@ -632,6 +645,8 @@ class SeianMeshSimulator:
     def run(self, duration_s: float | None = None, step_s: float = 10.0) -> None:
         """Run a deterministic batch simulation in fixed steps."""
 
+        if self.config.radio.mode == "event" and self.event_radio.pending:
+            self.process_queues()
         target = self.now + (duration_s if duration_s is not None else self.config.duration_s)
         if not any(node.neighbor_table for node in self.nodes.values()):
             self.discover_neighbors()
@@ -690,6 +705,9 @@ class SeianMeshSimulator:
         if not source.communication_available:
             self._drop(source, "sender_inactive", packet.packet_type)
             return False
+        if self.config.radio.mode == "event":
+            receivers = [nid for nid in source.neighbor_table if not exclude or nid not in exclude]
+            return self._schedule_radio(source_id, receivers, packet)
         delivered_any = False
         for neighbor_id in list(source.neighbor_table):
             if exclude and neighbor_id in exclude:
@@ -722,6 +740,8 @@ class SeianMeshSimulator:
         return self._deliver(source_id, next_hop, packet)
 
     def _deliver(self, source_id: str, receiver_id: str, packet: Packet) -> bool:
+        if self.config.radio.mode == "event":
+            return self._schedule_radio(source_id, [receiver_id], packet)
         source = self.nodes[source_id]
         receiver = self.nodes.get(receiver_id)
         if receiver is None or not receiver.communication_available:
@@ -748,6 +768,15 @@ class SeianMeshSimulator:
         self.env.run(until=self.now + max(0.001, obs.delay_s))
         if obs.delivered:
             self.metrics.record_link_success()
+        return self._accept_delivery(source_id, receiver_id, packet, obs, frame)
+
+    def _accept_delivery(self, source_id, receiver_id, packet, obs, frame=None):
+        """Validate and enqueue a completed reception in either radio mode."""
+        receiver = self.nodes.get(receiver_id)
+        source = self.nodes.get(source_id)
+        if receiver is None or source is None:
+            self.metrics.record_drop("missing_node")
+            return False
         if packet.network_id != receiver.network_id:
             self._drop(receiver, "wrong_network_id", packet.packet_type)
             return False
@@ -810,8 +839,72 @@ class SeianMeshSimulator:
             return False
         return True
 
+    def _schedule_radio(self, source_id, receivers, packet) -> bool:
+        """Queue one physical emission. True means queued, not delivered."""
+        receivers = tuple(sorted(set(receivers)))
+        if not receivers:
+            return False
+        source = self.nodes[source_id]
+        frame = None
+        if self.config.packet_encoding == "binary":
+            try:
+                frame = self.encode_wire_packet(packet, source_id, receivers[0])
+            except WireError as exc:
+                self.log(EventCategory.PACKET, str(exc), node_id=source_id)
+                self._drop(source, "wire_encode_error", packet.packet_type)
+                return False
+            frame_bytes = len(frame)
+        else:
+            packet.payload_length = len(encode_payload(packet.payload))
+            frame_bytes = packet.payload_length + self.config.lora.protocol_header_bytes
+            if not self.channel.supports_payload(packet.payload_length):
+                self._drop(source, "frame_too_large", packet.packet_type)
+                return False
+        # Freeze application contents so edits after scheduling cannot change bytes.
+        from copy import deepcopy
+        scheduled_packet = deepcopy(packet)
+
+        def on_result(request, results):
+            if any(obs.delivered for obs in results.values()):
+                self.metrics.record_link_success()
+            for receiver_id, obs in results.items():
+                received = scheduled_packet
+                if frame is not None and obs.delivered:
+                    try:
+                        received = self.decode_wire_packet(frame, scheduled_packet, receiver_id)
+                    except (WireError, KeyError):
+                        self.metrics.record_drop("wire_decode_error")
+                        continue
+                self._accept_delivery(source_id, receiver_id, received, obs, frame)
+
+        initial_wait = self.rng.randint(0, self.config.radio.initial_backoff_slots) * self.config.radio.backoff_slot_s
+        self.event_radio.schedule(source_id, receivers, frame_bytes, self.config.lora,
+                                  at=self.now + initial_wait, priority=packet.priority,
+                                  on_start=lambda request: self.metrics.record_transmission_attempt(),
+                                  on_result=on_result, retry=packet.destination_id is not None)
+        return True
+
     def process_queues(self) -> None:
         """Process queued packets in priority order."""
+
+        if self.config.radio.mode == "event" and not self._processing_radio:
+            self._processing_radio = True
+            try:
+                events = 0
+                while self.event_radio.pending or any(node.packet_queue for node in self.nodes.values()):
+                    self._process_receiver_queues()
+                    if self.event_radio.pending:
+                        self.env.run(until=self.event_radio.next_time)
+                        self.event_radio.step()
+                    events += 1
+                    if events > 100000:
+                        raise RuntimeError("Radio event drain limit reached; pending work retained.")
+            finally:
+                self._processing_radio = False
+            return
+        self._process_receiver_queues()
+
+    def _process_receiver_queues(self) -> None:
 
         for node in self.nodes.values():
             processed = 0
@@ -1208,6 +1301,7 @@ class SeianMeshSimulator:
         return {
             "measurements": pd.DataFrame([_jsonable(m) for m in self.measurements]),
             "packet_events": pd.DataFrame(self.packet_events),
+            "radio_events": pd.DataFrame(self.event_radio.records),
             "route_history": pd.DataFrame(self.route_history),
             "fault_events": pd.DataFrame([
                 {**_jsonable(f), "fault_type": f.fault_type.value, "affected_nodes": ",".join(sorted(f.affected_nodes))}
@@ -1228,6 +1322,8 @@ class SeianMeshSimulator:
             },
             "configuration": _jsonable(self.config),
             "summary_report": self.metrics.summary(),
+            "radio_events": list(self.event_radio.records),
+            "radio_metrics": dict(self.event_radio.stats),
         }
 
 

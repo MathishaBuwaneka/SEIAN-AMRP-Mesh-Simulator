@@ -5,7 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import asdict, fields
 
-from seian_sim.config import LoraConfig, SimulationConfig
+from seian_sim.config import LoraConfig, RadioConfig, SimulationConfig
 from seian_sim.enums import CommunicationFaultStatus, CommunicationStatus, FaultStatus, FaultType
 from seian_sim.simulator import SeianMeshSimulator
 
@@ -142,6 +142,7 @@ def export_topology(sim: SeianMeshSimulator) -> dict:
         "area_height_m": sim.config.area_height_m,
         "lora_range_m": sim.config.lora.max_range_m,
         "lora_config": asdict(sim.config.lora),
+        "radio_config": asdict(sim.config.radio),
         "nodes": [
             {
                 "node_id": node.node_id,
@@ -182,6 +183,12 @@ def build_from_topology(data: dict, config: SimulationConfig | None = None) -> S
     cfg.packet_encoding = data.get("packet_encoding", cfg.packet_encoding)
     cfg.wire_network_id = data.get("wire_network_id", cfg.wire_network_id)
     cfg.wire_addresses = deepcopy(data.get("wire_addresses", cfg.wire_addresses))
+    if "radio_config" in data:
+        radio_settings = data["radio_config"]
+        if not isinstance(radio_settings, dict) or set(radio_settings) - {item.name for item in fields(RadioConfig)}:
+            raise ValueError("radio_config must contain recognized radio settings.")
+        for name, value in radio_settings.items():
+            setattr(cfg.radio, name, value)
     cfg.area_width_m = float(data.get("area_width_m", cfg.area_width_m))
     cfg.area_height_m = float(data.get("area_height_m", cfg.area_height_m))
     if "lora_config" in data:

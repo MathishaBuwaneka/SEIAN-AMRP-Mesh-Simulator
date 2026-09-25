@@ -103,6 +103,9 @@ class ManualPacketSession:
     ) -> "ManualPacketSession":
         """Create a trace and schedule its first link transmission(s)."""
 
+        if sim.config.radio.mode == "event":
+            raise ValueError("Manual one-link tracing requires serialized radio mode; use batch mode for concurrent radio events.")
+
         if source_id not in sim.nodes:
             raise ValueError(f"Unknown source node: {source_id}")
         if destination_id is not None and destination_id not in sim.nodes:
