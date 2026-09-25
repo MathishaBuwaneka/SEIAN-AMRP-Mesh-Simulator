@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SEIAN PSCAD network reroute</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 1920px; height: 1080px; background: #fff; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #17252a; letter-spacing: 0; }
+    .page { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #fff; }
+    .top-rule { position: absolute; inset: 0 0 auto 0; height: 12px; background: #087b75; }
+    h1 { position: absolute; left: 82px; top: 52px; margin: 0; font-size: 63px; line-height: 1.1; }
+    .subtitle { position: absolute; left: 85px; top: 135px; margin: 0; font-size: 28px; color: #486268; }
+    .panel-title { position: absolute; top: 235px; margin: 0; font-size: 35px; font-weight: 700; }
+    .initial-title { left: 110px; }
+    .restored-title { left: 1020px; }
+    .panel-note { position: absolute; top: 284px; font-size: 24px; color: #486268; margin: 0; }
+    .initial-note { left: 110px; }
+    .restored-note { left: 1020px; }
+    svg { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    .legend { position: absolute; left: 82px; top: 783px; display: flex; align-items: center; gap: 34px; font-size: 23px; color: #486268; }
+    .swatch { display: inline-block; width: 50px; height: 0; border-top: 7px solid #087b75; margin-right: 10px; vertical-align: middle; }
+    .swatch.open { border-top: 5px dashed #9aa8aa; }
+    .fault-dot { display: inline-block; width: 20px; height: 20px; border-radius: 50%; background: #c7443e; margin-right: 10px; vertical-align: middle; }
+    .timeline { position: absolute; left: 0; top: 838px; width: 1920px; height: 169px; background: #f3f7f7; border-top: 2px solid #d6e2e3; }
+    .timeline-title { position: absolute; left: 82px; top: 857px; font-size: 27px; font-weight: 700; color: #087b75; }
+    .events { position: absolute; left: 82px; top: 908px; display: flex; gap: 48px; font-size: 25px; }
+    .event { width: 530px; line-height: 1.28; }
+    .event strong { color: #17252a; }
+    .event.fault strong { color: #c7443e; }
+    .footer { position: absolute; left: 82px; right: 82px; bottom: 29px; display: flex; justify-content: space-between; font-size: 20px; color: #486268; }
+  </style>
+</head>
+<body>
+  <section class="page" data-document-role="page" data-label="LV feeder reroute in PSCAD">
+    <div class="top-rule"></div>
+    <h1>How the LV feeder reroutes around N03</h1>
+    <p class="subtitle">Six-bus, 400 V model | Controller commands schedule physical breakers in PSCAD</p>
+    <h2 class="panel-title initial-title">Initial radial feeder</h2>
+    <p class="panel-note initial-note">Five closed branches; both alternate ties open</p>
+    <h2 class="panel-title restored-title">After isolation and tie closure</h2>
+    <p class="panel-note restored-note">N03 off; N04-N06 fed by the alternate route</p>
+
+    <svg viewBox="0 0 1920 1080" role="img" aria-label="Initial and restored six-bus LV network topology">
+      <defs>
+        <style>
+          .closed { stroke: #087b75; stroke-width: 9; fill: none; stroke-linecap: round; }
+          .open { stroke: #9aa8aa; stroke-width: 6; stroke-dasharray: 15 15; fill: none; }
+          .bus { fill: #17252a; }
+          .source { fill: #087b75; }
+          .isolated { fill: #c7443e; }
+          .bus-label { font: 29px Arial, Helvetica, sans-serif; fill: #17252a; text-anchor: middle; }
+          .small-label { font: 23px Arial, Helvetica, sans-serif; fill: #486268; text-anchor: middle; }
+          .alert-label { font: bold 25px Arial, Helvetica, sans-serif; fill: #c7443e; text-anchor: middle; }
+        </style>
+      </defs>
+
+      <path class="closed" d="M 140 480 L 280 480 L 500 480 L 730 480 M 500 480 L 500 690 L 730 690" />
+      <path class="open" d="M 280 480 L 500 690 M 730 480 L 730 690" />
+      <rect class="source" x="122" y="462" width="36" height="36" />
+      <circle class="bus" cx="280" cy="480" r="18" />
+      <circle class="bus" cx="500" cy="480" r="18" />
+      <circle class="bus" cx="730" cy="480" r="18" />
+      <circle class="bus" cx="500" cy="690" r="18" />
+      <circle class="bus" cx="730" cy="690" r="18" />
+      <text class="bus-label" x="140" y="434">G01</text>
+      <text class="bus-label" x="280" y="434">N02</text>
+      <text class="bus-label" x="500" y="434">N03</text>
+      <text class="bus-label" x="730" y="434">N04</text>
+      <text class="bus-label" x="500" y="742">N05</text>
+      <text class="bus-label" x="730" y="742">N06</text>
+      <text class="small-label" x="390" y="618">tie open</text>
+      <text class="small-label" x="790" y="596">tie open</text>
+
+      <path class="closed" d="M 1040 480 L 1180 480 L 1400 690 L 1630 690 L 1630 480" />
+      <path class="open" d="M 1180 480 L 1400 480 L 1630 480 M 1400 480 L 1400 690" />
+      <rect class="source" x="1022" y="462" width="36" height="36" />
+      <circle class="bus" cx="1180" cy="480" r="18" />
+      <circle class="isolated" cx="1400" cy="480" r="21" />
+      <circle class="bus" cx="1630" cy="480" r="18" />
+      <circle class="bus" cx="1400" cy="690" r="18" />
+      <circle class="bus" cx="1630" cy="690" r="18" />
+      <text class="bus-label" x="1040" y="434">G01</text>
+      <text class="bus-label" x="1180" y="434">N02</text>
+      <text class="bus-label" x="1400" y="434">N03</text>
+      <text class="bus-label" x="1630" y="434">N04</text>
+      <text class="bus-label" x="1400" y="742">N05</text>
+      <text class="bus-label" x="1630" y="742">N06</text>
+      <text class="alert-label" x="1400" y="390">isolated</text>
+      <text class="small-label" x="1280" y="635">tie closed</text>
+      <text class="small-label" x="1710" y="596">tie closed</text>
+    </svg>
+
+    <div class="legend">
+      <span><i class="swatch"></i>Closed, energized branch</span>
+      <span><i class="swatch open"></i>Open branch</span>
+      <span><i class="fault-dot"></i>Isolated N03</span>
+    </div>
+    <div class="timeline"></div>
+    <div class="timeline-title">One scheduled PSCAD experiment</div>
+    <div class="events">
+      <div class="event fault"><strong>4.8-5.2 s</strong><br>Native ABC-to-ground fault at N03</div>
+      <div class="event"><strong>5.0 s</strong><br>Open N02-N03, N03-N04, N03-N05</div>
+      <div class="event"><strong>6.0 s</strong><br>Close N02-N05 and N04-N06 ties</div>
+    </div>
+    <div class="footer">
+      <span>SEIAN | PSCAD validation | 25 Sep 2026</span>
+      <span>Fault and command times are preset; no relay detection is modeled.</span>
+    </div>
+  </section>
+</body>
+</html>
