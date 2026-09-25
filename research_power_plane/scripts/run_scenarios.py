@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import sys
 import time
 import traceback
@@ -62,6 +63,11 @@ def main() -> int:
         help="Scenario filename stem or glob; repeat to select several (default: all).",
     )
     parser.add_argument("--output", type=Path, default=RESULTS_FILE, help="JSON result path.")
+    parser.add_argument(
+        "--archive-psout-dir",
+        type=Path,
+        help="Copy the previous output and each completed raw PSCAD output here.",
+    )
     args = parser.parse_args()
 
     topology = json.loads(TOPOLOGY_FILE.read_text(encoding="utf-8"))
@@ -82,6 +88,11 @@ def main() -> int:
 
     results: dict[str, Any] = {}
     scenario_files = _select_scenario_files(args.scenario)
+    current_output = _case_output_path()
+    if args.archive_psout_dir:
+        args.archive_psout_dir.mkdir(parents=True, exist_ok=True)
+        if current_output.exists() and not (args.archive_psout_dir / "before_refresh.psout").exists():
+            shutil.copy2(current_output, args.archive_psout_dir / "before_refresh.psout")
     for scenario_file in scenario_files:
         name = scenario_file.stem
         print(f"\n=== {name} ===", flush=True)
@@ -89,6 +100,8 @@ def main() -> int:
             results[name] = _run_scenario(
                 pscad, project, canvas, adapter, topology, scenario_file
             )
+            if args.archive_psout_dir:
+                shutil.copy2(current_output, args.archive_psout_dir / f"{name}.psout")
         except Exception:
             print(traceback.format_exc(), flush=True)
             results[name] = {"error": traceback.format_exc()}
@@ -168,6 +181,7 @@ def _run_scenario(
     project.parameters(**manifest["project_settings"])
 
     project.save()
+    _case_output_path().unlink(missing_ok=True)
     project.build()
     build_messages = _build_messages(project)
     if build_messages["errors"]:
@@ -325,6 +339,14 @@ def _newest_psout(project: Any, *, not_before: float = 0.0) -> Path | None:
     if not candidates or candidates[-1].stat().st_mtime < not_before - 1.0:
         return None
     return candidates[-1]
+
+
+def _case_output_path() -> Path:
+    """Only the active timed case's generated result may be replaced."""
+    output = (WORKSPACE_DIR / f"{CASE_NAME}.gf46" / f"{CASE_NAME}.psout").resolve()
+    if not output.is_relative_to(WORKSPACE_DIR.resolve()):
+        raise ValueError("PSCAD output escapes the research workspace.")
+    return output
 
 
 def _build_messages(project: Any) -> dict[str, Any]:

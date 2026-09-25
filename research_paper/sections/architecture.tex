@@ -1,7 +1,7 @@
 \section{System Architecture and Command Semantics}
 \label{sec:architecture}
 \subsection{Ownership Boundaries and Data Flow}
-The original networking simulator remains in its existing repository modules.
+The networking simulator remains in its existing repository modules.
 The power-plane extension is housed separately under
 \code{research_power_plane}, with dedicated command adaptation, topology,
 timeline, PSCAD mapping, automation, measurement, and dashboard modules.
@@ -9,6 +9,18 @@ This separation allows networking colleagues to evolve their algorithms while
 the adapter handles changes in their output fields. It does not guarantee
 compatibility with an arbitrary future schema: new aliases and semantic changes
 must be tested at the adapter boundary.
+
+The integrated 25 September revision adds packet-driven decentralized route
+learning, binary packet encoding, selectable LoRa airtime, a shared event-based
+radio channel, and explicit communication versus electrical fault domains.
+The current PSCAD interface consumes fault-event rows or explicit command
+batches; it does not synchronize the radio event clock with the EMT solver.
+For domain-aware fault rows, the adapter emits an electrical action only for
+a power fault whose recommendation calls for switching. Communication and
+device faults do not schedule breakers. Legacy rows without a domain retain
+their earlier isolation behavior. The merged networking simulator's
+\code{export_tables_json()} omits fault events, so the adapter receives its
+\code{fault_events} collection explicitly.
 
 Figure~\ref{fig:architecture} shows the implemented workflow. A controller
 output batch or a graphical dashboard submission supplies topology, commands,

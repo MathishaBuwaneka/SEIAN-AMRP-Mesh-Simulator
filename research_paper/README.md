@@ -1,9 +1,14 @@
 # SEIAN Research Paper
 
-This independent manuscript folder does not change the simulator, dashboard,
-PSCAD workspace, or the networking team's code. It uses a conventional LaTeX
+This independent manuscript folder uses a conventional LaTeX
 `article` layout, numbered references, and separate section files so that the
 paper can later be moved into a journal or conference template.
+
+The September 25 refresh uses the merged repository and a newly rerun PSCAD
+matrix. Its full-rate raw outputs are retained outside this paper package in
+`../output/pscad_refresh_20260925/raw/`. The paper snapshot contains the saved
+metrics and plot previews. The networking simulator's power and communication
+fault domains are exercised in a separate command-to-PSCAD replay.
 
 ## Read and Edit
 
@@ -54,15 +59,19 @@ references resolved. Four original figures and seven tables are included.
 
 ## Refresh Evidence Deliberately
 
-Only after reviewing new experiment results, refresh the snapshot from the
-unchanged sibling project:
+After reviewing new experiment results, refresh the snapshot from the selected
+matrix and browser artifacts:
 
 ```powershell
-py -B scripts/prepare_artifacts.py --snapshot
+py -B scripts/prepare_artifacts.py --snapshot `
+  --matrix ../output/pscad_refresh_20260925/scenario_matrix.json `
+  --gui-validation ../output/pscad_refresh_20260925/graphical/graphical_gui_validation.json `
+  --gui-command-edit ../output/pscad_refresh_20260925/graphical/graphical_command_edit.json `
+  --merged-case ../output/pscad_refresh_20260925/merged_simulator.json
 ```
 
-This command only reads existing project inputs and writes inside this paper
-folder. It never starts PSCAD or Streamlit. It also records input SHA-256 hashes.
+This command reads existing result files and writes inside this paper folder.
+It never starts PSCAD or Streamlit. It also records input SHA-256 hashes.
 Review all numerical prose after a refresh: generated tables update
 automatically, but prose is intentionally not rewritten by the script.
 

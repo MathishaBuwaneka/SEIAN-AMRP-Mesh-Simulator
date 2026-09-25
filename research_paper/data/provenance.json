@@ -1,9 +1,9 @@
 {
-  "snapshot_utc": "2026-09-05T11:38:30.716999+00:00",
-  "repository_revision": "7db42ae0e9f8092065cf77bb206b1a818c29eacd",
+  "snapshot_utc": "2026-09-25T05:29:58.641730+00:00",
+  "repository_revision": "4a6f49d16ee23daf98fd7abc1c041523f4c1015f",
   "inputs": [
     {
-      "path": "research_power_plane/pscad_workspace/transient_scenario_results.json",
+      "path": "output/pscad_refresh_20260925/scenario_matrix.json",
       "bytes": 5350723,
       "sha256": "5fe9a64795b6f194fe0a2abe9c741d681613654fa6f53244e878081149e33181"
     },
@@ -13,14 +13,19 @@
       "sha256": "2114c66b9c99dd63cb67a515f06d5a5bf88665cba78f44b29f53021e834cec40"
     },
     {
-      "path": "research_power_plane/pscad_workspace/validation/graphical_gui_validation.json",
-      "bytes": 717,
-      "sha256": "4863a373dbfb3c8e08ff26ba7202a5b44166e3a4a9b876d825298abbc64254b1"
+      "path": "output/pscad_refresh_20260925/graphical/graphical_gui_validation.json",
+      "bytes": 714,
+      "sha256": "5b3cd00181fe8c0362ecf14016d1bec76917d7846483efd7b3e19d03e79c4e97"
     },
     {
-      "path": "research_power_plane/pscad_workspace/validation/graphical_command_edit.json",
-      "bytes": 974407,
-      "sha256": "25f70be8a05d8fc023efae3c73a281256dc1d483d0e413a70dae8145a2f1e755"
+      "path": "output/pscad_refresh_20260925/graphical/graphical_command_edit.json",
+      "bytes": 974406,
+      "sha256": "d3b2a2f826daad805ebcf4ecf6697eb703300115a39ed4a5d63abbf475014e7f"
+    },
+    {
+      "path": "output/pscad_refresh_20260925/merged_simulator.json",
+      "bytes": 1067719,
+      "sha256": "5b41ea007a9425603ab3bbb48af739f88c1fe09f1d84f0779de68fe5ba830897"
     },
     {
       "path": "research_power_plane/examples/scenarios/01_no_fault_baseline.json",
@@ -54,8 +59,8 @@
     },
     {
       "path": "research_power_plane/AI_CONTEXT.md",
-      "bytes": 18570,
-      "sha256": "690d464830103ac07219b507a8bd02bd590c7de32ee0479d6d92cddbf3c2ecb8"
+      "bytes": 21435,
+      "sha256": "9cc46af5d818cd7d9ce43d01f880227a0845f101a6239bc98d6df22ef1cbeae4"
     },
     {
       "path": "research_power_plane/scripts/build_lv_feeder.py",
@@ -64,13 +69,13 @@
     },
     {
       "path": "research_power_plane/scripts/run_scenarios.py",
-      "bytes": 14854,
-      "sha256": "cb0b1515628dd8b576d71a06be29d15bfdef7554e64238649eb438349ebaeefd"
+      "bytes": 15879,
+      "sha256": "f0e3e65e8c0b3be240e73ad3a63240c1fc20fbdf823344e60debaf0c338c7718"
     },
     {
       "path": "research_power_plane/dashboard.py",
-      "bytes": 16435,
-      "sha256": "3e819dc109a08633be05b4efe6966f35df8ba08a0a2c3221d8c20a97d4a256a2"
+      "bytes": 16226,
+      "sha256": "792f0bc4a8784c564dd2093f3462cfb82ec8289d89c10401eb38dbcc92724329"
     },
     {
       "path": "research_power_plane/seian_power_pipeline/__init__.py",
@@ -84,8 +89,8 @@
     },
     {
       "path": "research_power_plane/seian_power_pipeline/controller_adapter.py",
-      "bytes": 8023,
-      "sha256": "ec4ad562812d1e5ba2ae54c463a888d358e8c46d6534023d3ff5490693eea991"
+      "bytes": 8670,
+      "sha256": "4b50c89847ffac0ef6a0bace7794753c315f6600efb5e61f846dc557cb88de99"
     },
     {
       "path": "research_power_plane/seian_power_pipeline/faults.py",
@@ -99,8 +104,8 @@
     },
     {
       "path": "research_power_plane/seian_power_pipeline/power_plane.py",
-      "bytes": 13974,
-      "sha256": "1c9575db33a99660f0823b6245be10d2baf77b028db48239d38a265063452bc0"
+      "bytes": 14823,
+      "sha256": "61b851c0ae1f295494a096cb5426d1ce438c0a0eec74d9cf830dd297a0fbdd73"
     },
     {
       "path": "research_power_plane/seian_power_pipeline/project_config.py",
@@ -109,8 +114,8 @@
     },
     {
       "path": "research_power_plane/seian_power_pipeline/pscad_adapter.py",
-      "bytes": 20046,
-      "sha256": "2702a7d00228831e91c143a9f65eb2a29a8bbf253f3dcdb36df82dcea6a19185"
+      "bytes": 20288,
+      "sha256": "d319ab45be44a8a1afa7b666aa0730f8e4bb843c5e80c6a3e1a6164b27d23d7e"
     },
     {
       "path": "research_power_plane/seian_power_pipeline/pscad_gui.py",
@@ -154,16 +159,147 @@
     },
     {
       "path": "research_power_plane/pscad_workspace/SEIAN_LV_Timed_Switching.pscx",
-      "bytes": 128040,
-      "sha256": "ae91e87496bc4dfff5c60e8db846c23e49fa5140b8f9f149066a5e2b8e89fbeb"
+      "bytes": 128199,
+      "sha256": "d5240eaed02cfcbdeb338f2a32fc656d6b5f8aebd1559a6851799d4b88fb934d"
     },
     {
       "path": "research_power_plane/pscad_workspace/seian_pscad_timed_component_map.generated.json",
       "bytes": 5508,
       "sha256": "030047efd586977b30550696e55704b803e35259a9a4bed097e6631643982854"
+    },
+    {
+      "path": "seian_sim/__init__.py",
+      "bytes": 208,
+      "sha256": "45cf028b9dd23c2c958787ab1a15fda68fd3de5dcd32b82d47303ebc1c31f3fe"
+    },
+    {
+      "path": "seian_sim/config.py",
+      "bytes": 10251,
+      "sha256": "960f3165d825a84a87dc8aa8ec24cc3794a447415ebc6f07cca36e8571c42be0"
+    },
+    {
+      "path": "seian_sim/decentralized_routing.py",
+      "bytes": 12309,
+      "sha256": "e13e7b29cfb326fa60d229d8a9a237ffd372003500f1e2217b1dbdacb93bfc1b"
+    },
+    {
+      "path": "seian_sim/enums.py",
+      "bytes": 2359,
+      "sha256": "82a290e22d920b2713160c2ebd4bfbcac312ef24a9fa81963f9bb24e2f416aa5"
+    },
+    {
+      "path": "seian_sim/event_radio.py",
+      "bytes": 12034,
+      "sha256": "bb351efa8710efc51bbb20d1d3fbf40942170c05d0451966092835dcdcfc417f"
+    },
+    {
+      "path": "seian_sim/fault_model.py",
+      "bytes": 5320,
+      "sha256": "955c020d33f3a30a25bd18b461557862450e7f2367f4f7aa53e0138f33d5ca0c"
+    },
+    {
+      "path": "seian_sim/grid_model.py",
+      "bytes": 2085,
+      "sha256": "9f72104ce2414abda5d173b4432ef76fe96d0ba013c66adfae527bcc667e15a2"
+    },
+    {
+      "path": "seian_sim/lora_airtime.py",
+      "bytes": 2166,
+      "sha256": "951c56fb2e004a540dd27fe0e42128bf6f45d559679e13f1d8f0d71b3ebe6e2c"
+    },
+    {
+      "path": "seian_sim/lora_channel.py",
+      "bytes": 4799,
+      "sha256": "05fedcf24f41d0783353f611c94732ee56a737a76ea4fd06b4854218fb53f2d6"
+    },
+    {
+      "path": "seian_sim/manual_simulation.py",
+      "bytes": 24583,
+      "sha256": "fabbbd35c6a5210e80a1434998b81bea5a10ecd493be36afcaf1d60650abdfad"
+    },
+    {
+      "path": "seian_sim/metrics.py",
+      "bytes": 6726,
+      "sha256": "e7ef23b6ad868f886cb0cd125953e2b78a001f6e10e98d1b48fed3d4df2a2522"
+    },
+    {
+      "path": "seian_sim/models.py",
+      "bytes": 3090,
+      "sha256": "91c15fcf43f6b1c2bd01af77450eee94155dd0a6287518bec83e2e9e6c9cf69d"
+    },
+    {
+      "path": "seian_sim/network_builder.py",
+      "bytes": 6085,
+      "sha256": "3694a5a2a585dc7b20b0b88a9b765f3a4856971631d5f8272df3c6c59a1fbd05"
+    },
+    {
+      "path": "seian_sim/node.py",
+      "bytes": 6254,
+      "sha256": "aac705d665bc5d94014651b0969d1c7b3c8be11d23403cd26af44cd9795236f4"
+    },
+    {
+      "path": "seian_sim/packets.py",
+      "bytes": 3228,
+      "sha256": "834035c0e9a642b9be29749d7a050d87533cb8858ee626c5eb4f0d2783957c54"
+    },
+    {
+      "path": "seian_sim/route_messages.py",
+      "bytes": 5687,
+      "sha256": "69e9b451f1ea562ff04db96eca33ffd5b05901de4780d86b6f717852fff33bc0"
+    },
+    {
+      "path": "seian_sim/routing.py",
+      "bytes": 9269,
+      "sha256": "d9c3e98c7262a3a7db1f45a3f88e51ce903de3595bcc012ab5db4d3a41d26277"
+    },
+    {
+      "path": "seian_sim/scenarios.py",
+      "bytes": 10413,
+      "sha256": "939334c4b01a9722c8e8447dbca2850f70e1d967e83eb545f8b2c8477a51531e"
+    },
+    {
+      "path": "seian_sim/simulator.py",
+      "bytes": 62828,
+      "sha256": "14b90c24a2996b10eca3aa12dab9f57855cca8d4c67e31315e2ff28962dfc41b"
+    },
+    {
+      "path": "seian_sim/topology.py",
+      "bytes": 12097,
+      "sha256": "0d513f58825439b857421637de0ca1423084417c237cf80d1bcf7dd32445f26f"
+    },
+    {
+      "path": "seian_sim/visualization.py",
+      "bytes": 17230,
+      "sha256": "da5c9457f0af07cbf7cb01057f96c36cfd9fe15612e00648e2fb93fd32d0eb85"
+    },
+    {
+      "path": "seian_sim/wire.py",
+      "bytes": 8020,
+      "sha256": "4fd282655ae6c95c6a191c66ba64c5f7d24cac3437a8d4e7eab5f78269ca8178"
+    },
+    {
+      "path": "research_power_plane/scripts/replay_merged_simulator.py",
+      "bytes": 4507,
+      "sha256": "8c3b671fd8aefe0631b906056d5bb37bd5c9b2bc43af24278722fa00423e536a"
+    },
+    {
+      "path": "scripts/build_wire_codec.py",
+      "bytes": 1201,
+      "sha256": "46d8ced843174ea06d1da092ffc671b768f099370222181237e1d37926c9a92c"
+    },
+    {
+      "path": "firmware/codec/codec_cli.cpp",
+      "bytes": 2012,
+      "sha256": "066e003ca4165dcbf68a254176df8bd34939bd889dc872884eddf1b8b49222ff"
+    },
+    {
+      "path": "firmware/codec/seian_wire.hpp",
+      "bytes": 8044,
+      "sha256": "afc9e4e3335bb362a84de1ce8e72e6316651da94db0067c3167c94bc0e34d64f"
     }
   ],
-  "method": "Read-only snapshot of existing saved experiments; no new PSCAD runs.",
+  "method": "Read-only snapshot of saved experiments; the generator itself does not run PSCAD.",
+  "matrix_source": "output/pscad_refresh_20260925/scenario_matrix.json",
   "raw_psout_included": false,
   "trace_previews_are_decimated": true
 }

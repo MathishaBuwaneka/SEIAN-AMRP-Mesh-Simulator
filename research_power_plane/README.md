@@ -1,5 +1,30 @@
 # SEIAN Power Plane PSCAD Pipeline
 
+## September 2026 Integrated Refresh
+
+The merged networking simulator now emits fault domains. Power-domain events
+with an electrical switching recommendation may become breaker commands;
+communication and device faults do not. Pass `simulator.fault_events` to
+`commands_from_controller_payload({"fault_events": simulator.fault_events})`.
+The merged simulator's `export_tables_json()` does not contain those events.
+
+The live rerun on the integrated repository is archived under
+`../output/pscad_refresh_20260925/` (gitignored). The six-scenario matrix and
+its separate raw `.psout` files are retained there. To repeat it:
+
+```powershell
+py -3.13 -B research_power_plane/scripts/run_scenarios.py `
+  --output output/pscad_refresh_20260925/scenario_matrix.json `
+  --archive-psout-dir output/pscad_refresh_20260925/raw
+py -3.13 -B research_power_plane/scripts/replay_merged_simulator.py --execute-pscad
+```
+
+Run these commands sequentially against one PSCAD editor. The second command
+demonstrates a fault event from the merged simulator flowing through the
+adapter, the switching manifest, and the PSCAD MCP executor. Its PSCAD fault
+and controller time are preset experiment inputs; the simulator has no live
+measurement-to-controller feedback in this version.
+
 This folder is the research co-simulation layer for SEIAN AMRP. It translates
 network-controller decisions into safety-checked LV switching schedules, runs
 those schedules as physical breaker events in PSCAD, and returns measured EMT

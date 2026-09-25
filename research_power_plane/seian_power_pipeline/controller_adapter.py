@@ -5,20 +5,23 @@ commands directly -- it emits *events*: ``FaultEvent`` rows (fault_id,
 origin_node, fault_type, severity, start_time, affected_nodes,
 recommended_action) and ``EventRecord`` rows (timestamp, category, message,
 node_id, fault_id, details), both reachable via
-``Simulator.export_tables_json()``. This module turns those into the
-switching-command contract in :mod:`seian_power_pipeline.control_plane`.
+    ``Simulator.fault_events`` and ``Simulator.events``. The current
+    ``export_tables_json()`` omits fault events, so callers must supply those
+    rows explicitly. This module turns them into the switching-command
+    contract in :mod:`seian_power_pipeline.control_plane`.
 
 There is no frozen spec for the controller's eventual output format, so this
 is deliberately tolerant: it accepts a payload that is already in native
 command form (passed through untouched), a simulator export dict, or a bare
 list of fault rows, and it accepts common key aliases for each field. When the
-real format lands, the expected place to extend is ``_FIELD_ALIASES`` and
-``commands_from_fault_events``.
+    real format lands, the expected place to extend is ``_FIELD_ALIASES`` and
+    ``commands_from_fault_events``. Domain-aware rows without an electrical
+    switching recommendation produce no breaker command.
 
 Typical use::
 
     from seian_power_pipeline.controller_adapter import commands_from_controller_payload
-    payload = json.loads(Path("controller_output.json").read_text())
+    payload = {"fault_events": simulator.fault_events}
     commands_json = commands_from_controller_payload(payload)
     commands = control_commands_from_payload(commands_json)
 """
@@ -43,6 +46,7 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
     "fault_id": ("fault_id", "id", "event_id"),
     "origin_node": ("origin_node", "node_id", "node", "origin", "source_node"),
     "fault_type": ("fault_type", "type", "kind"),
+    "fault_domain": ("fault_domain", "domain"),
     "severity": ("severity", "level"),
     "start_time": ("start_time", "timestamp", "time", "t"),
     "affected_nodes": ("affected_nodes", "affected", "impacted_nodes"),
@@ -94,10 +98,10 @@ def commands_from_fault_events(
 ) -> list[dict[str, Any]]:
     """Turn fault rows into isolate (and, where warranted, restore) commands.
 
-    Every fault yields an ``isolate_node`` on its origin node. A fault whose
-    ``recommended_action`` hints at rerouting *and* that carries a usable
-    alternate path additionally yields a ``reroute_power_path`` issued
-    ``restoration_delay_s`` after the fault.
+    Legacy rows without a domain retain their original isolation semantics.
+    Domain-aware rows only produce electrical commands for power faults with
+    an explicit switching recommendation. An alternate path adds a delayed
+    ``reroute_power_path`` command.
     """
 
     commands: list[dict[str, Any]] = []
@@ -106,6 +110,14 @@ def commands_from_fault_events(
         origin = fields.get("origin_node")
         if not origin:
             continue
+
+        domain = fields.get("fault_domain")
+        if domain is not None:
+            if str(_plain(domain)).lower() != "power":
+                continue
+            action = str(fields.get("recommended_action") or "").lower()
+            if not any(word in action for word in ("isolat", "open", *RESTORATION_ACTION_HINTS)):
+                continue
 
         fault_id = fields.get("fault_id") or f"fault-{index + 1:03d}"
         start_time = _as_float(fields.get("start_time"), 0.0)
@@ -164,7 +176,7 @@ def _isolation_reason(fields: dict[str, Any]) -> str:
     fault_type = fields.get("fault_type")
     severity = fields.get("severity")
     origin = fields.get("origin_node")
-    parts = [str(fault_type) if fault_type else "Fault"]
+    parts = [str(_plain(fault_type)) if fault_type else "Fault"]
     if severity:
         parts.append(f"({severity})")
     parts.append(f"at {origin}; isolate all incident LV paths.")
@@ -173,7 +185,7 @@ def _isolation_reason(fields: dict[str, Any]) -> str:
 
 def _isolation_metadata(fields: dict[str, Any]) -> dict[str, Any]:
     metadata: dict[str, Any] = {}
-    for key in ("fault_id", "fault_type", "severity", "recommended_action"):
+    for key in ("fault_id", "fault_type", "fault_domain", "severity", "recommended_action"):
         if fields.get(key) is not None:
             metadata[key] = _plain(fields[key])
     affected = _as_node_list(fields.get("affected_nodes"))

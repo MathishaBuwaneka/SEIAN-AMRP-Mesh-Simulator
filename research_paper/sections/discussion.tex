@@ -48,6 +48,10 @@ No independent communication failure is simulated in the electrical run.
 The control delay is an input, not an observed transport characteristic.
 An always-connected control-plane objective remains untested, including its
 power supply, redundancy, reconnection behavior, and failure isolation.
+The merged networking simulator can represent communication faults, learned
+routes, binary packets, and radio contention. In this study those processes
+were not clock-coupled to PSCAD, and no measured packet timing was used as a
+breaker command delay.
 The MCP service is a local automation mechanism, not a safety-rated
 field protocol or evidence of secure, reliable network delivery.
 

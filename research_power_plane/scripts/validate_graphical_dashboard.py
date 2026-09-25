@@ -11,12 +11,14 @@ from pathlib import Path
 
 def main() -> int:
     from playwright.sync_api import expect, sync_playwright
+    from playwright.sync_api import Error as PlaywrightError
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://localhost:8502")
+    parser.add_argument("--output-dir", type=Path)
     args = parser.parse_args()
-    output = Path(__file__).resolve().parents[1] / "pscad_workspace/validation"
-    output.mkdir(exist_ok=True)
+    output = args.output_dir or Path(__file__).resolve().parents[1] / "pscad_workspace/validation"
+    output.mkdir(parents=True, exist_ok=True)
     evidence = {"validated_at_utc": datetime.now(timezone.utc).isoformat(), "url": args.url, "runs": []}
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(channel="msedge", headless=True)
@@ -44,10 +46,17 @@ def main() -> int:
             expect(spinner).to_be_visible(timeout=30000)
             expect(spinner).not_to_be_visible(timeout=240000)
             expect(page.get_by_text("PSCAD completed the run and produced fresh output data.", exact=True)).to_be_visible(timeout=30000)
-            with page.expect_download() as download:
-                page.get_by_role("button", name="Download Full Research Artifact", exact=True).click()
             artifact = output / f"graphical_{name}.json"
-            download.value.save_as(artifact)
+            for attempt in range(3):
+                try:
+                    with page.expect_download() as download:
+                        page.get_by_role("button", name="Download Full Research Artifact", exact=True).click()
+                    download.value.save_as(artifact)
+                    break
+                except PlaywrightError as exc:
+                    if "canceled" not in str(exc).lower() or attempt == 2:
+                        raise
+                    page.wait_for_timeout(1000)
             result = json.loads(artifact.read_text(encoding="utf-8"))
             run = result["pscad_execution"]
             assert not run["errors"], run["errors"]
@@ -88,7 +97,7 @@ def main() -> int:
             page.get_by_role("tab", name=name, exact=True).click()
             expect(page.locator("[data-testid=stException]")).to_have_count(0)
         page.get_by_role("radio", name="Scheduled state", exact=True).click()
-        expect(page.get_by_text("Preview time (s)", exact=True)).to_be_visible()
+        expect(page.get_by_text("Preview time (s)", exact=True)).to_be_visible(timeout=30000)
         expect(page.get_by_text("Running PSCAD simulation...", exact=True)).not_to_be_visible()
         page.get_by_role("heading", name="Power Topology", exact=True).scroll_into_view_if_needed()
         page.screenshot(path=str(output / "graphical_scheduled.png"))

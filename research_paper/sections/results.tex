@@ -1,7 +1,7 @@
 \section{Results}
 \label{sec:results}
 \subsection{Baseline, Isolation, and Loop Rejection}
-All six saved matrix runs report 31 research channels, zero build errors, and
+All six newly rerun matrix cases report 31 research channels, zero build errors, and
 zero build warnings. The recorded sample counts match their respective
 simulation durations at the specified output interval
 (Table~\ref{tab:scenarios}). This is evidence of successful case execution and
@@ -112,8 +112,17 @@ decimated waveform previews.}
 \label{fig:comparison}
 \end{figure}
 
-\subsection{Recorded Dashboard Integration Evidence}
-The graphical-validation artifact dated 5 September 2026 records three
+\subsection{Merged Simulator and Dashboard Integration Evidence}
+The additional merged-simulator replay carries two generated network fault
+objects with explicit domains. The adapter emits one N03 power-isolation
+command, three breaker transitions, and no N05 communication-fault breaker
+command. A fresh 6.2-s PSCAD experiment records 124,001 samples on each of
+31 channels, reports nine applied parameter writes, and returns no execution
+error. The native fault was supplied separately in advance, so this case
+verifies command compatibility and physical switching without claiming
+fault-triggered closed-loop protection.
+
+The refreshed graphical-validation artifact dated 25 September 2026 records three
 successful actions: selecting the baseline, selecting the physical fault, and
 editing a controller command. All three retain the same PSCAD process
 identifier and return 31 selected channels with no reported errors. The
@@ -126,6 +135,6 @@ the 6.0-s restoration time and the same fixed feeder model.
 Together with the parameter manifests and fresh-output checks, this evidence
 supports the implemented dashboard-to-PSCAD batch workflow. It is not a
 measurement of end-to-end dashboard latency, proof of uninterrupted control
-connectivity, or a live feedback demonstration. The project context also
-records 114 passing automated tests; those tests were not rerun for this
-read-only manuscript task and are not counted as additional experiments.
+connectivity, or a live feedback demonstration. The merged Python test suite
+passed 318 tests after the adapter update, including the compiled packet-codec
+checks. These software tests are not counted as electrical experiments.

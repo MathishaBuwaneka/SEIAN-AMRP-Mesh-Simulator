@@ -3,6 +3,7 @@
   "channels_per_scenario": 31,
   "preview_points_per_channel": 501,
   "checks": "passed",
-  "new_pscad_runs": 0,
-  "source_revision": "7db42ae0e9f8092065cf77bb206b1a818c29eacd"
+  "pscad_runs_by_artifact_generator": 0,
+  "merged_case_channels": 31,
+  "source_revision": "4a6f49d16ee23daf98fd7abc1c041523f4c1015f"
 }

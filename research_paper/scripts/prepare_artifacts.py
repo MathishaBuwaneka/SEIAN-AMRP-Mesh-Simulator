@@ -37,12 +37,13 @@ def write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=2, allow_nan=False) + "\n", encoding="utf-8")
 
 
-def snapshot() -> None:
+def snapshot(matrix_file: Path, gui_file: Path, command_edit_file: Path, merged_file: Path | None) -> None:
     workspace = REPO / "research_power_plane" / "pscad_workspace"
-    sources = [workspace / "transient_scenario_results.json",
+    sources = [matrix_file.resolve(),
                workspace / "timed_feeder_build_report.json",
-               workspace / "validation" / "graphical_gui_validation.json",
-               workspace / "validation" / "graphical_command_edit.json"]
+               gui_file.resolve(), command_edit_file.resolve()]
+    if merged_file:
+        sources.append(merged_file.resolve())
     scenario_files = sorted((REPO / "research_power_plane" / "examples" / "scenarios").glob("0[1-6]_*.json"))
     code_files = [REPO / "research_power_plane" / "AI_CONTEXT.md",
                   REPO / "research_power_plane" / "scripts" / "build_lv_feeder.py",
@@ -51,6 +52,13 @@ def snapshot() -> None:
     code_files.extend(sorted((REPO / "research_power_plane" / "seian_power_pipeline").glob("*.py")))
     code_files.extend([workspace / "SEIAN_LV_Timed_Switching.pscx",
                        workspace / "seian_pscad_timed_component_map.generated.json"])
+    code_files.extend(sorted((REPO / "seian_sim").glob("*.py")))
+    code_files.append(REPO / "research_power_plane" / "scripts" / "replay_merged_simulator.py")
+    code_files.append(REPO / "scripts" / "build_wire_codec.py")
+    code_files.extend(sorted((REPO / "firmware" / "codec").glob("*")))
+    for path in sources:
+        if not path.is_file() or not path.is_relative_to(REPO):
+            raise ValueError(f"Snapshot input must be an existing file inside the repository: {path}")
     hashes = [{"path": p.relative_to(REPO).as_posix(), "bytes": p.stat().st_size,
                "sha256": hashlib.sha256(p.read_bytes()).hexdigest()}
               for p in sources + scenario_files + code_files]
@@ -58,7 +66,8 @@ def snapshot() -> None:
                               capture_output=True, text=True).stdout.strip()
     provenance = {"snapshot_utc": datetime.now(timezone.utc).isoformat(),
                   "repository_revision": revision, "inputs": hashes,
-                  "method": "Read-only snapshot of existing saved experiments; no new PSCAD runs.",
+                  "method": "Read-only snapshot of saved experiments; the generator itself does not run PSCAD.",
+                  "matrix_source": sources[0].relative_to(REPO).as_posix(),
                   "raw_psout_included": False,
                   "trace_previews_are_decimated": True}
     report = json.loads(sources[1].read_text(encoding="utf-8"))
@@ -73,6 +82,8 @@ def snapshot() -> None:
                                      ["plans", "physical_faults", "switching_timeline"]},
                 "scenario_inputs": {p.stem: json.loads(p.read_text(encoding="utf-8"))
                                     for p in scenario_files}}
+    if merged_file:
+        evidence["merged_simulator_case"] = json.loads(sources[4].read_text(encoding="utf-8"))
     write_json(DATA / "evidence_snapshot.json", evidence)
     write_json(DATA / "provenance.json", provenance)
 
@@ -109,6 +120,15 @@ def validate(evidence: dict) -> None:
                 assert row["threshold"] == 0.2
     assert scenarios["04_loop_rejection"]["accepted_commands"] == 0
     assert interval(scenarios["06_physical_fault_restoration"], "N03")["ongoing_at_end"]
+    merged = evidence.get("merged_simulator_case")
+    if merged:
+        assert len(merged["controller_commands"]) == 1
+        assert merged["controller_commands"][0]["target_node_id"] == "N03"
+        assert merged["communication_fault"]["domain"] == "communication"
+        assert merged["pipeline"]["switching_timeline"]["event_count"] == 3
+        run = merged["pipeline"]["pscad_execution"]
+        assert run and not run["errors"] and run["fresh_output_files"]
+        assert run["channel_data"]["channel_count"] == 31
 
 
 def write_rows(name: str, rows: list[str]) -> None:
@@ -295,11 +315,16 @@ def comparison(evidence: dict) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--snapshot", action="store_true", help="Read current project evidence and refresh the paper-only snapshot.")
+    workspace = REPO / "research_power_plane" / "pscad_workspace"
+    parser.add_argument("--matrix", type=Path, default=workspace / "transient_scenario_results.json")
+    parser.add_argument("--gui-validation", type=Path, default=workspace / "validation" / "graphical_gui_validation.json")
+    parser.add_argument("--gui-command-edit", type=Path, default=workspace / "validation" / "graphical_command_edit.json")
+    parser.add_argument("--merged-case", type=Path)
     args = parser.parse_args()
     for folder in [DATA, FIGURES, TABLES]:
         folder.mkdir(parents=True, exist_ok=True)
     if args.snapshot:
-        snapshot()
+        snapshot(args.matrix, args.gui_validation, args.gui_command_edit, args.merged_case)
     evidence = json.loads((DATA / "evidence_snapshot.json").read_text(encoding="utf-8"))
     validate(evidence)
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 9,
@@ -310,7 +335,8 @@ def main() -> None:
     transients(evidence)
     comparison(evidence)
     write_json(DATA / "artifact_validation.json", {"scenario_count": 6, "channels_per_scenario": 31,
-               "preview_points_per_channel": 501, "checks": "passed", "new_pscad_runs": 0,
+               "preview_points_per_channel": 501, "checks": "passed", "pscad_runs_by_artifact_generator": 0,
+               "merged_case_channels": 31 if evidence.get("merged_simulator_case") else None,
                "source_revision": evidence["provenance"]["repository_revision"]})
     print("Validated six saved scenarios; generated four figures, five tables, and one CSV inside research_paper/.")
 

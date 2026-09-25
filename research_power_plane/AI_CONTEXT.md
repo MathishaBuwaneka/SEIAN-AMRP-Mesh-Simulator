@@ -1,6 +1,54 @@
 # AI Context: SEIAN Power Plane PSCAD Workflow
 
-Last updated: 2026-09-05 Asia/Colombo
+Last updated: 2026-09-25 Asia/Colombo
+
+## Integrated Repository Refresh (2026-09-25)
+
+The merged upstream `main` revision `4a6f49d` includes the PSCAD integration
+PR and the networking team's timing/decentralized-routing PR, plus binary
+packet, LoRa airtime, and event-radio work. This refresh was performed on a
+local branch based on `origin/main`. The original networking modules were not
+edited as part of the power-plane refresh.
+
+The updated simulator distinguishes power, communication, and device faults.
+The research adapter now consumes `simulator.fault_events` explicitly. It
+translates domain-aware power faults only when the recommendation requests
+electrical switching. Communication and device faults create no PSCAD breaker
+command. Legacy rows lacking a domain retain the prior isolation behavior.
+`export_tables_json()` in the merged simulator does not include fault events.
+The reproducible event replay is
+`scripts/replay_merged_simulator.py`; its communication-fault and power-fault
+events produce one N03 isolation command and three breaker operations.
+
+The refreshed six-scenario PSCAD matrix was written to
+`../output/pscad_refresh_20260925/scenario_matrix.json`. Each case returned 31
+research channels with zero build errors; the raw `.psout` files are archived
+under `../output/pscad_refresh_20260925/raw/`. The new matrix matches the
+earlier threshold-interruption durations and approximately 1.554-kA peak
+phase fault current. The merged simulator event replay also completed a fresh
+6.2-s PSCAD run with 124,001 samples per channel and nine parameter writes.
+These are batch experiments with preset fault and command times, not live
+EMT-to-controller feedback.
+
+The complete Python and host C++ codec suite passed: **318 passed, 0 skipped**.
+The optional Zig 0.14.1 compiler was installed only under the ignored
+`../output/refresh_tools/` directory, and the host codec executable lives in
+`../output/wire-codec/`.
+
+The refreshed graphical Edge check passed all three actions: baseline,
+physical fault, and a graphical change of N03 isolation from 5.0 to 5.1 s.
+Each triggered a fresh 31-channel PSCAD run in editor PID 8804. The same
+dashboard's Advanced JSON editor passed baseline and physical-fault checks;
+committing each text edit by Tab triggered PSCAD without a Replay click.
+The physical-fault raw-JSON run measured a 1.554333-kA maximum phase peak.
+The saved GUI evidence is under
+`../output/pscad_refresh_20260925/graphical/` and
+`../output/pscad_refresh_20260925/raw_ui/`, including desktop/mobile
+screenshots and no mobile horizontal overflow. The networking dashboard was
+also browser-smoke-tested: its Run Batch action updated packet delivery from
+0 to 70% in a sample run. That smoke result is not a controlled benchmark.
+The dashboards are served locally at `http://localhost:8501` (networking)
+and `http://localhost:8502` (power plane).
 
 ## Graphical Editor Update
 
@@ -17,7 +65,7 @@ colleagues' metadata. Preview/selection changes never launch PSCAD; committed
 edits use the existing automatic-run path. Bus wiring is not editable through
 this layer because it must match the generated physical PSCAD case.
 
-Validation complete: 114 repository tests passed. The actual Edge browser
+Earlier validation: 114 repository tests passed. The actual Edge browser
 selected N03 on the feeder, selected baseline and physical-fault presets, and
 applied a graphical isolation-time edit from 5.0 to 5.1 s. All three runs
 produced fresh PSCAD results with 31 channels and zero errors, using one
@@ -25,7 +73,7 @@ PSCAD instance (PID 33424 during this validation). Metadata and the unchanged
 physical-fault schedule survived the command edit. Desktop/mobile screenshots
 were inspected; the 390px page has no horizontal overflow.
 
-Evidence: `pscad_workspace/validation/graphical_gui_validation.json`,
+Earlier evidence: `pscad_workspace/validation/graphical_gui_validation.json`,
 `graphical_baseline.json`, `graphical_physical_fault.json`,
 `graphical_command_edit.json`, and `graphical_*.png` screenshots. Repeat with
 `scripts/validate_graphical_dashboard.py`. `validate_dashboard.py` still tests
@@ -45,7 +93,7 @@ restores it. Automatic process termination has been removed. Do not reintroduce
 it to recover minimized windows. The local HTTP MCP service retains its PSCAD
 connection; the dashboard reads fresh PSOUT traces directly using `mhi.psout`.
 
-Real-browser integration passed: Playwright/Edge committed baseline and
+Earlier real-browser integration passed: Playwright/Edge committed baseline and
 physical-fault JSON edits by Tab, without a Replay click. Each edit produced
 fresh PSCAD measurements, using the same editor process (PID 27608). Baseline
 had 20,001 samples; physical fault had 140,001; both selected 31 channels and
@@ -53,10 +101,10 @@ reported zero errors. Baseline fault-branch leakage is about 1.3 mA, not
 exactly zero; fault phase peaks exceed 1.55 kA. Desktop and 390px mobile charts
 were captured; the mobile page has no horizontal overflow.
 
-Evidence lives in `pscad_workspace/validation/`: two downloaded research
+Earlier evidence lives in `pscad_workspace/validation/`: two downloaded research
 artifacts, desktop/mobile screenshots, and `dashboard_gui_validation.json`.
 Repeat with `scripts/validate_dashboard.py` against the running dashboard.
-The full test suite now passes (114 tests), including graphical and uploaded-file editor
+The earlier test suite passed 114 tests, including graphical and uploaded-file editor
 persistence. Implementation and documentation are complete for the automatic
 batch pipeline. The research dashboard is served on http://localhost:8502;
 the timed SEIAN case is left open in PSCAD. Only the next-stage research work

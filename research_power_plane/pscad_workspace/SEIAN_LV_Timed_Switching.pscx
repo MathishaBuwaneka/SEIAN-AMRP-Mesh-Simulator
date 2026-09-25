@@ -23,7 +23,7 @@
     <param name="Warn" value="0" />
     <param name="Check" value="0" />
     <param name="description" value="" />
-    <param name="revisor" value="RUSULA OSHADHA, 1788531649" />
+    <param name="revisor" value="RUSULA OSHADHA, 1790312959" />
   </paramlist>
   <Layers />
   <List classid="Settings" />
@@ -67,7 +67,7 @@
         </Wire>
       </schematic>
     </Definition>
-    <Definition classid="UserCmpDefn" name="Main" id="220343895" group="" url="" version="" build="" crc="69023486" view="false" date="1788522863">
+    <Definition classid="UserCmpDefn" name="Main" id="220343895" group="" url="" version="" build="" crc="120288359" view="false" date="1790312843">
       <paramlist name="">
         <param name="Description" value="" />
       </paramlist>
@@ -110,6 +110,9 @@
           <param name="bus_expand_x" value="8" />
           <param name="bus_expand_y" value="8" />
           <param name="bus_length" value="4" />
+          <param name="show_terminals" value="0" />
+          <param name="virtual_filter" value="" />
+          <param name="animation_freq" value="500" />
         </paramlist>
         <grouping />
         <Sticky classid="Sticky" id="795425876" x="180" y="4410" w="108" h="36" colors="0, 15792890">
@@ -2456,7 +2459,7 @@
   </definitions>
   <List classid="Resource" />
   <hierarchy>
-    <call link="1510504076" name="SEIAN_LV_Timed_Switching:DS" z="-1" view="false" instance="0">
+    <call link="44986109" name="SEIAN_LV_Timed_Switching:DS" z="-1" view="false" instance="0">
       <call link="1695981626" name="SEIAN_LV_Timed_Switching:Main" z="-1" view="true" instance="0" />
     </call>
   </hierarchy>

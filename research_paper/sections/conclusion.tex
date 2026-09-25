@@ -3,10 +3,15 @@ This paper describes a working batch interface from structured network-control
 commands and graphical dashboard edits to timed PSCAD electrical experiments.
 The modular implementation preserves the networking code boundary while
 linking logical identifiers, operation-level decisions, component parameters,
-fresh outputs, and measured results. Six saved deterministic scenarios provide
+fresh outputs, and measured results. Six freshly rerun deterministic scenarios provide
 preliminary functional evidence for baseline operation, isolation, tie-based
 restoration, single-loop rejection, imposed waiting time, and a native
 three-phase fault.
+
+An additional event replay uses fault objects from the merged networking
+simulator. It produces electrical isolation for a power fault and leaves the
+switch schedule unchanged for a communication fault, confirming the
+fault-domain boundary under test.
 
 In the physical-fault case, a maximum absolute phase current of 1.554 kA
 precedes restoration of healthy downstream buses to approximately

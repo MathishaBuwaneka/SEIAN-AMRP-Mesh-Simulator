@@ -59,7 +59,7 @@ def main() -> None:
     report = {"pdf_pages": len(doc), "references": len(bib_keys), "pages": pages,
               "unresolved_citations_or_references": False, "overfull_boxes": False,
               "input_hashes_unchanged": True, "verified_source_inputs": len(provenance["inputs"]),
-              "pscad_runs_during_preparation": 0,
+              "pscad_runs_by_paper_verifier": 0,
               "pdf_sha256": hashlib.sha256((BUILD / "main.pdf").read_bytes()).hexdigest()}
     (BUILD / "verification.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in report.items() if k != "pages"}, indent=2))

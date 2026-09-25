@@ -3,6 +3,13 @@
 from __future__ import annotations
 
 import pytest
+import json
+from pathlib import Path
+
+from seian_sim.enums import FaultDomain, FaultType
+from seian_sim.fault_model import create_fault
+from seian_sim.node import SeianNode
+from seian_sim.scenarios import build_from_topology
 
 from seian_power_pipeline.control_plane import ControlAction, control_commands_from_payload
 from seian_power_pipeline.controller_adapter import (
@@ -10,6 +17,7 @@ from seian_power_pipeline.controller_adapter import (
     commands_from_fault_events,
 )
 from seian_power_pipeline.pscad_adapter import PscadLineBinding
+from seian_power_pipeline.pipeline import run_control_pipeline
 
 
 class TestControllerAdapter:
@@ -104,6 +112,67 @@ class TestControllerAdapter:
         commands = commands_from_fault_events([FaultEventLike()])
         assert commands[0]["target_node_id"] == "N02"
         assert commands[0]["metadata"]["fault_id"] == "F-4"
+
+    def test_updated_simulator_fault_domains_do_not_open_power_lines(self):
+        communication = {
+            "fault_id": "radio-loss",
+            "origin_node": "N03",
+            "fault_type": "communication_loss",
+            "fault_domain": "communication",
+            "recommended_action": "reroute via healthy neighbors",
+            "restoration_path": ["G01", "N02", "N05"],
+            "start_time": 5.0,
+        }
+        device = {**communication, "fault_id": "overheat", "fault_domain": "device"}
+        unknown = {**communication, "fault_id": "unexpected", "fault_domain": "future_domain"}
+        assert commands_from_fault_events([communication, device, unknown]) == []
+
+    def test_new_power_fault_requires_switching_recommendation(self):
+        advisory = {
+            "fault_id": "sag",
+            "origin_node": "N03",
+            "fault_domain": "power",
+            "recommended_action": "request voltage support",
+        }
+        isolation = {
+            **advisory,
+            "fault_id": "short",
+            "recommended_action": "isolate affected region in the model",
+        }
+        commands = commands_from_fault_events([advisory, isolation])
+        assert len(commands) == 1
+        assert commands[0]["metadata"]["fault_domain"] == "power"
+        assert commands[0]["target_node_id"] == "N03"
+
+    def test_actual_new_simulator_fault_objects_follow_domain_boundary(self):
+        node = SeianNode(node_id="N03", local_address=3, network_id="SEIAN-LAB", position_x=0, position_y=0)
+        radio = create_fault(node, FaultType.COMMUNICATION_LOSS, "severe", 5.0, 1.0, 0.0)
+        short = create_fault(node, FaultType.SHORT_CIRCUIT_SUSPECTED, "severe", 5.0, 1.0, 0.0)
+        assert radio.fault_domain is FaultDomain.COMMUNICATION
+        assert short.fault_domain is FaultDomain.POWER
+        commands = commands_from_fault_events([radio, short])
+        assert len(commands) == 1
+        assert commands[0]["target_node_id"] == "N03"
+
+    def test_merged_simulator_faults_generate_only_electrical_switch_events(self):
+        source = Path(__file__).resolve().parents[1] / "examples" / "lv_power_plane_microgrid.json"
+        topology = json.loads(source.read_text(encoding="utf-8"))
+        simulator = build_from_topology(topology)
+        simulator.env.run(until=5.0)
+        simulator.inject_fault("N03", FaultType.SHORT_CIRCUIT_SUSPECTED, radius_m=1.0)
+        simulator.inject_fault("N05", FaultType.COMMUNICATION_LOSS, radius_m=1.0)
+
+        payload = commands_from_controller_payload({"fault_events": simulator.fault_events})
+        assert len(payload["commands"]) == 1
+        commands = control_commands_from_payload(payload)
+        result = run_control_pipeline(
+            topology_payload=topology,
+            commands=commands,
+            simulation_mode="transient",
+        )
+        assert result.plans[0].accepted
+        assert len(result.switching_timeline.events) == 3
+        assert result.final_power_plane["analysis"]["deenergized_nodes"] == ["N03", "N04", "N05", "N06"]
 
     def test_unsupported_payload_type_raises(self):
         with pytest.raises(ValueError):

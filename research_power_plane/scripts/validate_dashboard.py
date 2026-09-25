@@ -18,12 +18,14 @@ sys.path.insert(0, str(HERE))
 
 def main() -> int:
     from playwright.sync_api import expect, sync_playwright
+    from playwright.sync_api import Error as PlaywrightError
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://localhost:8502")
+    parser.add_argument("--output-dir", type=Path)
     args = parser.parse_args()
-    output = HERE / "pscad_workspace" / "validation"
-    output.mkdir(exist_ok=True)
+    output = args.output_dir or HERE / "pscad_workspace" / "validation"
+    output.mkdir(parents=True, exist_ok=True)
     scenarios = [
         ("baseline", {"commands": []}),
         ("physical_fault", json.loads((HERE / "examples/scenarios/06_physical_fault_restoration.json").read_text())),
@@ -34,21 +36,29 @@ def main() -> int:
         context = browser.new_context(viewport={"width": 1440, "height": 1000}, accept_downloads=True)
         page = context.new_page()
         page.goto(args.url)
-        page.get_by_text("Advanced JSON", exact=True).click()
         editor = page.get_by_role("textbox", name="Command JSON", exact=True)
-        expect(editor).to_be_visible(timeout=30000)
         for name, payload in scenarios:
             print(f"Committing {name} dashboard edit", flush=True)
+            if not editor.is_visible():
+                page.get_by_text("Advanced JSON", exact=True).click()
+            expect(editor).to_be_visible(timeout=30000)
             editor.fill(json.dumps(payload, indent=2))
             editor.press("Tab")
             spinner = page.get_by_text("Running PSCAD simulation...", exact=True)
             expect(spinner).to_be_visible(timeout=30000)
             expect(spinner).not_to_be_visible(timeout=240000)
             expect(page.get_by_text("PSCAD completed the run and produced fresh output data.", exact=True)).to_be_visible(timeout=30000)
-            with page.expect_download() as downloaded:
-                page.get_by_role("button", name="Download Full Research Artifact", exact=True).click()
             artifact = output / f"dashboard_{name}.json"
-            downloaded.value.save_as(artifact)
+            for attempt in range(3):
+                try:
+                    with page.expect_download() as downloaded:
+                        page.get_by_role("button", name="Download Full Research Artifact", exact=True).click()
+                    downloaded.value.save_as(artifact)
+                    break
+                except PlaywrightError as exc:
+                    if "canceled" not in str(exc).lower() or attempt == 2:
+                        raise
+                    page.wait_for_timeout(1000)
             result = json.loads(artifact.read_text(encoding="utf-8"))
             execution = result["pscad_execution"]
             assert execution["errors"] == [], execution["errors"]

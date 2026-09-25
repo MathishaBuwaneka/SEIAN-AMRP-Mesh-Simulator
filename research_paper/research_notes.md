@@ -1,6 +1,6 @@
 # Research Notes and Claim Audit
 
-Prepared 2026-09-05. This is a focused background review, not an exhaustive
+Prepared 2026-09-05; project evidence refreshed 2026-09-25. This is a focused background review, not an exhaustive
 systematic review or evidence that no closer prior work exists. Searches covered
 SDN microgrids, electrical reconfiguration, communication/power co-simulation,
 cyber-physical testbeds, and official PSCAD automation and component behavior.
@@ -47,27 +47,30 @@ linked, not redistributed.
 
 ## Project Evidence
 
-The clean inspected repository revision was
-`7db42ae0e9f8092065cf77bb206b1a818c29eacd`. This is the revision observed at
-snapshot time, not an assertion that every historical run was executed at this
-exact commit. See `data/provenance.json` for the SHA-256 hashes of the actual
-saved artifacts and source files read.
+The merged upstream repository revision was `4a6f49d`. The refreshed
+experiments also use local adapter and workflow changes on branch
+`integration_refresh_20260925`; they are not evidence of an unmodified
+upstream checkout. See `data/provenance.json` for SHA-256 hashes of the saved
+artifacts and source files actually read. The paper generator only reads these
+artifacts, while the separate validation workflow did run PSCAD.
 
 | Claim | Evidence | Wording limit |
 | --- | --- | --- |
-| Six working saved PSCAD conditions | `transient_scenario_results.json`, six scenario inputs | One saved deterministic result per condition, not repeated stochastic trials. |
+| Six rerun PSCAD conditions | `output/pscad_refresh_20260925/scenario_matrix.json`, six scenario inputs | One fresh deterministic result per condition, not repeated stochastic trials. |
 | Native three-phase fault and restoration | S6 fault manifest, channel summaries and intervals | Fault and controller times are supplied inputs; no implemented relay detection is established. |
 | 1.554 kA largest phase peak | S6 `measured_metrics.fault_current_peak_abs_ka` | Saved full-rate maximum, not a peak recovered from the preview. |
 | Approximately 1.195 s downstream interruption | S6 full-rate threshold intervals | Experimental 200-V threshold and filtering, not standards compliance. |
 | 39 s extra waiting in S5 versus S3 | Input times 45 versus 6 s, interval differences | Imposed delay; no measured SDN versus legacy latency. |
-| Dashboard changes invoke PSCAD | Recorded graphical GUI summary and command-edit timeline | Prior saved integration check; no new GUI run for this manuscript. |
+| Dashboard changes invoke PSCAD | Refreshed graphical GUI summary and command-edit timeline | Browser-driven batch integration check, not live solver feedback. |
 | Loop closure rejected | S4 one issued / zero accepted commands, zero events | Does not establish all-or-nothing rejection of arbitrary mixed commands. |
-| 114 tests passed | Existing `AI_CONTEXT.md` recorded test report | Historical context statement only; tests were not rerun here. |
+| 318 tests passed | Current `pytest tests research_power_plane/tests` run including compiled codec checks | Software regression evidence, not an electrical experiment. |
+| Domain-aware merged replay | `output/pscad_refresh_20260925/merged_simulator.json` and archived raw output | N03 power event maps to one isolation command; N05 communication event causes no breaker command. Native fault is preprogrammed. |
 | Electrical R/L/load values | Saved build report and `build_lv_feeder.py` | Illustrative settings, not measured cable, transformer, or load calibration. |
 
 The preparation script validates internal consistency of saved results. It
 does not independently recompute full-rate extrema from raw `.psout` files,
-which are not bundled per scenario in this paper package.
+which are archived separately under `output/pscad_refresh_20260925/raw/`
+and not bundled inside the paper package.
 
 ## Important Findings from Read-Only Code Inspection
 
@@ -77,16 +80,15 @@ which are not bundled per scenario in this paper package.
 2. `PowerPlaneState.apply_command()` records warnings and then applies
    individual requests. A partially invalid command can still change some
    edges. The paper explicitly avoids describing this as atomic safety
-   validation or a transactional interlock. No fix was made, in accordance
-   with the instruction not to touch the working project.
+   validation or a transactional interlock. This remains future safety work.
 3. `State_*` channels record controller signals, not independently measured
    breaker contacts. The diagram's schedule panel is explicitly an input plot.
 4. Each dashboard commit triggers a fresh batch experiment. A persistent MCP
    connection does not provide live solver feedback, time synchronization, or
    an always-powered physical communications network.
-5. Output cleanup intentionally replaces the current case's raw result. A
-   publication experiment campaign must archive raw outputs under distinct
-   names before rerunning.
+5. Output cleanup intentionally replaces the current case's raw result. The
+   refreshed scenario runner archives each raw output under a distinct name,
+   but a publication campaign should also preserve complete tool logs.
 6. No-event line schedules use a transition after the run window. The current
    `tbreakn` binding supports at most two transitions per breaker per run.
 7. Scenario text saying protection "detects" the fault describes intent,
@@ -117,8 +119,8 @@ which are not bundled per scenario in this paper package.
 
 ## Preparation Boundary
 
-All changes for this task are confined to `research_paper/`. Existing code,
-PSCAD cases, generated simulator outputs, tests, and `AI_CONTEXT.md` were only
-read. No simulator, server, or GUI automation was started for manuscript
-preparation. Compiling the paper uses the installed TeX toolchain; its ordinary
-user-level font/cache access is separate from the operational project.
+The original manuscript preparation was read-only. The 25 September integration
+refresh adds local code under `research_power_plane/`, reruns PSCAD and browser
+validation, and refreshes this paper's derived evidence. The network team's
+root modules remain unchanged. Artifact generation and PDF verification do not
+start PSCAD; they read the outputs produced by the separate experiment runs.

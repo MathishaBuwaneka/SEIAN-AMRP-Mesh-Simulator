@@ -1,10 +1,11 @@
 \section{Experimental Method and Evidence Handling}
 \label{sec:methods}
 \subsection{Saved Scenario Matrix}
-The evaluation is a read-only analysis of existing experiment artifacts,
-frozen for manuscript preparation on 5 September 2026. No new PSCAD
-simulations were launched while producing the paper. There is one saved
-deterministic result per matrix condition, so no confidence interval,
+The six electrical experiments were rerun against the integrated repository
+on 25 September 2026. Raw outputs were archived per condition outside the
+manuscript package, while this paper freezes their result summaries and
+figure previews. There is one saved deterministic result per condition in
+this refresh, so no confidence interval,
 stochastic reliability estimate, or repeated-run performance distribution is
 reported.
 
@@ -97,10 +98,15 @@ peak bars from the saved full-rate metrics rather than inventing a detailed
 waveform between preview points. Publication-grade transient waveform figures
 will require separately archived raw outputs.
 
-Provenance includes the inspected repository revision, SHA-256 hashes of the
+Provenance includes the merged upstream revision, SHA-256 hashes of the
 read input artifacts and relevant source modules, the electrical build report,
 and the scenario inputs. A recorded graphical-validation artifact supplies
 additional evidence for baseline selection, physical-fault selection, and a
-command edit through the dashboard. This evidence is reported as an earlier
-integration check, not a new GUI experiment conducted during manuscript
-preparation.
+command edit through the dashboard.
+
+The merged-simulator integration case is separate from the six-row matrix.
+An N03 short-circuit-suspected event and an N05 communication-loss event are
+injected in the merged networking simulator. Its event objects pass through
+the domain-aware adapter; only the N03 event produces an isolation command.
+A native N03 PSCAD fault is preprogrammed at 4.8--5.2 s and isolation at 5.0 s.
+The networking simulator does not detect a PSCAD fault in a shared live run.
